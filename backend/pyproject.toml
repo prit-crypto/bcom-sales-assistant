@@ -1,0 +1,55 @@
+[project]
+name = "bcom-sales-backend"
+version = "0.1.0"
+description = "BCOM Sales Assistant API: reads a prospect's courier invoice, compares it with BCOM rates, builds the proposal PDF and WhatsApp message."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "python-multipart>=0.0.9",   # multipart parsing for invoice uploads
+    "pypdf>=5",                  # text of sample PDFs for the no-AI (mock) reader
+    "google-genai>=1.0",         # Gemini invoice reader
+    "openai>=1.60",              # OpenAI invoice reader
+    "jinja2>=3.1",               # proposal HTML template
+    "weasyprint>=63",            # proposal HTML -> PDF (needs pango system libs)
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.28",               # FastAPI TestClient
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+ignore = ["E501"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.File", "fastapi.Body"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["weasyprint.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

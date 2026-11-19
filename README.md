@@ -10,59 +10,37 @@ photo), checks the shipments the AI read, and gets:
 > Everything in this POC is fictional: the BCOM rate card, the courier ("SwiftLine Express") and the sample customers.
 > See [docs/PLAN.md](docs/PLAN.md) for the agreed scope and plan.
 
-## Quick start
+## Repository layout
 
-Requirements: Node.js 20.9+ (tested on 22).
+| Folder | What it is | Stack |
+|---|---|---|
+| [backend/](backend/) | The API: invoice reading (mock / Gemini / OpenAI), pricing, comparison, proposal PDF, WhatsApp message | Python 3.12, FastAPI, WeasyPrint |
+| [frontend/](frontend/) | The partner-facing screens. No server code: it only calls the backend | Next.js 16, React 19, Tailwind 4 |
+
+All prices and savings are calculated by plain code in the backend (`backend/app/services/pricing`), so the numbers
+are exact and the same every time, whichever AI provider is active. The frontend never calculates money.
+
+## Quick start (two terminals)
+
+Requirements: Python 3.12 with [uv](https://docs.astral.sh/uv/), Node.js 20.9+, and Pango for the PDF
+(`sudo apt install libpango-1.0-0 libpangoft2-1.0-0` on Debian/Ubuntu; present on most desktops).
 
 ```bash
+# 1. Backend – http://localhost:8000 (API docs at http://localhost:8000/docs)
+cd backend
+make init
+cp .env.example .env        # AI_PROVIDER=mock works with no key
+make run
+
+# 2. Frontend – http://localhost:3000
+cd frontend
 npm install
-npm run dev          # http://localhost:3000
+cp .env.example .env.local  # NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+npm run dev
 ```
 
-With no settings, the app runs in **mock mode** (no AI, no key, $0) and reads the bundled sample invoices.
-
-## Switching the invoice reader (`AI_PROVIDER`)
-
-Copy `.env.example` to `.env.local` and set `AI_PROVIDER`. Restart the app after changing it.
-
-| `AI_PROVIDER` | What it does | Needs | Cost |
-|---|---|---|---|
-| `mock` (default) | Reads only our sample PDF format, uses a fixed message template | nothing | $0 |
-| `gemini` | Google Gemini reads any PDF or photo and writes the message | `GEMINI_API_KEY` ([get one](https://aistudio.google.com/apikey)) | Free tier |
-| `openai` | OpenAI reads any PDF or photo and writes the message | `OPENAI_API_KEY` | Paid (small) |
-
-Models can be changed with `GEMINI_MODEL` and `OPENAI_MODEL` (default `gpt-6.1-terra`).
-
-### Gemini settings and test results (18 Nov 2026, free tier)
-
-| Setting | Default | Why |
-|---|---|---|
-| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Read both sample PDFs and the photo **100% correctly in about 8 seconds** |
-| `GEMINI_FALLBACK_MODEL` | `gemini-3.8-flash` | Used automatically if the main model is busy or out of quota (`none` turns it off) |
-| `GEMINI_THINKING_LEVEL` | `low` | Copying a table needs little reasoning. `high` took 2+ minutes and returned broken JSON |
-
-All 8 sample files were read **100% correctly** (every shipment and every field, matched by waybill number) by
-`gemini-3.5-flash-lite` in 7–16 seconds each:
-
-| File | Format | Result |
-|---|---|---|
-| `sample-1-al-noor-mobile.pdf` | SwiftLine table, 2 pages, 46 rows | 100% |
-| `sample-2-gulf-spice.pdf` / `-photo.jpg` | Same layout with gaps; phone photo | 100% / 100% |
-| `sample-3-falcon-air.pdf` / `-scan.png` | Product codes with legend, fuel column, DD/MM/YYYY, origin only in header; grey scan | 100% / 100% |
-| `sample-4-desert-parcel.pdf` | Landscape, grouped under service headings with subtotals, YYYY/MM/DD | 100% |
-| `sample-5-gulf-runner.png` | No table – one card per shipment | 100% |
-| `sample-6-oryx-usd.pdf` | US dollars, MM/DD/YYYY | 100% read; correctly flagged as not comparable with AED rates |
-
-- `gemini-3.8-flash` answered **503 "high demand"** to every request during testing; the app retries twice and then
-  switches model, and shows "Gemini is busy" if both fail.
-- Photos: keep the invoice **flat and straight**. With a ~1° tilt, Flash-Lite mixed up values between neighbouring rows;
-  with a slight tilt (0.3°) it was 100% correct. The review step is there to catch such errors.
-
-**Do not upload real customer invoices while using the Gemini free tier** – Google may use free-tier data to improve
-its products. Use the fictional samples, or a paid key.
-
-The provider only reads the invoice and writes the message. **All prices and savings are calculated by plain code**
-(`src/lib/pricing`), so the numbers are exact and the same every time, whichever provider is active.
+With no AI key, the backend runs in **mock mode** (no AI, $0) and reads the bundled SwiftLine sample invoices.
+Details: [backend/README.md](backend/README.md) · [frontend/README.md](frontend/README.md).
 
 ## Demo script (about 5 minutes)
 
@@ -78,63 +56,21 @@ The provider only reads the invoice and writes the message. **All prices and sav
 Sample 1 shows a clean, 2-page invoice with 46 shipments. With Gemini or OpenAI active, the **Other courier formats**
 row on the upload screen shows the same flow on four different invoice designs (codes, grouped sections, cards, USD).
 
-## Scripts
+## Safeguards on the numbers
 
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Development server |
-| `npm run build` / `npm start` | Production build / server |
-| `npm test` | Unit tests (pricing, mock reader on the real sample PDFs, normalisers) |
-| `npm run lint` / `npm run typecheck` | ESLint / TypeScript checks |
-| `npm run samples` | Regenerate the sample invoices in `public/samples` (needs local Chrome; set `CHROME_PATH` if needed) |
-| `npm run format` | Prettier |
-
-## Project structure
-
-```
-src/
-  app/                  page, layout, styles
-    api/config          GET  – which provider is active (no secrets)
-    api/extract         POST – upload invoice -> clean, editable shipment data
-    api/proposal        POST – reviewed data -> proposal PDF (numbers recalculated on the server)
-    api/message         POST – reviewed data -> WhatsApp text (numbers recalculated on the server)
-  components/demo/      one component per journey step + stepper + DemoFlow (state)
-  components/ui/        small shared UI pieces
-  lib/ai/               provider interface, factory, prompts, JSON schema, providers/{mock,gemini,openai}
-  lib/invoice/          normalisation of any reader's output, mock parser, PDF text extraction
-  lib/pricing/          fictional rate card, calculator, comparison and summary
-  lib/proposal/         proposal PDF (react-pdf) and sample commercial terms
-  lib/whatsapp/         message facts, template, wa.me link
-  lib/http/             request validation, upload checks, error responses
-  lib/config/           environment settings (server only)
-  types/                shared types
-scripts/                sample invoice generator
-public/samples/         fictional sample invoices
-tests/                  Vitest unit tests
-docs/PLAN.md            agreed plan and scope
-```
-
-### Adding another AI provider
-
-Implement the `AIProvider` interface in `src/lib/ai/providers/<name>.ts` (`extractInvoice`, `writeSalesMessage`), add
-the id to `PROVIDER_IDS` in `src/types/provider.ts`, and wire it in `src/lib/ai/index.ts`. Its output is validated
-against the same schema and normalised the same way as the others.
-
-## Pricing rules (fictional rate card)
-
-- AED, all-in including fuel surcharge, excluding 5% VAT and duties.
-- Origin must be the UAE. Destinations are grouped into 6 zones; Express and Economy services.
-- Weight rounded up to 0.5 kg; first 0.5 kg + each extra 0.5 kg up to 30 kg; per kg above 30 kg; max 70 kg.
-- Shipments that are imports, off the rate card, over 70 kg, missing data or excluded are counted in the coverage but
-  left out of the savings.
-- An invoice covering 25–35 days counts as one month; other periods are scaled to 30 days. Yearly = monthly x 12.
+- When BCOM is not cheaper overall, the savings screen says so, and the proposal PDF and WhatsApp message are refused
+  (the backend returns `no_saving`), so a customer never sees "save about AED -11".
+- Monthly figures are scaled only from the **billing period printed on the invoice**. If it is missing, the invoice
+  counts as one month and the partner is asked to enter the period; shipment dates are not used to guess it.
+- A missing currency is assumed to be AED, with a warning on the review screen and a line in the assumptions.
 
 ## Known limitations (POC)
 
 - Rates are fictional; no connection to BCOM's real rates or the Metafour API yet.
 - Mock mode reads only the bundled sample format. Real invoices need `gemini` or `openai`.
-- Gemini has been tested with a live free-tier key (see above). The OpenAI provider is typed against its SDK but has
-  not been run against a live key yet – test with a sample first when you add a key.
-- Free-tier Gemini can be busy or rate-limited at any moment; keep `mock` mode as a backup for live demos.
-- No login, database, Arabic, or volumetric weight from parcel dimensions.
+- **Do not upload real customer invoices while using the Gemini free tier** – Google may use free-tier data to improve
+  its products. Use the fictional samples, or a paid key.
+- No login and no rate limiting on the API: keep it on a private network until both are added, or anyone with the URL
+  can use up the AI quota.
+- No database, Arabic, or volumetric weight from parcel dimensions.
 - WhatsApp is click-to-chat only; the partner sends the message and attaches the PDF manually.

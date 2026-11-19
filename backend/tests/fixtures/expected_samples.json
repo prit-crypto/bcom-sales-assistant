@@ -1,0 +1,1700 @@
+[
+  {
+    "file_stem": "sample-1-al-noor-mobile",
+    "layout": "swiftline",
+    "carrier_name": "SwiftLine Express LLC",
+    "customer_name": "Al Noor Mobile Accessories Trading LLC",
+    "invoice_number": "SWL-INV-2610-0457",
+    "invoice_date": "2026-11-03",
+    "period_start": "2026-10-01",
+    "period_end": "2026-10-31",
+    "currency": "AED",
+    "rows": [
+      {
+        "date": "2026-10-01",
+        "awb": "SWL 8305 5541 86",
+        "origin_country": "AE",
+        "destination_city": "Paris",
+        "destination_country": "FR",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 283.75
+      },
+      {
+        "date": "2026-10-02",
+        "awb": "SWL 8782 6309 31",
+        "origin_country": "AE",
+        "destination_city": "Karachi",
+        "destination_country": "PK",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 119.95
+      },
+      {
+        "date": "2026-10-02",
+        "awb": "SWL 6048 8018 48",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 1.5,
+        "service": "express",
+        "amount": 21.52
+      },
+      {
+        "date": "2026-10-03",
+        "awb": "SWL 4945 5782 27",
+        "origin_country": "AE",
+        "destination_city": "Delhi",
+        "destination_country": "IN",
+        "weight_kg": 4,
+        "service": "express",
+        "amount": 233.6
+      },
+      {
+        "date": "2026-10-04",
+        "awb": "SWL 7917 6514 08",
+        "origin_country": "AE",
+        "destination_city": "Karachi",
+        "destination_country": "PK",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 205.4
+      },
+      {
+        "date": "2026-10-05",
+        "awb": "SWL 3079 7706 42",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 0.5,
+        "service": "economy",
+        "amount": 12.75
+      },
+      {
+        "date": "2026-10-05",
+        "awb": "SWL 5769 2199 47",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 5,
+        "service": "economy",
+        "amount": 143.85
+      },
+      {
+        "date": "2026-10-06",
+        "awb": "SWL 8857 1845 12",
+        "origin_country": "AE",
+        "destination_city": "Paris",
+        "destination_country": "FR",
+        "weight_kg": 0.5,
+        "service": "express",
+        "amount": 155.3
+      },
+      {
+        "date": "2026-10-06",
+        "awb": "SWL 4923 5512 00",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 3,
+        "service": "economy",
+        "amount": 104.99
+      },
+      {
+        "date": "2026-10-06",
+        "awb": "SWL 3313 8121 50",
+        "origin_country": "AE",
+        "destination_city": "Hong Kong",
+        "destination_country": "HK",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 200.21
+      },
+      {
+        "date": "2026-10-07",
+        "awb": "SWL 2639 1924 27",
+        "origin_country": "AE",
+        "destination_city": "Singapore",
+        "destination_country": "SG",
+        "weight_kg": 1.5,
+        "service": "express",
+        "amount": 188.89
+      },
+      {
+        "date": "2026-10-07",
+        "awb": "SWL 4560 3770 33",
+        "origin_country": "AE",
+        "destination_city": "Karachi",
+        "destination_country": "PK",
+        "weight_kg": 4,
+        "service": "express",
+        "amount": 233.49
+      },
+      {
+        "date": "2026-10-07",
+        "awb": "SWL 0332 0709 43",
+        "origin_country": "AE",
+        "destination_city": "Amman",
+        "destination_country": "JO",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 275.51
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "SWL 4806 9893 61",
+        "origin_country": "AE",
+        "destination_city": "Sydney",
+        "destination_country": "AU",
+        "weight_kg": 0.5,
+        "service": "economy",
+        "amount": 93.53
+      },
+      {
+        "date": "2026-10-09",
+        "awb": "SWL 5221 4180 49",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 19.46
+      },
+      {
+        "date": "2026-10-09",
+        "awb": "SWL 2413 4113 57",
+        "origin_country": "AE",
+        "destination_city": "Amsterdam",
+        "destination_country": "NL",
+        "weight_kg": 18,
+        "service": "express",
+        "amount": 1153.88
+      },
+      {
+        "date": "2026-10-09",
+        "awb": "SWL 0989 7685 43",
+        "origin_country": "AE",
+        "destination_city": "Berlin",
+        "destination_country": "DE",
+        "weight_kg": 2.5,
+        "service": "economy",
+        "amount": 173.14
+      },
+      {
+        "date": "2026-10-10",
+        "awb": "SWL 7833 2784 39",
+        "origin_country": "AE",
+        "destination_city": "Sao Paulo",
+        "destination_country": "BR",
+        "weight_kg": 1.5,
+        "service": "express",
+        "amount": 412.4
+      },
+      {
+        "date": "2026-10-11",
+        "awb": "SWL 2205 6682 44",
+        "origin_country": "AE",
+        "destination_city": "New York",
+        "destination_country": "US",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 203.16
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "SWL 5908 0591 83",
+        "origin_country": "AE",
+        "destination_city": "Karachi",
+        "destination_country": "PK",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 126.81
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "SWL 0102 7203 63",
+        "origin_country": "AE",
+        "destination_city": "Amsterdam",
+        "destination_country": "NL",
+        "weight_kg": 4,
+        "service": "express",
+        "amount": 353.36
+      },
+      {
+        "date": "2026-10-13",
+        "awb": "SWL 0565 5269 81",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 4,
+        "service": "express",
+        "amount": 176.66
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "SWL 3185 0528 11",
+        "origin_country": "AE",
+        "destination_city": "Sydney",
+        "destination_country": "AU",
+        "weight_kg": 2,
+        "service": "economy",
+        "amount": 137.23
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "SWL 1217 3401 18",
+        "origin_country": "AE",
+        "destination_city": "New York",
+        "destination_country": "US",
+        "weight_kg": 1.5,
+        "service": "express",
+        "amount": 221.21
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "SWL 5885 3707 18",
+        "origin_country": "AE",
+        "destination_city": "Karachi",
+        "destination_country": "PK",
+        "weight_kg": 3,
+        "service": "economy",
+        "amount": 134.53
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "SWL 6639 5981 56",
+        "origin_country": "AE",
+        "destination_city": "Manama",
+        "destination_country": "BH",
+        "weight_kg": 0.5,
+        "service": "express",
+        "amount": 81.03
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "SWL 7125 1479 12",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 18,
+        "service": "express",
+        "amount": 590.29
+      },
+      {
+        "date": "2026-10-17",
+        "awb": "SWL 8462 5591 99",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 23.33
+      },
+      {
+        "date": "2026-10-17",
+        "awb": "SWL 5759 4051 83",
+        "origin_country": "AE",
+        "destination_city": "Paris",
+        "destination_country": "FR",
+        "weight_kg": 0.5,
+        "service": "express",
+        "amount": 149.55
+      },
+      {
+        "date": "2026-10-18",
+        "awb": "SWL 9537 7124 90",
+        "origin_country": "AE",
+        "destination_city": "Manchester",
+        "destination_country": "GB",
+        "weight_kg": 4,
+        "service": "express",
+        "amount": 335.85
+      },
+      {
+        "date": "2026-10-19",
+        "awb": "SWL 8714 5867 72",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 3,
+        "service": "economy",
+        "amount": 101.66
+      },
+      {
+        "date": "2026-10-19",
+        "awb": "SWL 3707 1638 82",
+        "origin_country": "AE",
+        "destination_city": "London",
+        "destination_country": "GB",
+        "weight_kg": 1,
+        "service": "economy",
+        "amount": 122.3
+      },
+      {
+        "date": "2026-10-20",
+        "awb": "SWL 4808 0571 39",
+        "origin_country": "AE",
+        "destination_city": "Sydney",
+        "destination_country": "AU",
+        "weight_kg": 2.5,
+        "service": "express",
+        "amount": 239.35
+      },
+      {
+        "date": "2026-10-20",
+        "awb": "SWL 1805 7875 01",
+        "origin_country": "AE",
+        "destination_city": "Muscat",
+        "destination_country": "OM",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 155.78
+      },
+      {
+        "date": "2026-10-21",
+        "awb": "SWL 4608 6984 61",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 4,
+        "service": "express",
+        "amount": 33.39
+      },
+      {
+        "date": "2026-10-21",
+        "awb": "SWL 4899 5530 62",
+        "origin_country": "AE",
+        "destination_city": "Delhi",
+        "destination_country": "IN",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 127.5
+      },
+      {
+        "date": "2026-10-21",
+        "awb": "SWL 0730 6517 19",
+        "origin_country": "AE",
+        "destination_city": "Dammam",
+        "destination_country": "SA",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 204.77
+      },
+      {
+        "date": "2026-10-22",
+        "awb": "SWL 1173 2316 15",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 4,
+        "service": "express",
+        "amount": 178.76
+      },
+      {
+        "date": "2026-10-24",
+        "awb": "SWL 7671 8354 54",
+        "origin_country": "AE",
+        "destination_city": "Doha",
+        "destination_country": "QA",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 124.92
+      },
+      {
+        "date": "2026-10-25",
+        "awb": "SWL 0105 3243 80",
+        "origin_country": "AE",
+        "destination_city": "Paris",
+        "destination_country": "FR",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 228.16
+      },
+      {
+        "date": "2026-10-26",
+        "awb": "SWL 3689 4609 36",
+        "origin_country": "AE",
+        "destination_city": "Paris",
+        "destination_country": "FR",
+        "weight_kg": 4,
+        "service": "express",
+        "amount": 345.57
+      },
+      {
+        "date": "2026-10-27",
+        "awb": "SWL 5003 9859 32",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 23.46
+      },
+      {
+        "date": "2026-10-27",
+        "awb": "SWL 1041 4395 32",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 4,
+        "service": "economy",
+        "amount": 25.18
+      },
+      {
+        "date": "2026-10-27",
+        "awb": "SWL 4599 9182 60",
+        "origin_country": "AE",
+        "destination_city": "Toronto",
+        "destination_country": "CA",
+        "weight_kg": 18,
+        "service": "express",
+        "amount": 1225.57
+      },
+      {
+        "date": "2026-10-29",
+        "awb": "SWL 9357 4974 97",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 10,
+        "service": "economy",
+        "amount": 239.05
+      },
+      {
+        "date": "2026-10-30",
+        "awb": "SWL 3015 2830 37",
+        "origin_country": "AE",
+        "destination_city": "Istanbul",
+        "destination_country": "TR",
+        "weight_kg": 1.5,
+        "service": "economy",
+        "amount": 142.62
+      }
+    ]
+  },
+  {
+    "file_stem": "sample-2-gulf-spice",
+    "layout": "swiftline",
+    "carrier_name": "SwiftLine Express LLC",
+    "customer_name": "Gulf Spice Traders LLC",
+    "invoice_number": "SWL-INV-2610-0912",
+    "invoice_date": "2026-11-04",
+    "period_start": "2026-10-01",
+    "period_end": "2026-10-31",
+    "currency": "AED",
+    "rows": [
+      {
+        "date": "2026-10-01",
+        "awb": "SWL 5161 3959 39",
+        "origin_country": "AE",
+        "destination_city": "Cairo",
+        "destination_country": "EG",
+        "weight_kg": 12,
+        "service": "express",
+        "amount": 538.08
+      },
+      {
+        "date": "2026-10-03",
+        "awb": "SWL 5401 1420 41",
+        "origin_country": "AE",
+        "destination_city": "Cairo",
+        "destination_country": "EG",
+        "weight_kg": 10,
+        "service": "economy",
+        "amount": 321.51
+      },
+      {
+        "date": "2026-10-03",
+        "awb": "SWL 1007 0938 74",
+        "origin_country": "AE",
+        "destination_city": "Riyadh",
+        "destination_country": "SA",
+        "weight_kg": 10,
+        "service": "economy",
+        "amount": 235.8
+      },
+      {
+        "date": "2026-10-04",
+        "awb": "SWL 3712 2184 72",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 3,
+        "service": "economy",
+        "amount": 20.83
+      },
+      {
+        "date": "2026-10-04",
+        "awb": "SWL 5630 8276 09",
+        "origin_country": "AE",
+        "destination_city": "Riyadh",
+        "destination_country": "SA",
+        "weight_kg": null,
+        "service": "economy",
+        "amount": 273
+      },
+      {
+        "date": "2026-10-06",
+        "awb": "SWL 7220 3522 85",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 7.5,
+        "service": "express",
+        "amount": 279.77
+      },
+      {
+        "date": "2026-10-07",
+        "awb": "SWL 3335 3834 82",
+        "origin_country": "AE",
+        "destination_city": "Doha",
+        "destination_country": "QA",
+        "weight_kg": 12,
+        "service": "economy",
+        "amount": 270.99
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "SWL 1403 9209 48",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 20,
+        "service": "economy",
+        "amount": 413.36
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "SWL 9182 4288 89",
+        "origin_country": "CN",
+        "destination_city": "Dubai",
+        "destination_country": "AE",
+        "weight_kg": 22,
+        "service": "economy",
+        "amount": 968
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "SWL 3304 0171 67",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 152.25
+      },
+      {
+        "date": "2026-10-09",
+        "awb": "SWL 1433 4951 36",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 25,
+        "service": "economy",
+        "amount": 92.36
+      },
+      {
+        "date": "2026-10-11",
+        "awb": "SWL 5392 9732 51",
+        "origin_country": "AE",
+        "destination_city": "Abu Dhabi",
+        "destination_country": "AE",
+        "weight_kg": 15,
+        "service": "economy",
+        "amount": 59.64
+      },
+      {
+        "date": "2026-10-13",
+        "awb": "SWL 2483 8412 41",
+        "origin_country": "AE",
+        "destination_city": "Manama",
+        "destination_country": "BH",
+        "weight_kg": 7.5,
+        "service": "economy",
+        "amount": 186.77
+      },
+      {
+        "date": "2026-10-13",
+        "awb": "SWL 7801 7086 54",
+        "origin_country": "AE",
+        "destination_city": "Manchester",
+        "destination_country": "GB",
+        "weight_kg": null,
+        "service": "economy",
+        "amount": 542.07
+      },
+      {
+        "date": "2026-10-13",
+        "awb": "SWL 4640 9840 10",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 32,
+        "service": "economy",
+        "amount": 645.38
+      },
+      {
+        "date": "2026-10-13",
+        "awb": "SWL 7572 4191 62",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 3,
+        "service": "economy",
+        "amount": 20.64
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "SWL 3113 0702 38",
+        "origin_country": "AE",
+        "destination_city": "Abu Dhabi",
+        "destination_country": "AE",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 38.53
+      },
+      {
+        "date": "2026-10-16",
+        "awb": "SWL 4807 4367 79",
+        "origin_country": "AE",
+        "destination_city": "Riyadh",
+        "destination_country": "SA",
+        "weight_kg": 85,
+        "service": "economy",
+        "amount": 1485.5
+      },
+      {
+        "date": "2026-10-16",
+        "awb": "SWL 7854 0834 58",
+        "origin_country": "AE",
+        "destination_city": "Muscat",
+        "destination_country": "OM",
+        "weight_kg": 10,
+        "service": "economy",
+        "amount": 244.37
+      },
+      {
+        "date": "2026-10-20",
+        "awb": "SWL 8254 4637 97",
+        "origin_country": "AE",
+        "destination_city": "Muscat",
+        "destination_country": "OM",
+        "weight_kg": 32,
+        "service": "express",
+        "amount": 947.98
+      },
+      {
+        "date": "2026-10-28",
+        "awb": "SWL 9203 0236 17",
+        "origin_country": "AE",
+        "destination_city": "Riyadh",
+        "destination_country": "SA",
+        "weight_kg": 12,
+        "service": "economy",
+        "amount": 280.24
+      },
+      {
+        "date": "2026-10-31",
+        "awb": "SWL 6140 7643 50",
+        "origin_country": "AE",
+        "destination_city": "Muscat",
+        "destination_country": "OM",
+        "weight_kg": 10,
+        "service": "express",
+        "amount": 349.59
+      }
+    ]
+  },
+  {
+    "file_stem": "sample-3-falcon-air",
+    "layout": "falcon",
+    "carrier_name": "Falcon Air Courier FZE",
+    "customer_name": "Bayt Al Oud Perfumes LLC",
+    "invoice_number": "FA/2026/10/3318",
+    "invoice_date": "2026-11-02",
+    "period_start": "2026-10-01",
+    "period_end": "2026-10-31",
+    "currency": "AED",
+    "rows": [
+      {
+        "date": "2026-10-01",
+        "awb": "FZ9172486196",
+        "origin_country": "AE",
+        "destination_city": "Cairo",
+        "destination_country": "EG",
+        "weight_kg": 4.5,
+        "service": "economy",
+        "amount": 174.7
+      },
+      {
+        "date": "2026-10-01",
+        "awb": "FZ0625237169",
+        "origin_country": "AE",
+        "destination_city": "Paris",
+        "destination_country": "FR",
+        "weight_kg": 6,
+        "service": "economy",
+        "amount": 315.49
+      },
+      {
+        "date": "2026-10-04",
+        "awb": "FZ8005263263",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 23.46
+      },
+      {
+        "date": "2026-10-04",
+        "awb": "FZ2308301687",
+        "origin_country": "AE",
+        "destination_city": "Manama",
+        "destination_country": "BH",
+        "weight_kg": 8,
+        "service": "express",
+        "amount": 289
+      },
+      {
+        "date": "2026-10-04",
+        "awb": "FZ1057659833",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 118.71
+      },
+      {
+        "date": "2026-10-04",
+        "awb": "FZ9102108274",
+        "origin_country": "AE",
+        "destination_city": "Manama",
+        "destination_country": "BH",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 122.19
+      },
+      {
+        "date": "2026-10-06",
+        "awb": "FZ7657838872",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 6,
+        "service": "express",
+        "amount": 242.1
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "FZ3604019447",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 1,
+        "service": "economy",
+        "amount": 63.37
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "FZ2236759658",
+        "origin_country": "AE",
+        "destination_city": "Sydney",
+        "destination_country": "AU",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 245.11
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "FZ5885182126",
+        "origin_country": "AE",
+        "destination_city": "Dammam",
+        "destination_country": "SA",
+        "weight_kg": 4.5,
+        "service": "economy",
+        "amount": 130.45
+      },
+      {
+        "date": "2026-10-09",
+        "awb": "FZ2369059037",
+        "origin_country": "AE",
+        "destination_city": "Abu Dhabi",
+        "destination_country": "AE",
+        "weight_kg": 2,
+        "service": "economy",
+        "amount": 18.6
+      },
+      {
+        "date": "2026-10-10",
+        "awb": "FZ6198122368",
+        "origin_country": "AE",
+        "destination_city": "Doha",
+        "destination_country": "QA",
+        "weight_kg": 2,
+        "service": "economy",
+        "amount": 85.14
+      },
+      {
+        "date": "2026-10-10",
+        "awb": "FZ9577889399",
+        "origin_country": "AE",
+        "destination_city": "Riyadh",
+        "destination_country": "SA",
+        "weight_kg": 8,
+        "service": "economy",
+        "amount": 194.24
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "FZ2102393453",
+        "origin_country": "AE",
+        "destination_city": "Sydney",
+        "destination_country": "AU",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 156.88
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "FZ9602957544",
+        "origin_country": "AE",
+        "destination_city": "Istanbul",
+        "destination_country": "TR",
+        "weight_kg": 4.5,
+        "service": "economy",
+        "amount": 260.04
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "FZ9098494323",
+        "origin_country": "AE",
+        "destination_city": "Colombo",
+        "destination_country": "LK",
+        "weight_kg": 1,
+        "service": "economy",
+        "amount": 84.92
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "FZ7136079088",
+        "origin_country": "AE",
+        "destination_city": "Dammam",
+        "destination_country": "SA",
+        "weight_kg": 4.5,
+        "service": "express",
+        "amount": 188.08
+      },
+      {
+        "date": "2026-10-13",
+        "awb": "FZ1118517875",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 152.56
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "FZ0359795734",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 1.5,
+        "service": "express",
+        "amount": 103.55
+      },
+      {
+        "date": "2026-10-15",
+        "awb": "FZ6190356990",
+        "origin_country": "AE",
+        "destination_city": "Mumbai",
+        "destination_country": "IN",
+        "weight_kg": 0.5,
+        "service": "economy",
+        "amount": 72.6
+      },
+      {
+        "date": "2026-10-15",
+        "awb": "FZ8570829792",
+        "origin_country": "AE",
+        "destination_city": "Toronto",
+        "destination_country": "CA",
+        "weight_kg": 4.5,
+        "service": "express",
+        "amount": 414.48
+      },
+      {
+        "date": "2026-10-18",
+        "awb": "FZ2900254277",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 4.5,
+        "service": "economy",
+        "amount": 26.55
+      },
+      {
+        "date": "2026-10-18",
+        "awb": "FZ2024801007",
+        "origin_country": "AE",
+        "destination_city": "Amsterdam",
+        "destination_country": "NL",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 296.3
+      },
+      {
+        "date": "2026-10-18",
+        "awb": "FZ6365480720",
+        "origin_country": "AE",
+        "destination_city": "Singapore",
+        "destination_country": "SG",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 209.31
+      },
+      {
+        "date": "2026-10-19",
+        "awb": "FZ5716921765",
+        "origin_country": "AE",
+        "destination_city": "Doha",
+        "destination_country": "QA",
+        "weight_kg": 8,
+        "service": "economy",
+        "amount": 197.86
+      },
+      {
+        "date": "2026-10-20",
+        "awb": "FZ4354322043",
+        "origin_country": "AE",
+        "destination_city": "Sydney",
+        "destination_country": "AU",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 160.25
+      },
+      {
+        "date": "2026-10-23",
+        "awb": "FZ5173715111",
+        "origin_country": "AE",
+        "destination_city": "Riyadh",
+        "destination_country": "SA",
+        "weight_kg": 1.5,
+        "service": "economy",
+        "amount": 73.12
+      },
+      {
+        "date": "2026-10-27",
+        "awb": "FZ3782513210",
+        "origin_country": "AE",
+        "destination_city": "Manama",
+        "destination_country": "BH",
+        "weight_kg": 1.5,
+        "service": "economy",
+        "amount": 71.51
+      },
+      {
+        "date": "2026-10-29",
+        "awb": "FZ4416823556",
+        "origin_country": "AE",
+        "destination_city": "Hong Kong",
+        "destination_country": "HK",
+        "weight_kg": 0.5,
+        "service": "express",
+        "amount": 136.1
+      },
+      {
+        "date": "2026-10-30",
+        "awb": "FZ7728596962",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 6,
+        "service": "express",
+        "amount": 40.9
+      }
+    ]
+  },
+  {
+    "file_stem": "sample-4-desert-parcel",
+    "layout": "desert",
+    "carrier_name": "Desert Parcel Co. LLC",
+    "customer_name": "Al Waha Home Furnishings LLC",
+    "invoice_number": "DPC-INV-88412",
+    "invoice_date": "2026-11-05",
+    "period_start": "2026-10-01",
+    "period_end": "2026-10-31",
+    "currency": "AED",
+    "rows": [
+      {
+        "date": "2026-10-01",
+        "awb": "DP-82859998",
+        "origin_country": "AE",
+        "destination_city": "Paris",
+        "destination_country": "FR",
+        "weight_kg": 8,
+        "service": "express",
+        "amount": 579.09
+      },
+      {
+        "date": "2026-10-03",
+        "awb": "DP-13895770",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 30,
+        "service": "economy",
+        "amount": 635.11
+      },
+      {
+        "date": "2026-10-04",
+        "awb": "DP-64052687",
+        "origin_country": "AE",
+        "destination_city": "Istanbul",
+        "destination_country": "TR",
+        "weight_kg": 14,
+        "service": "express",
+        "amount": 879.45
+      },
+      {
+        "date": "2026-10-06",
+        "awb": "DP-31196091",
+        "origin_country": "AE",
+        "destination_city": "Dammam",
+        "destination_country": "SA",
+        "weight_kg": 10,
+        "service": "economy",
+        "amount": 241.55
+      },
+      {
+        "date": "2026-10-06",
+        "awb": "DP-42118251",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 37.54
+      },
+      {
+        "date": "2026-10-06",
+        "awb": "DP-39547903",
+        "origin_country": "AE",
+        "destination_city": "Riyadh",
+        "destination_country": "SA",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 202.61
+      },
+      {
+        "date": "2026-10-07",
+        "awb": "DP-35938294",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 3.5,
+        "service": "economy",
+        "amount": 107.88
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "DP-80443042",
+        "origin_country": "AE",
+        "destination_city": "Doha",
+        "destination_country": "QA",
+        "weight_kg": 14,
+        "service": "express",
+        "amount": 474.95
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "DP-24883455",
+        "origin_country": "AE",
+        "destination_city": "Amsterdam",
+        "destination_country": "NL",
+        "weight_kg": 45,
+        "service": "express",
+        "amount": 2491.22
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "DP-57798864",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 5,
+        "service": "economy",
+        "amount": 28.57
+      },
+      {
+        "date": "2026-10-08",
+        "awb": "DP-25670378",
+        "origin_country": "AE",
+        "destination_city": "Manchester",
+        "destination_country": "GB",
+        "weight_kg": 8,
+        "service": "economy",
+        "amount": 386.37
+      },
+      {
+        "date": "2026-10-10",
+        "awb": "DP-30548935",
+        "origin_country": "AE",
+        "destination_city": "Istanbul",
+        "destination_country": "TR",
+        "weight_kg": 8,
+        "service": "economy",
+        "amount": 384.39
+      },
+      {
+        "date": "2026-10-10",
+        "awb": "DP-52546917",
+        "origin_country": "AE",
+        "destination_city": "Kuwait City",
+        "destination_country": "KW",
+        "weight_kg": 18,
+        "service": "economy",
+        "amount": 391.74
+      },
+      {
+        "date": "2026-10-11",
+        "awb": "DP-30723757",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 10,
+        "service": "economy",
+        "amount": 45.31
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "DP-15982437",
+        "origin_country": "AE",
+        "destination_city": "Abu Dhabi",
+        "destination_country": "AE",
+        "weight_kg": 25,
+        "service": "economy",
+        "amount": 93.15
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "DP-07241599",
+        "origin_country": "AE",
+        "destination_city": "Hong Kong",
+        "destination_country": "HK",
+        "weight_kg": 3.5,
+        "service": "express",
+        "amount": 286.69
+      },
+      {
+        "date": "2026-10-13",
+        "awb": "DP-74623529",
+        "origin_country": "AE",
+        "destination_city": "Manchester",
+        "destination_country": "GB",
+        "weight_kg": 18,
+        "service": "economy",
+        "amount": 738.62
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "DP-18964663",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 2,
+        "service": "economy",
+        "amount": 18.06
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "DP-41899437",
+        "origin_country": "AE",
+        "destination_city": "Dammam",
+        "destination_country": "SA",
+        "weight_kg": 10,
+        "service": "express",
+        "amount": 353.45
+      },
+      {
+        "date": "2026-10-15",
+        "awb": "DP-17606733",
+        "origin_country": "AE",
+        "destination_city": "Amsterdam",
+        "destination_country": "NL",
+        "weight_kg": 14,
+        "service": "economy",
+        "amount": 600.11
+      },
+      {
+        "date": "2026-10-15",
+        "awb": "DP-77268878",
+        "origin_country": "AE",
+        "destination_city": "Mumbai",
+        "destination_country": "IN",
+        "weight_kg": 45,
+        "service": "economy",
+        "amount": 1216.32
+      },
+      {
+        "date": "2026-10-17",
+        "awb": "DP-16445902",
+        "origin_country": "AE",
+        "destination_city": "Mumbai",
+        "destination_country": "IN",
+        "weight_kg": 3.5,
+        "service": "economy",
+        "amount": 157.52
+      },
+      {
+        "date": "2026-10-17",
+        "awb": "DP-24527332",
+        "origin_country": "AE",
+        "destination_city": "Colombo",
+        "destination_country": "LK",
+        "weight_kg": 8,
+        "service": "economy",
+        "amount": 265.62
+      },
+      {
+        "date": "2026-10-18",
+        "awb": "DP-78810885",
+        "origin_country": "AE",
+        "destination_city": "Istanbul",
+        "destination_country": "TR",
+        "weight_kg": 30,
+        "service": "express",
+        "amount": 1733.75
+      },
+      {
+        "date": "2026-10-18",
+        "awb": "DP-87559474",
+        "origin_country": "AE",
+        "destination_city": "London",
+        "destination_country": "GB",
+        "weight_kg": 2,
+        "service": "economy",
+        "amount": 155.41
+      },
+      {
+        "date": "2026-10-18",
+        "awb": "DP-87354174",
+        "origin_country": "AE",
+        "destination_city": "Hong Kong",
+        "destination_country": "HK",
+        "weight_kg": 5,
+        "service": "economy",
+        "amount": 248.98
+      },
+      {
+        "date": "2026-10-19",
+        "awb": "DP-98637008",
+        "origin_country": "AE",
+        "destination_city": "Abu Dhabi",
+        "destination_country": "AE",
+        "weight_kg": 14,
+        "service": "express",
+        "amount": 78.56
+      },
+      {
+        "date": "2026-10-19",
+        "awb": "DP-90749617",
+        "origin_country": "AE",
+        "destination_city": "Abu Dhabi",
+        "destination_country": "AE",
+        "weight_kg": 45,
+        "service": "economy",
+        "amount": 152.65
+      },
+      {
+        "date": "2026-10-23",
+        "awb": "DP-12160718",
+        "origin_country": "AE",
+        "destination_city": "Singapore",
+        "destination_country": "SG",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 210.18
+      },
+      {
+        "date": "2026-10-25",
+        "awb": "DP-23088426",
+        "origin_country": "AE",
+        "destination_city": "Manama",
+        "destination_country": "BH",
+        "weight_kg": 25,
+        "service": "economy",
+        "amount": 532.6
+      },
+      {
+        "date": "2026-10-26",
+        "awb": "DP-94848391",
+        "origin_country": "AE",
+        "destination_city": "Manchester",
+        "destination_country": "GB",
+        "weight_kg": 2,
+        "service": "economy",
+        "amount": 161.56
+      },
+      {
+        "date": "2026-10-26",
+        "awb": "DP-56808533",
+        "origin_country": "AE",
+        "destination_city": "Riyadh",
+        "destination_country": "SA",
+        "weight_kg": 18,
+        "service": "economy",
+        "amount": 404.21
+      },
+      {
+        "date": "2026-10-26",
+        "awb": "DP-49539631",
+        "origin_country": "AE",
+        "destination_city": "Sydney",
+        "destination_country": "AU",
+        "weight_kg": 25,
+        "service": "express",
+        "amount": 1276.18
+      },
+      {
+        "date": "2026-10-27",
+        "awb": "DP-23590629",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 14,
+        "service": "express",
+        "amount": 467.92
+      },
+      {
+        "date": "2026-10-28",
+        "awb": "DP-83302450",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 45,
+        "service": "express",
+        "amount": 212.92
+      },
+      {
+        "date": "2026-10-28",
+        "awb": "DP-78373904",
+        "origin_country": "AE",
+        "destination_city": "Muscat",
+        "destination_country": "OM",
+        "weight_kg": 2,
+        "service": "economy",
+        "amount": 85.49
+      },
+      {
+        "date": "2026-10-29",
+        "awb": "DP-20261085",
+        "origin_country": "AE",
+        "destination_city": "Doha",
+        "destination_country": "QA",
+        "weight_kg": 10,
+        "service": "economy",
+        "amount": 231.05
+      },
+      {
+        "date": "2026-10-30",
+        "awb": "DP-88810547",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 14,
+        "service": "economy",
+        "amount": 57.87
+      }
+    ]
+  },
+  {
+    "file_stem": "sample-5-gulf-runner",
+    "layout": "cards",
+    "carrier_name": "Gulf Runner Logistics LLC",
+    "customer_name": "Noor Al Sahra Cosmetics LLC",
+    "invoice_number": "GRL-2610-0207",
+    "invoice_date": "2026-11-03",
+    "period_start": "2026-10-01",
+    "period_end": "2026-10-31",
+    "currency": "AED",
+    "rows": [
+      {
+        "date": "2026-10-06",
+        "awb": "GR-59823855",
+        "origin_country": "AE",
+        "destination_city": "Dammam",
+        "destination_country": "SA",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 150.82
+      },
+      {
+        "date": "2026-10-10",
+        "awb": "GR-96408635",
+        "origin_country": "AE",
+        "destination_city": "Al Ain",
+        "destination_country": "AE",
+        "weight_kg": 0.5,
+        "service": "express",
+        "amount": 16.8
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "GR-30318186",
+        "origin_country": "AE",
+        "destination_city": "Dammam",
+        "destination_country": "SA",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 96.16
+      },
+      {
+        "date": "2026-10-18",
+        "awb": "GR-86037320",
+        "origin_country": "AE",
+        "destination_city": "Istanbul",
+        "destination_country": "TR",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 290.66
+      },
+      {
+        "date": "2026-10-18",
+        "awb": "GR-92341006",
+        "origin_country": "AE",
+        "destination_city": "Muscat",
+        "destination_country": "OM",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 94.65
+      },
+      {
+        "date": "2026-10-21",
+        "awb": "GR-08393814",
+        "origin_country": "AE",
+        "destination_city": "Muscat",
+        "destination_country": "OM",
+        "weight_kg": 2.5,
+        "service": "express",
+        "amount": 137.91
+      },
+      {
+        "date": "2026-10-21",
+        "awb": "GR-94266227",
+        "origin_country": "AE",
+        "destination_city": "Hong Kong",
+        "destination_country": "HK",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 340.77
+      },
+      {
+        "date": "2026-10-22",
+        "awb": "GR-69035705",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 145.6
+      },
+      {
+        "date": "2026-10-23",
+        "awb": "GR-32824725",
+        "origin_country": "AE",
+        "destination_city": "Paris",
+        "destination_country": "FR",
+        "weight_kg": 2.5,
+        "service": "express",
+        "amount": 259.44
+      },
+      {
+        "date": "2026-10-23",
+        "awb": "GR-67862531",
+        "origin_country": "AE",
+        "destination_city": "Muscat",
+        "destination_country": "OM",
+        "weight_kg": 1.5,
+        "service": "express",
+        "amount": 108.44
+      },
+      {
+        "date": "2026-10-23",
+        "awb": "GR-74239744",
+        "origin_country": "AE",
+        "destination_city": "Sharjah",
+        "destination_country": "AE",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 36.57
+      },
+      {
+        "date": "2026-10-28",
+        "awb": "GR-91160567",
+        "origin_country": "AE",
+        "destination_city": "Berlin",
+        "destination_country": "DE",
+        "weight_kg": 1,
+        "service": "economy",
+        "amount": 121.67
+      },
+      {
+        "date": "2026-10-29",
+        "awb": "GR-80454732",
+        "origin_country": "AE",
+        "destination_city": "Manama",
+        "destination_country": "BH",
+        "weight_kg": 2.5,
+        "service": "economy",
+        "amount": 89.99
+      },
+      {
+        "date": "2026-10-30",
+        "awb": "GR-39631433",
+        "origin_country": "AE",
+        "destination_city": "Muscat",
+        "destination_country": "OM",
+        "weight_kg": 0.5,
+        "service": "economy",
+        "amount": 54.68
+      }
+    ]
+  },
+  {
+    "file_stem": "sample-6-oryx-usd",
+    "layout": "oryx",
+    "carrier_name": "Oryx Express Inc.",
+    "customer_name": "Blue Lagoon Electronics LLC",
+    "invoice_number": "OX-1026-4471",
+    "invoice_date": "2026-11-01",
+    "period_start": "2026-10-01",
+    "period_end": "2026-10-31",
+    "currency": "USD",
+    "rows": [
+      {
+        "date": "2026-10-02",
+        "awb": "OX246646649",
+        "origin_country": "AE",
+        "destination_city": "New York",
+        "destination_country": "US",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 68.04
+      },
+      {
+        "date": "2026-10-10",
+        "awb": "OX486826070",
+        "origin_country": "AE",
+        "destination_city": "Toronto",
+        "destination_country": "CA",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 116.62
+      },
+      {
+        "date": "2026-10-12",
+        "awb": "OX753246897",
+        "origin_country": "AE",
+        "destination_city": "Riyadh",
+        "destination_country": "SA",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 39.87
+      },
+      {
+        "date": "2026-10-13",
+        "awb": "OX570947725",
+        "origin_country": "AE",
+        "destination_city": "Manama",
+        "destination_country": "BH",
+        "weight_kg": 0.5,
+        "service": "economy",
+        "amount": 14.62
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "OX699786560",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 2,
+        "service": "economy",
+        "amount": 23.05
+      },
+      {
+        "date": "2026-10-14",
+        "awb": "OX395937639",
+        "origin_country": "AE",
+        "destination_city": "New York",
+        "destination_country": "US",
+        "weight_kg": 0.5,
+        "service": "express",
+        "amount": 45.19
+      },
+      {
+        "date": "2026-10-17",
+        "awb": "OX534632974",
+        "origin_country": "AE",
+        "destination_city": "Jeddah",
+        "destination_country": "SA",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 57.47
+      },
+      {
+        "date": "2026-10-20",
+        "awb": "OX770147454",
+        "origin_country": "AE",
+        "destination_city": "New York",
+        "destination_country": "US",
+        "weight_kg": 1,
+        "service": "express",
+        "amount": 53.38
+      },
+      {
+        "date": "2026-10-25",
+        "awb": "OX029819488",
+        "origin_country": "AE",
+        "destination_city": "Berlin",
+        "destination_country": "DE",
+        "weight_kg": 3,
+        "service": "express",
+        "amount": 80.29
+      },
+      {
+        "date": "2026-10-28",
+        "awb": "OX093874895",
+        "origin_country": "AE",
+        "destination_city": "Paris",
+        "destination_country": "FR",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 111.59
+      },
+      {
+        "date": "2026-10-29",
+        "awb": "OX634239879",
+        "origin_country": "AE",
+        "destination_city": "Manama",
+        "destination_country": "BH",
+        "weight_kg": 5,
+        "service": "express",
+        "amount": 56.21
+      },
+      {
+        "date": "2026-10-30",
+        "awb": "OX824628335",
+        "origin_country": "AE",
+        "destination_city": "Doha",
+        "destination_country": "QA",
+        "weight_kg": 2,
+        "service": "express",
+        "amount": 33.32
+      }
+    ]
+  }
+]

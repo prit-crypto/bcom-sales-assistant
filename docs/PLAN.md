@@ -28,6 +28,10 @@ validated with the same Zod schema and normalised the same way, so the rest of t
 Rule: no real customer invoices on the Gemini free tier (Google may use free-tier data).
 
 ## Architecture
+> **Update (19 Nov 2026):** the single Next.js app was split into `backend/` (Python FastAPI: AI readers, pricing,
+> PDF, message) and `frontend/` (Next.js screens only). API routes are now under `/api/v1` – see the READMEs in each
+> folder. The architecture and folder notes below describe the original single-app version.
+
 - Next.js (App Router, TypeScript, Tailwind) – one app, UI + API routes.
 - Server-only AI layer: `src/lib/ai` (keys never reach the browser).
 - Pure domain logic with unit tests: `src/lib/pricing` (rate card, calculator, comparison), `src/lib/invoice`

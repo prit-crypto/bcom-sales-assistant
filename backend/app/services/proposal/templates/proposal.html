@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shipping savings proposal – {{ partner.prospect_name }}</title>
+<meta name="author" content="{{ partner.partner_company }}">
+<meta name="generator" content="BCOM Global Sales Assistant">
+<style>
+  @page {
+    size: A4;
+    margin: 34pt 38pt 50pt;
+    @bottom-left { content: element(footer-left); vertical-align: top; width: 70%; border-top: 1pt solid #d8dee6; }
+    @bottom-right { content: element(footer-right); vertical-align: top; width: 30%; border-top: 1pt solid #d8dee6; }
+  }
+  .footer-left, .footer-right { font-size: 7pt; color: #5d6b7c; padding-top: 5pt; }
+  .footer-left { position: running(footer-left); }
+  .footer-right { position: running(footer-right); text-align: right; }
+  .page-number::after { content: "Page " counter(page) " of " counter(pages); }
+  :root { --ink: #02386b; --muted: #5d6b7c; --line: #d8dee6; --band: #f2f5f8; --accent: #1478c8; --good: #1f7a4d; --bad: #b23a2e; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 9pt/1.35 Helvetica, Arial, sans-serif; color: var(--ink); }
+  .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2pt solid var(--ink); padding-bottom: 8pt; margin-bottom: 14pt; }
+  .logo { width: 104pt; height: 48pt; object-fit: contain; display: block; }
+  .brand-sub { color: var(--accent); margin-top: 4pt; }
+  .header-right { text-align: right; font-size: 8pt; color: var(--muted); }
+  .parties { display: flex; gap: 12pt; margin-bottom: 14pt; }
+  .party { flex: 1; background: var(--band); padding: 8pt; border-radius: 3pt; }
+  .label { font-size: 7pt; color: var(--muted); text-transform: uppercase; letter-spacing: .8pt; margin-bottom: 3pt; }
+  .strong { font-weight: bold; }
+  .small { font-size: 7.5pt; color: var(--muted); }
+  h1 { font-size: 20pt; line-height: 1.25; margin: 0 0 6pt; }
+  h1 .accent { color: var(--accent); }
+  .sub { color: var(--muted); margin: 0 0 12pt; }
+  .kpis { display: flex; border: 1pt solid var(--line); border-radius: 3pt; margin-bottom: 16pt; }
+  .kpi { flex: 1; padding: 8pt; border-right: 1pt solid var(--line); }
+  .kpi:last-child { border-right: 0; }
+  .kpi-value { font-size: 12pt; font-weight: bold; margin-top: 2pt; }
+  .good { color: var(--good); }
+  .bad { color: var(--bad); }
+  section { margin-bottom: 14pt; break-inside: avoid; }
+  h2 { font-size: 11pt; margin: 4pt 0 6pt; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1pt solid var(--line); border-radius: 3pt; }
+  th { background: var(--band); font-size: 7.5pt; color: var(--muted); text-align: left; padding: 5pt; border-bottom: 1pt solid var(--line); }
+  td { padding: 5pt; border-bottom: 1pt solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  tr { break-inside: avoid; }
+  .num { text-align: right; white-space: nowrap; }
+  .col-name { width: 40%; }
+  ul { margin: 0; padding-left: 12pt; }
+  li { margin-bottom: 3pt; }
+</style>
+</head>
+<body>
+{% macro saving_cell(value) %}<td class="num {{ 'good' if value >= 0 else 'bad' }}">{{ value | money_exact }}</td>{% endmacro %}
+{% macro group_table(title, name_header, groups) %}
+<section>
+  <h2>{{ title }}</h2>
+  <table>
+    <thead><tr><th class="col-name">{{ name_header }}</th><th class="num">Shipments</th><th class="num">Today</th><th class="num">With BCOM</th><th class="num">Saving</th></tr></thead>
+    <tbody>
+    {% for group in groups %}
+      <tr><td>{{ group.label }}</td><td class="num">{{ group.shipments }}</td><td class="num">{{ group.current | money_exact }}</td><td class="num">{{ group.proposed | money_exact }}</td>{{ saving_cell(group.saving) }}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endmacro %}
+
+<div class="footer-left">BCOM Global · Prepared by {{ partner.partner_name }}, {{ partner.partner_company }}</div>
+<div class="footer-right">Ref {{ reference }} · <span class="page-number"></span></div>
+
+<div class="header">
+  <div>
+    <img class="logo" src="bcom-global-logo.png" alt="BCOM Global">
+    <div class="brand-sub">Shipping savings proposal</div>
+  </div>
+  <div class="header-right">
+    <div>Ref: {{ reference }}</div>
+    <div>Issued: {{ issued_on | date }}</div>
+    <div>Valid until: {{ valid_until | date }}</div>
+  </div>
+</div>
+
+<div class="parties">
+  <div class="party">
+    <div class="label">Prepared for</div>
+    <div class="strong">{{ partner.prospect_name }}</div>
+    <div class="small">Based on invoice {{ invoice.invoice_number or "provided" }} from {{ invoice.carrier_name or "your current courier" }}</div>
+  </div>
+  <div class="party">
+    <div class="label">Prepared by</div>
+    <div class="strong">{{ partner.partner_name }}</div>
+    <div>{{ partner.partner_company }}, BCOM Global partner</div>
+    {% if partner.partner_phone %}<div class="small">{{ partner.partner_phone }}</div>{% endif %}
+    {% if partner.partner_email %}<div class="small">{{ partner.partner_email }}</div>{% endif %}
+  </div>
+</div>
+
+<h1>Save about <span class="accent">{{ summary.monthly_saving | money }}</span> every month</h1>
+<p class="sub">
+  About {{ summary.yearly_saving | money }} a year, {{ summary.saving_pct | percent }} less than you pay today.
+  Based on {{ summary.compared_shipments }} of the {{ summary.total_shipments }} shipments on your invoice for {{ period_text }}.
+</p>
+
+<div class="kpis">
+  <div class="kpi"><div class="label">You pay today / month</div><div class="kpi-value">{{ summary.monthly_current | money }}</div></div>
+  <div class="kpi"><div class="label">With BCOM / month</div><div class="kpi-value">{{ summary.monthly_proposed | money }}</div></div>
+  <div class="kpi"><div class="label">Monthly saving</div><div class="kpi-value good">{{ summary.monthly_saving | money }}</div></div>
+  <div class="kpi"><div class="label">Shipments compared</div><div class="kpi-value">{{ summary.compared_shipments }} / {{ summary.total_shipments }}</div></div>
+</div>
+
+<section>
+  <h2>Recommended services</h2>
+  <table>
+    <thead><tr><th class="col-name">Service</th><th class="num">Shipments</th><th class="num">Today</th><th class="num">With BCOM</th><th class="num">Saving</th></tr></thead>
+    <tbody>
+    {% for row in service_rows %}
+      <tr>
+        <td><div class="strong">{{ row.title }}</div><div class="small">{{ row.description }}</div></td>
+        <td class="num">{{ row.group.shipments }}</td>
+        <td class="num">{{ row.group.current | money_exact }}</td>
+        <td class="num">{{ row.group.proposed | money_exact }}</td>
+        {{ saving_cell(row.group.saving) }}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{{ group_table("Cost comparison by region", "Region", summary.by_zone) }}
+{{ group_table("Your busiest routes", "Route", summary.top_lanes) }}
+
+{% if not_compared %}
+<section>
+  <h2>Shipments not included in the saving</h2>
+  <ul>{% for item in not_compared %}<li>{{ item }}</li>{% endfor %}</ul>
+  <p class="small">We are happy to quote these separately.</p>
+</section>
+{% endif %}
+
+<section>
+  <h2>Commercial conditions</h2>
+  <ul>{% for item in conditions %}<li>{{ item }}</li>{% endfor %}</ul>
+</section>
+
+<section class="small">
+  <h2>How we calculated this</h2>
+  <ul>{% for item in summary.assumptions %}<li>{{ item }}</li>{% endfor %}</ul>
+</section>
+</body>
+</html>
