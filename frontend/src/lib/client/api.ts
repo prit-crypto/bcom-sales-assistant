@@ -27,7 +27,8 @@ async function send(path: string, init: RequestInit): Promise<Response> {
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, init);
-  } catch {
+  } catch (error) {
+    if (isAbort(error)) throw error;
     throw new ApiRequestError("Could not reach the server. Check that the backend is running.", "network_error");
   }
   if (!response.ok) throw await toApiError(response);
@@ -50,8 +51,14 @@ export async function postForm<T>(path: string, form: FormData): Promise<T> {
   return (await send(path, { method: "POST", body: form })).json() as Promise<T>;
 }
 
-export async function postForBlob(path: string, body: unknown): Promise<Blob> {
-  return (await send(path, jsonInit(body))).blob();
+/** POST that returns a file. Pass `signal` to cancel it when a newer request replaces it. */
+export async function postForBlob(path: string, body: unknown, signal?: AbortSignal): Promise<Blob> {
+  return (await send(path, { ...jsonInit(body), signal })).blob();
+}
+
+/** True when a request was cancelled on purpose (a newer one replaced it). */
+export function isAbort(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
 }
 
 export function errorMessage(error: unknown): string {

@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Notice } from "@/components/ui/Notice";
-import { errorMessage, postForBlob } from "@/lib/client/api";
+import { useEffect, useRef, useState } from "react";
+import { ActionBar } from "@/components/ui/ActionBar";
+import { Banner } from "@/components/ui/Banner";
+import { Button, buttonClasses } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
+import { Segmented } from "@/components/ui/Segmented";
+import { Sheet } from "@/components/ui/Sheet";
+import { errorMessage, isAbort, postForBlob } from "@/lib/client/api";
+import { useMinWidth } from "@/lib/hooks";
 import type { PartnerDetailsInput } from "@/types/api";
 import type { InvoiceData } from "@/types/invoice";
 
@@ -22,13 +27,22 @@ interface ProposalStepProps {
   onContinue: () => void;
 }
 
-const TEXT_FIELDS: { field: keyof Omit<PartnerDetailsInput, "validity_days">; label: string; required: boolean }[] = [
-  { field: "prospect_name", label: "Prospect (customer) name", required: true },
-  { field: "partner_name", label: "Your name", required: true },
-  { field: "partner_company", label: "Your company", required: true },
-  { field: "partner_phone", label: "Your phone", required: false },
-  { field: "partner_email", label: "Your email", required: false },
+type TextField = Exclude<keyof PartnerDetailsInput, "validity_days">;
+type Status = "waiting" | "updating" | "ready" | "error";
+
+/** Wait this long after the last keystroke before rebuilding the PDF. */
+const PREVIEW_DELAY_MS = 800;
+
+const PREPARED_BY: { field: TextField; label: string; required: boolean; type: string }[] = [
+  { field: "partner_name", label: "Your name", required: true, type: "text" },
+  { field: "partner_company", label: "Your company", required: true, type: "text" },
+  { field: "partner_phone", label: "Phone", required: false, type: "tel" },
+  { field: "partner_email", label: "Email", required: false, type: "email" },
 ];
+
+function safeFileName(prospect: string): string {
+  return `BCOM-proposal-${prospect.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "prospect"}.pdf`;
+}
 
 export function ProposalStep({
   invoice,
@@ -39,106 +53,254 @@ export function ProposalStep({
   onBack,
   onContinue,
 }: ProposalStepProps) {
-  const [busy, setBusy] = useState(false);
+  const wide = useMinWidth(1024);
+  const [status, setStatus] = useState<Status>(proposal ? "ready" : "waiting");
   const [error, setError] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const request = useRef<AbortController | null>(null);
+  const firstRun = useRef(true);
 
-  const missingRequired = TEXT_FIELDS.some(({ field, required }) => required && partner[field].trim() === "");
+  const missingRequired =
+    partner.prospect_name.trim() === "" || partner.partner_name.trim() === "" || partner.partner_company.trim() === "";
+  const requestKey = JSON.stringify(partner);
 
-  async function generate() {
-    setBusy(true);
-    setError(null);
-    try {
-      const blob = await postForBlob("/proposals", { invoice, partner });
-      const safeName = partner.prospect_name.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "prospect";
-      onProposalReady({ url: URL.createObjectURL(blob), fileName: `BCOM-proposal-${safeName}.pdf` });
-    } catch (generateError) {
-      setError(errorMessage(generateError));
-    } finally {
-      setBusy(false);
+  // Rebuild the PDF a moment after the details stop changing. A newer request cancels the older one.
+  useEffect(() => {
+    if (missingRequired) {
+      request.current?.abort();
+      return;
     }
+    const immediate = firstRun.current && !proposal;
+    const skip = firstRun.current && proposal !== null;
+    firstRun.current = false;
+    if (skip) return;
+
+    const timer = window.setTimeout(
+      () => {
+        request.current?.abort();
+        const controller = new AbortController();
+        request.current = controller;
+        setStatus("updating");
+        setError(null);
+        postForBlob("/proposals", { invoice, partner }, controller.signal)
+          .then((blob) => {
+            onProposalReady({ url: URL.createObjectURL(blob), fileName: safeFileName(partner.prospect_name) });
+            setStatus("ready");
+          })
+          .catch((failure: unknown) => {
+            if (isAbort(failure)) return;
+            setError(errorMessage(failure));
+            setStatus("error");
+          });
+      },
+      immediate ? 0 : PREVIEW_DELAY_MS,
+    );
+    return () => window.clearTimeout(timer);
+    // The key captures every partner detail; the invoice cannot change on this step.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestKey, missingRequired]);
+
+  useEffect(() => () => request.current?.abort(), []);
+
+  function change(field: TextField, value: string) {
+    setStatus(missingRequired ? "waiting" : "updating");
+    onPartnerChange({ ...partner, [field]: value });
   }
 
+  const upToDate = status === "ready" && proposal !== null;
+  const statusText = missingRequired
+    ? "Add the required names to build the PDF"
+    : status === "updating"
+      ? "Updating the PDF…"
+      : status === "error"
+        ? "The PDF could not be built"
+        : upToDate
+          ? "PDF ready"
+          : "Building the PDF…";
+
+  const preview = proposal ? (
+    // Hide the browser's PDF toolbar so the preview reads as a page, fitted to the width.
+    <iframe title="Proposal preview" src={`${proposal.url}#toolbar=0&navpanes=0&view=FitH`} className="h-full w-full rounded bg-white" />
+  ) : (
+    <div className="flex h-full items-center justify-center text-sm text-secondary">{missingRequired ? "Waiting for the names" : "Building…"}</div>
+  );
+
   return (
-    <section className="flex flex-col gap-5" aria-labelledby="proposal-title">
-      <div>
-        <h2 id="proposal-title" className="text-xl font-bold">
-          Customer proposal
-        </h2>
-        <p className="text-sm text-muted">
-          A branded PDF with the recommended services, cost comparison, savings and commercial conditions.
-        </p>
-      </div>
-
-      <form
-        className="grid gap-3 rounded-lg border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!missingRequired && !busy) void generate();
-        }}
-      >
-        {TEXT_FIELDS.map(({ field, label, required }) => (
-          <label key={field} className="flex flex-col gap-1 text-xs font-semibold text-muted">
-            {label}
-            {required ? "" : " (optional)"}
-            <input
-              id={`partner-${field}`}
-              value={partner[field]}
-              required={required}
-              onChange={(event) => onPartnerChange({ ...partner, [field]: event.target.value })}
-              className="rounded border border-line px-2 py-1.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-accent"
-            />
-          </label>
-        ))}
-        <label className="flex flex-col gap-1 text-xs font-semibold text-muted">
-          Rates valid for
-          <select
-            id="partner-validity"
-            value={partner.validity_days}
-            onChange={(event) => onPartnerChange({ ...partner, validity_days: Number(event.target.value) })}
-            className="rounded border border-line px-2 py-1.5 text-sm text-ink"
-          >
-            <option value={14}>14 days</option>
-            <option value={30}>30 days</option>
-            <option value={60}>60 days</option>
-          </select>
-        </label>
-        <div className="flex items-end sm:col-span-2 lg:col-span-3">
-          <Button type="submit" disabled={busy || missingRequired}>
-            {busy ? "Creating PDF…" : proposal ? "Create the PDF again" : "Create proposal PDF"}
-          </Button>
-        </div>
-      </form>
-
-      {error ? <Notice tone="error" title="Could not create the proposal">{error}</Notice> : null}
-
-      {proposal ? (
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <a
-              href={proposal.url}
-              download={proposal.fileName}
-              className="rounded-md border border-line bg-white px-4 py-2 text-sm font-semibold hover:bg-band"
-            >
-              Download {proposal.fileName}
-            </a>
-            <span className="text-sm text-muted">Attach this PDF when you send the WhatsApp message.</span>
+    <>
+      <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-wrap items-start gap-8 px-4 pt-8 sm:px-6 sm:pt-12">
+        <form className="flex w-full max-w-[440px] flex-[1_1_380px] flex-col gap-6" onSubmit={(event) => event.preventDefault()}>
+          <div className="flex flex-col gap-1.5">
+            <h1 className="type-title text-[28px] font-bold sm:text-[34px]">Customer proposal</h1>
+            <p className="text-base leading-relaxed text-secondary">Check the names. The preview updates as you type.</p>
           </div>
-          <iframe
-            title="Proposal preview"
-            src={proposal.url}
-            className="h-[75vh] w-full rounded-lg border border-line bg-white"
-          />
-        </div>
-      ) : null}
 
-      <div className="flex flex-wrap justify-between gap-3">
-        <Button variant="secondary" onClick={onBack}>
-          Back to savings
+          <Group legend="Prepared for">
+            <Field
+              label="Prospect"
+              required
+              value={partner.prospect_name}
+              onChange={(value) => change("prospect_name", value)}
+            />
+          </Group>
+
+          <Group legend="Prepared by">
+            {PREPARED_BY.map(({ field, label, required, type }) => (
+              <Field
+                key={field}
+                label={label}
+                required={required}
+                type={type}
+                value={partner[field]}
+                onChange={(value) => change(field, value)}
+              />
+            ))}
+          </Group>
+
+          <fieldset className="flex flex-col">
+            <legend className="pb-2 pl-1 text-[13px] font-medium text-secondary">Rates valid for</legend>
+            <Segmented
+              label="Rates valid for"
+              stretch
+              value={String(partner.validity_days) as "14" | "30" | "60"}
+              onChange={(value) => {
+                setStatus("updating");
+                onPartnerChange({ ...partner, validity_days: Number(value) });
+              }}
+              options={[
+                { value: "14", label: "14 days" },
+                { value: "30", label: "30 days" },
+                { value: "60", label: "60 days" },
+              ]}
+            />
+          </fieldset>
+
+          {!wide ? (
+            <Button variant="tinted" onClick={() => setSheetOpen(true)} disabled={!proposal}>
+              <Icon name="eye" className="size-4" />
+              Preview PDF
+            </Button>
+          ) : null}
+
+          {error ? (
+            <Banner tone="error" title="Could not build the proposal">
+              {error}
+            </Banner>
+          ) : null}
+        </form>
+
+        {wide ? (
+          <section aria-label="PDF preview" className="flex min-w-0 flex-[999_1_520px] flex-col gap-3">
+            <div className="flex items-center justify-between gap-3 text-[13px] text-secondary">
+              <span className="inline-flex items-center gap-2" aria-live="polite">
+                <span
+                  aria-hidden="true"
+                  className={`size-2 rounded-full ${upToDate ? "bg-accent" : status === "error" ? "bg-bad" : "bg-attention"}`}
+                />
+                {upToDate ? "Preview up to date" : statusText}
+              </span>
+              <span>A4</span>
+            </div>
+            <div className="rounded-3xl bg-fill p-6 xl:p-8">
+              <div
+                className={`mx-auto aspect-[210/297] w-full max-w-[560px] overflow-hidden rounded bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08),0_20px_48px_rgba(0,0,0,0.12)] transition-opacity duration-200 ${
+                  status === "updating" ? "opacity-60" : ""
+                }`}
+              >
+                {preview}
+              </div>
+            </div>
+          </section>
+        ) : null}
+      </main>
+
+      <ActionBar backLabel="Savings" onBack={onBack} status={statusText}>
+        {proposal && wide ? (
+          <a
+            href={proposal.url}
+            download={proposal.fileName}
+            aria-disabled={!upToDate}
+            className={`${buttonClasses("tinted")} ${upToDate ? "" : "pointer-events-none opacity-50"}`}
+          >
+            <Icon name="download" className="size-4" />
+            Download PDF
+          </a>
+        ) : null}
+        <Button onClick={onContinue} disabled={!upToDate} className="flex-1 md:flex-none">
+          Next: WhatsApp
         </Button>
-        <Button onClick={onContinue} disabled={!proposal}>
-          Prepare WhatsApp message
-        </Button>
+      </ActionBar>
+
+      <Sheet
+        open={sheetOpen && !wide}
+        onClose={() => setSheetOpen(false)}
+        title="Proposal preview"
+        footer={
+          proposal ? (
+            <div className="flex gap-2.5">
+              <a href={proposal.url} download={proposal.fileName} className={`${buttonClasses("tinted", "large")} flex-1`}>
+                Download PDF
+              </a>
+              <Button
+                size="large"
+                className="flex-1"
+                disabled={!upToDate}
+                onClick={() => {
+                  setSheetOpen(false);
+                  onContinue();
+                }}
+              >
+                Next: WhatsApp
+              </Button>
+            </div>
+          ) : null
+        }
+      >
+        <div className="h-[62dvh] bg-fill p-4">{preview}</div>
+      </Sheet>
+    </>
+  );
+}
+
+/** iOS-style inset group of fields with hairline separators. */
+function Group({ legend, children }: { legend: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="flex flex-col">
+      <legend className="pb-2 pl-1 text-[13px] font-medium text-secondary">{legend}</legend>
+      <div className="overflow-hidden rounded-[14px] bg-surface shadow-card [&>label+label]:ml-4 [&>label+label]:border-t [&>label+label]:border-separator [&>label+label]:pl-0">
+        {children}
       </div>
-    </section>
+    </fieldset>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  required = false,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  type?: string;
+}) {
+  const empty = required && value.trim() === "";
+  return (
+    <label className="flex flex-col gap-0.5 px-4 py-2.5 focus-within:bg-fill-soft">
+      <span className="text-xs text-secondary">
+        {label}
+        {required ? null : <span className="text-tertiary"> · optional</span>}
+        {empty ? <span className="font-medium text-attention-ink"> · required</span> : null}
+      </span>
+      <input
+        type={type}
+        value={value}
+        required={required}
+        onChange={(event) => onChange(event.target.value)}
+        className="bg-transparent py-0.5 text-base outline-none"
+      />
+    </label>
   );
 }

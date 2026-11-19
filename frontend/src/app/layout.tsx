@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -6,10 +6,17 @@ export const metadata: Metadata = {
   description: "Turn a prospect's courier invoice into a savings proposal and a WhatsApp message.",
 };
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f3ee" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d1117" },
+  ],
+};
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen font-sans antialiased">{children}</body>
+      <body className="min-h-screen bg-canvas font-sans text-ink antialiased">{children}</body>
     </html>
   );
 }

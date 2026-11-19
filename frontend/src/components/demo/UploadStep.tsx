@@ -1,72 +1,42 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
 import { useId, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Notice } from "@/components/ui/Notice";
+import { Banner } from "@/components/ui/Banner";
+import { Icon } from "@/components/ui/Icon";
 import { errorMessage, postForm } from "@/lib/client/api";
 import type { ConfigResponse, ExtractResponse } from "@/types/api";
+
+type Thumb = "clean" | "gaps" | "photo";
 
 interface Sample {
   file: string;
   label: string;
   detail: string;
-  /** Mock mode reads only the SwiftLine PDFs; everything else needs Gemini or OpenAI */
+  thumb: Thumb;
+  /** No-AI mode reads only the SwiftLine PDFs; everything else needs AI reading */
   needsAI: boolean;
 }
 
 const MAIN_SAMPLES: Sample[] = [
-  {
-    file: "sample-1-al-noor-mobile.pdf",
-    label: "Sample 1 · clean PDF",
-    detail: "46 shipments for an online phone-accessories shop",
-    needsAI: false,
-  },
+  { file: "sample-1-al-noor-mobile.pdf", label: "Clean PDF", detail: "46 shipments · phone accessories shop", thumb: "clean", needsAI: false },
   {
     file: "sample-2-gulf-spice.pdf",
-    label: "Sample 2 · PDF with gaps",
-    detail: "22 shipments with missing weights, an import and an 85 kg box",
+    label: "PDF with gaps",
+    detail: "22 shipments · missing weights, an import, an 85 kg box",
+    thumb: "gaps",
     needsAI: false,
   },
-  {
-    file: "sample-2-gulf-spice-photo.jpg",
-    label: "Sample 2 · phone photo",
-    detail: "The same invoice, photographed",
-    needsAI: true,
-  },
+  { file: "sample-2-gulf-spice-photo.jpg", label: "Phone photo", detail: "The same invoice, photographed", thumb: "photo", needsAI: true },
 ];
 
-/** Other couriers' layouts, to show the AI is not tied to one format. */
-const FORMAT_SAMPLES: Sample[] = [
-  {
-    file: "sample-3-falcon-air.pdf",
-    label: "Falcon Air · PDF",
-    detail: "Product codes, fuel column, DD/MM/YYYY",
-    needsAI: true,
-  },
-  {
-    file: "sample-3-falcon-air-scan.png",
-    label: "Falcon Air · scan",
-    detail: "Same invoice as a grey office scan",
-    needsAI: true,
-  },
-  {
-    file: "sample-4-desert-parcel.pdf",
-    label: "Desert Parcel · PDF",
-    detail: "Landscape, grouped by service with subtotals",
-    needsAI: true,
-  },
-  {
-    file: "sample-5-gulf-runner.png",
-    label: "Gulf Runner · image",
-    detail: "No table – one card per shipment",
-    needsAI: true,
-  },
-  {
-    file: "sample-6-oryx-usd.pdf",
-    label: "Oryx Express · USD",
-    detail: "Billed in US dollars – shows the currency check",
-    needsAI: true,
-  },
+/** Other couriers' layouts, to show the reader is not tied to one format. */
+const FORMAT_SAMPLES: { file: string; label: string }[] = [
+  { file: "sample-3-falcon-air.pdf", label: "Falcon Air · codes" },
+  { file: "sample-3-falcon-air-scan.png", label: "Falcon Air · scan" },
+  { file: "sample-4-desert-parcel.pdf", label: "Desert Parcel · grouped" },
+  { file: "sample-5-gulf-runner.png", label: "Gulf Runner · cards" },
+  { file: "sample-6-oryx-usd.pdf", label: "Oryx Express · USD" },
 ];
 
 const ACCEPT = "application/pdf,image/jpeg,image/png,image/webp";
@@ -78,14 +48,15 @@ interface UploadStepProps {
 
 export function UploadStep({ config, onExtracted }: UploadStepProps) {
   const inputId = useId();
+  const reduce = useReducedMotion();
   const [busyLabel, setBusyLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const provider = config?.provider ?? null;
-  const reads_images = provider?.reads_images ?? false;
-  /** A real AI reader (Gemini/OpenAI) is active – mock reads only the SwiftLine sample PDFs */
+  /** A real AI reader is active – no-AI mode reads only the SwiftLine sample PDFs */
   const aiActive = provider !== null && provider.id !== "mock";
+  const busy = busyLabel !== null;
 
   async function upload(file: File) {
     setError(null);
@@ -104,7 +75,7 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
 
   async function loadSample(fileName: string) {
     setError(null);
-    setBusyLabel(`Loading ${fileName}…`);
+    setBusyLabel(`Reading ${fileName}…`);
     try {
       const response = await fetch(`/samples/${fileName}`);
       if (!response.ok) throw new Error("The sample file is missing. Run `npm run samples`.");
@@ -116,26 +87,29 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
     }
   }
 
-  const busy = busyLabel !== null;
-
   return (
-    <section className="flex flex-col gap-5" aria-labelledby="upload-title">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 id="upload-title" className="text-xl font-bold">
-            Upload the prospect&apos;s courier invoice
-          </h2>
-          <p className="text-sm text-muted">PDF or photo of last month&apos;s invoice. The shipments are read automatically.</p>
-        </div>
+    <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-10 px-4 pt-12 pb-20 sm:gap-12 sm:px-6 sm:pt-[72px]">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <h1 className="type-title max-w-[760px] text-[34px] font-bold text-balance sm:text-[48px] sm:leading-[1.05]">
+          Turn last month&apos;s courier invoice into a savings proposal.
+        </h1>
+        <p className="max-w-[620px] text-[17px] leading-relaxed text-secondary sm:text-[19px]">
+          Drop the prospect&apos;s invoice. We read every shipment, compare it with BCOM rates, and prepare the PDF and
+          WhatsApp message.
+        </p>
       </div>
 
-      {config?.problem ? <Notice tone="error" title="AI provider not ready">{config.problem}</Notice> : null}
+      {config?.problem ? (
+        <Banner tone="error" title="Invoice reading isn't available right now">
+          {config.problem}
+        </Banner>
+      ) : null}
 
       <label
         htmlFor={inputId}
         onDragOver={(event) => {
           event.preventDefault();
-          setDragging(true);
+          if (!busy) setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={(event) => {
@@ -144,15 +118,33 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
           const file = event.dataTransfer.files[0];
           if (file && !busy) void upload(file);
         }}
-        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-12 text-center transition-colors ${
-          dragging ? "border-accent bg-accent/5" : "border-line bg-white hover:border-muted"
-        } ${busy ? "pointer-events-none opacity-60" : ""}`}
+        className={`relative flex cursor-pointer flex-col items-center justify-center gap-4 overflow-hidden rounded-[28px] border-2 border-dashed px-6 py-14 text-center shadow-raised transition-[background-color,border-color,transform] duration-200 focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-accent sm:py-16 ${
+          dragging ? "scale-[1.01] border-accent bg-accent-tint" : "border-tertiary/45 bg-surface hover:border-tertiary"
+        } ${busy ? "pointer-events-none" : ""}`}
       >
-        <span className="text-base font-semibold">{busy ? busyLabel : "Drop the invoice here, or click to choose a file"}</span>
-        <span className="text-sm text-muted">
-          PDF, JPG, PNG or WEBP · up to {config?.max_upload_mb ?? 10} MB
-          {provider && !reads_images ? " · photos need Gemini or OpenAI" : ""}
+        <span aria-hidden="true" className="flex size-16 items-center justify-center rounded-[20px] bg-accent-tint text-accent">
+          <Icon name={busy ? "file" : "upload"} className="size-[30px]" />
         </span>
+        <span className="type-headline text-2xl font-semibold" aria-live="polite">
+          {busy ? busyLabel : dragging ? "Drop to read it" : "Drop the invoice here"}
+        </span>
+        {busy ? (
+          <span className="relative h-1.5 w-56 overflow-hidden rounded-full bg-fill" role="progressbar" aria-label="Reading the invoice">
+            <motion.span
+              className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-accent"
+              initial={{ x: "-100%" }}
+              animate={reduce ? { x: "100%", opacity: [0.4, 1, 0.4] } : { x: "300%" }}
+              transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </span>
+        ) : (
+          <>
+            <span className="text-[15px] text-secondary">PDF or photo · up to {config?.max_upload_mb ?? 10} MB</span>
+            <span className="inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-[15px] font-semibold text-on-accent">
+              Choose a file
+            </span>
+          </>
+        )}
         <input
           id={inputId}
           type="file"
@@ -167,44 +159,86 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
         />
       </label>
 
-      {error ? <Notice tone="error" title="Could not read the invoice">{error}</Notice> : null}
+      {error ? (
+        <Banner tone="error" title="Could not read the invoice">
+          {error}
+        </Banner>
+      ) : null}
 
-      <div className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold tracking-wide text-muted uppercase">Or try a sample invoice</h3>
-        <div className="grid gap-3 sm:grid-cols-3">
+      <section aria-labelledby="samples-title" className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="samples-title" className="type-headline text-[22px] font-semibold">
+            No invoice to hand? Try a sample
+          </h2>
+          <span className="text-[13px] text-secondary">Fictional companies and data</span>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
           {MAIN_SAMPLES.map((sample) => {
             const unavailable = sample.needsAI && !aiActive;
             return (
-              <div key={sample.file} className="flex flex-col gap-2 rounded-lg border border-line bg-white p-4">
-                <p className="font-semibold">{sample.label}</p>
-                <p className="flex-1 text-sm text-muted">{sample.detail}</p>
-                {unavailable ? <p className="text-xs text-warn">Needs AI_PROVIDER=gemini or openai.</p> : null}
-                <Button variant="secondary" disabled={busy || unavailable} onClick={() => void loadSample(sample.file)}>
-                  Use this sample
-                </Button>
-              </div>
+              <button
+                key={sample.file}
+                type="button"
+                disabled={busy || unavailable}
+                onClick={() => void loadSample(sample.file)}
+                aria-label={`Use sample: ${sample.label}${unavailable ? " (needs AI reading)" : ""}`}
+                className="pressable flex items-center gap-4 rounded-[20px] bg-surface p-4 text-left shadow-card hover:shadow-raised focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:hover:shadow-card"
+              >
+                <Thumbnail kind={sample.thumb} />
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className={`text-base font-semibold ${unavailable ? "text-secondary" : ""}`}>{sample.label}</span>
+                  {unavailable ? (
+                    <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-fill-soft px-2.5 py-0.5 text-xs font-semibold text-secondary">
+                      <Icon name="info" className="size-3" />
+                      Needs AI reading
+                    </span>
+                  ) : (
+                    <span className="text-sm leading-snug text-secondary">{sample.detail}</span>
+                  )}
+                </span>
+              </button>
             );
           })}
         </div>
-
-        <h3 className="mt-2 text-sm font-semibold tracking-wide text-muted uppercase">
-          Other courier formats {aiActive ? "" : "· need AI_PROVIDER=gemini or openai"}
-        </h3>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="mr-1 text-[13px] text-secondary">Other courier layouts{aiActive ? ":" : " (need AI reading):"}</span>
           {FORMAT_SAMPLES.map((sample) => (
             <button
               key={sample.file}
               type="button"
               disabled={busy || !aiActive}
               onClick={() => void loadSample(sample.file)}
-              className="flex flex-col gap-1 rounded-lg border border-line bg-white p-3 text-left transition-colors hover:border-muted focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
+              className="pressable min-h-9 rounded-full bg-surface px-3.5 text-[13px] text-secondary shadow-card hover:text-ink focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:text-secondary"
             >
-              <span className="text-sm font-semibold">{sample.label}</span>
-              <span className="text-xs text-muted">{sample.detail}</span>
+              {sample.label}
             </button>
           ))}
         </div>
-      </div>
-    </section>
+        {!aiActive && provider ? (
+          <p className="text-[13px] text-secondary">
+            Photos and other couriers&apos; layouts need AI reading, which is switched off on this server. The two SwiftLine
+            PDFs work without it.
+          </p>
+        ) : null}
+      </section>
+    </main>
+  );
+}
+
+/** A tiny drawn invoice, so each sample is recognisable at a glance. */
+function Thumbnail({ kind }: { kind: Thumb }) {
+  const lines = kind === "gaps" ? ["w-full", "w-2/5 bg-attention", "w-full", "w-1/2 bg-attention"] : ["w-full", "w-full", "w-full", "w-3/4"];
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex h-[72px] w-14 shrink-0 flex-col gap-[5px] rounded-lg border border-separator px-2 py-2.5 ${
+        kind === "photo" ? "-rotate-3 bg-[#e9e4dc] dark:bg-[#2a2620]" : "bg-canvas"
+      }`}
+    >
+      <span className={`h-[5px] w-3/5 rounded-full ${kind === "photo" ? "bg-tertiary" : "bg-accent"}`} />
+      {lines.map((line, index) => (
+        <span key={index} className={`h-[3px] rounded-full ${line.includes("bg-") ? line : `${line} bg-fill`}`} />
+      ))}
+    </span>
   );
 }

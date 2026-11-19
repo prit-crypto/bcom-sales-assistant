@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useIsPresent, useReducedMotion, type Variants } from "motion/react";
+import { useEffect, useState, type ReactNode } from "react";
+import { AppBar, stepIndex, type StepId } from "@/components/ui/AppBar";
 import { errorMessage, getJson, postJson } from "@/lib/client/api";
 import type {
   ComparisonResult,
@@ -14,7 +16,6 @@ import type { InvoiceData } from "@/types/invoice";
 import { ProposalStep, type ProposalFile } from "./ProposalStep";
 import { ReviewStep } from "./ReviewStep";
 import { SavingsStep } from "./SavingsStep";
-import { Stepper, stepIndex, type StepId } from "./Stepper";
 import { UploadStep } from "./UploadStep";
 import { WhatsAppStep } from "./WhatsAppStep";
 
@@ -33,10 +34,31 @@ interface Extracted {
   fileName: string;
 }
 
-/** Holds the state of the whole demo journey: upload → review → savings → proposal → WhatsApp. */
+/** Forward: the new step comes in from the right. Back: it comes in from the left, the old one leaves right. */
+const SLIDE: Variants = {
+  enter: (direction: number) => ({ x: direction * 48, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (direction: number) => ({ x: direction * -48, opacity: 0 }),
+};
+// Same properties as SLIDE (x stays 0), so the server-rendered page matches whichever one the browser picks.
+const FADE: Variants = { enter: { x: 0, opacity: 0 }, center: { x: 0, opacity: 1 }, exit: { x: 0, opacity: 0 } };
+
+/** While a step slides out, take it out of reach: no focus, no clicks, hidden from screen readers. */
+function LeavingGuard({ children }: { children: ReactNode }) {
+  const present = useIsPresent();
+  return (
+    <div inert={!present} aria-hidden={!present || undefined} className="flex flex-1 flex-col">
+      {children}
+    </div>
+  );
+}
+
+/** Holds the state of the whole journey: upload → review → savings → proposal → WhatsApp. */
 export function DemoFlow() {
+  const reduce = useReducedMotion();
   const [config, setConfig] = useState<ConfigResponse | null>(null);
   const [step, setStep] = useState<StepId>("upload");
+  const [direction, setDirection] = useState(1);
   const [reached, setReached] = useState<StepId>("upload");
   const [extracted, setExtracted] = useState<Extracted | null>(null);
   /** The backend's comparison of the current invoice; null until compared, and again after any edit */
@@ -53,7 +75,7 @@ export function DemoFlow() {
       .catch((error: unknown) => setConfig({ provider: null, problem: errorMessage(error), max_upload_mb: 10 }));
   }, []);
 
-  // Free the PDF preview's memory when it is replaced or the page closes.
+  // Free the PDF's memory when it is replaced or the page closes.
   useEffect(() => {
     return () => {
       if (proposal) URL.revokeObjectURL(proposal.url);
@@ -61,9 +83,10 @@ export function DemoFlow() {
   }, [proposal]);
 
   function goTo(next: StepId) {
+    setDirection(stepIndex(next) >= stepIndex(step) ? 1 : -1);
     setStep(next);
     if (stepIndex(next) > stepIndex(reached)) setReached(next);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0 });
   }
 
   /** Any change to the shipments makes the comparison, proposal and message out of date. */
@@ -110,46 +133,44 @@ export function DemoFlow() {
     goTo("upload");
   }
 
-  if (step === "upload" || !extracted) {
-    return (
-      <div className="flex flex-col gap-6">
-        <Stepper current="upload" reached={reached} onSelect={goTo} />
-        <UploadStep config={config} onExtracted={handleExtracted} />
-      </div>
-    );
-  }
-
   // Later steps need a comparison of the current data; without one, the partner is back on the review step.
-  const current: StepId = step !== "review" && !comparison ? "review" : step;
+  const current: StepId = !extracted ? "upload" : step !== "upload" && step !== "review" && !comparison ? "review" : step;
 
-  return (
-    <div className="flex flex-col gap-6">
-      <Stepper current={current} reached={reached} onSelect={goTo} />
-
-      {current === "review" || !comparison ? (
+  function renderStep() {
+    if (current === "upload" || !extracted) {
+      return <UploadStep config={config} onExtracted={handleExtracted} />;
+    }
+    if (current === "review" || !comparison) {
+      return (
         <ReviewStep
           invoice={extracted.invoice}
           fileName={extracted.fileName}
           comparing={comparing}
           error={compareError}
           onChange={handleInvoiceChange}
+          onBack={() => goTo("upload")}
           onContinue={() => void compare()}
         />
-      ) : current === "savings" ? (
+      );
+    }
+    if (current === "savings") {
+      return (
         <SavingsStep
           invoice={extracted.invoice}
           comparison={comparison}
           onBack={() => goTo("review")}
           onContinue={() => goTo("proposal")}
         />
-      ) : current === "proposal" ? (
+      );
+    }
+    if (current === "proposal") {
+      return (
         <ProposalStep
           invoice={extracted.invoice}
           partner={partner}
           proposal={proposal}
           onPartnerChange={(next) => {
             setPartner(next);
-            setProposal(null);
             setMessage(null);
             setReached("proposal");
           }}
@@ -160,16 +181,39 @@ export function DemoFlow() {
           onBack={() => goTo("savings")}
           onContinue={() => goTo("whatsapp")}
         />
-      ) : (
-        <WhatsAppStep
-          invoice={extracted.invoice}
-          partner={partner}
-          message={message}
-          onMessage={setMessage}
-          onBack={() => goTo("proposal")}
-          onRestart={restart}
-        />
-      )}
+      );
+    }
+    return (
+      <WhatsAppStep
+        invoice={extracted.invoice}
+        partner={partner}
+        proposal={proposal}
+        message={message}
+        onMessage={setMessage}
+        onBack={() => goTo("proposal")}
+      />
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <AppBar current={current} reached={reached} onSelect={goTo} onRestart={extracted ? restart : null} />
+      <div className="relative flex-1 overflow-x-clip">
+        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+          <motion.div
+            key={current}
+            custom={direction}
+            variants={reduce ? FADE : SLIDE}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={reduce ? { duration: 0.15 } : { type: "spring", bounce: 0, duration: 0.35 }}
+            className="flex min-h-[calc(100vh-61px)] flex-col"
+          >
+            <LeavingGuard>{renderStep()}</LeavingGuard>
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
