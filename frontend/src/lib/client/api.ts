@@ -43,8 +43,8 @@ export async function getJson<T>(path: string): Promise<T> {
   return (await send(path, { method: "GET" })).json() as Promise<T>;
 }
 
-export async function postJson<T>(path: string, body: unknown): Promise<T> {
-  return (await send(path, jsonInit(body))).json() as Promise<T>;
+export async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+  return (await send(path, { ...jsonInit(body), signal })).json() as Promise<T>;
 }
 
 export async function postForm<T>(path: string, form: FormData): Promise<T> {
@@ -54,6 +54,18 @@ export async function postForm<T>(path: string, form: FormData): Promise<T> {
 /** POST that returns a file. Pass `signal` to cancel it when a newer request replaces it. */
 export async function postForBlob(path: string, body: unknown, signal?: AbortSignal): Promise<Blob> {
   return (await send(path, { ...jsonInit(body), signal })).blob();
+}
+
+/** Hands a downloaded file to the browser as a download. */
+export function saveBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** True when a request was cancelled on purpose (a newer one replaced it). */

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { ActionBar } from "@/components/ui/ActionBar";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -10,7 +10,8 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Sheet } from "@/components/ui/Sheet";
 import { errorMessage, isAbort, postForBlob } from "@/lib/client/api";
 import { useMinWidth } from "@/lib/hooks";
-import type { PartnerDetailsInput } from "@/types/api";
+import { partnerForRequest, usableBookingUrl } from "@/lib/partner";
+import type { CustomerLanguage, PartnerDetailsInput, Scenario } from "@/types/api";
 import type { InvoiceData } from "@/types/invoice";
 
 export interface ProposalFile {
@@ -20,6 +21,8 @@ export interface ProposalFile {
 
 interface ProposalStepProps {
   invoice: InvoiceData;
+  /** The what-if chosen on Savings; the PDF shows the same figures */
+  scenario: Scenario;
   partner: PartnerDetailsInput;
   proposal: ProposalFile | null;
   onPartnerChange: (partner: PartnerDetailsInput) => void;
@@ -28,7 +31,7 @@ interface ProposalStepProps {
   onContinue: () => void;
 }
 
-type TextField = Exclude<keyof PartnerDetailsInput, "validity_days">;
+type TextField = "prospect_name" | "partner_name" | "partner_company" | "partner_phone" | "partner_email" | "booking_url";
 type Status = "waiting" | "updating" | "ready" | "error";
 
 /** Wait this long after the last keystroke before rebuilding the PDF. */
@@ -41,12 +44,17 @@ const PREPARED_BY: { field: TextField; label: string; required: boolean; type: s
   { field: "partner_email", label: "Email", required: false, type: "email" },
 ];
 
-function safeFileName(prospect: string): string {
-  return `BCOM-proposal-${prospect.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "prospect"}.pdf`;
+/** The backend's limit for the partner logo. */
+const MAX_LOGO_BYTES = 300 * 1024;
+
+function safeFileName(prospect: string, language: CustomerLanguage): string {
+  const name = prospect.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "prospect";
+  return `BCOM-proposal-${name}${language === "ar" ? "-ar" : ""}.pdf`;
 }
 
 export function ProposalStep({
   invoice,
+  scenario,
   partner,
   proposal,
   onPartnerChange,
@@ -64,7 +72,10 @@ export function ProposalStep({
 
   const missingRequired =
     partner.prospect_name.trim() === "" || partner.partner_name.trim() === "" || partner.partner_company.trim() === "";
-  const requestKey = JSON.stringify(partner);
+  const requestKey = JSON.stringify([partnerForRequest(partner), scenario]);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const bookingTyped = partner.booking_url.trim() !== "";
+  const bookingInvalid = bookingTyped && usableBookingUrl(partner.booking_url) === "";
 
   // Rebuild the PDF a moment after the details stop changing. A newer request cancels the older one.
   useEffect(() => {
@@ -84,9 +95,12 @@ export function ProposalStep({
         request.current = controller;
         setStatus("updating");
         setError(null);
-        postForBlob("/proposals", { invoice, partner }, controller.signal)
+        postForBlob("/proposals", { invoice, partner: partnerForRequest(partner), scenario }, controller.signal)
           .then((blob) => {
-            onProposalReady({ url: URL.createObjectURL(blob), fileName: safeFileName(partner.prospect_name) });
+            onProposalReady({
+              url: URL.createObjectURL(blob),
+              fileName: safeFileName(partner.prospect_name, partner.language),
+            });
             setStatus("ready");
           })
           .catch((failure: unknown) => {
@@ -98,7 +112,7 @@ export function ProposalStep({
       immediate ? 0 : PREVIEW_DELAY_MS,
     );
     return () => window.clearTimeout(timer);
-    // The key captures every partner detail; the invoice cannot change on this step.
+    // The key captures every partner detail and the what-if; the invoice cannot change on this step.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey, missingRequired]);
 
@@ -107,6 +121,27 @@ export function ProposalStep({
   function change(field: TextField, value: string) {
     setStatus(missingRequired ? "waiting" : "updating");
     onPartnerChange({ ...partner, [field]: value });
+  }
+
+  function update(patch: Partial<PartnerDetailsInput>) {
+    setStatus(missingRequired ? "waiting" : "updating");
+    onPartnerChange({ ...partner, ...patch });
+  }
+
+  function pickLogo(file: File) {
+    setLogoError(null);
+    if (file.type !== "image/png" && file.type !== "image/jpeg") {
+      setLogoError("Choose a PNG or JPG image.");
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setLogoError(`That image is ${Math.round(file.size / 1024)} KB. Use one of 300 KB or less.`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => update({ partner_logo: String(reader.result) });
+    reader.onerror = () => setLogoError("Could not read that image.");
+    reader.readAsDataURL(file);
   }
 
   const upToDate = status === "ready" && proposal !== null;
@@ -164,7 +199,36 @@ export function ProposalStep({
                 onChange={(value) => change(field, value)}
               />
             ))}
+            <Field
+              label="Booking link"
+              type="url"
+              placeholder="https://cal.com/your-name"
+              value={partner.booking_url}
+              onChange={(value) => change("booking_url", value)}
+              hint={bookingInvalid ? "Use a full link starting with https:// to include it" : undefined}
+            />
           </Group>
+
+          <LogoPicker logo={partner.partner_logo} error={logoError} onPick={pickLogo} onRemove={() => update({ partner_logo: null })} />
+
+          <fieldset className="flex flex-col">
+            <legend className="pb-2 pl-1 text-[13px] font-medium text-secondary">Customer language</legend>
+            <Segmented
+              label="Customer language"
+              stretch
+              value={partner.language}
+              onChange={(language) => update({ language })}
+              options={[
+                { value: "en", label: "English" },
+                { value: "ar", label: "العربية" },
+              ]}
+            />
+            <p className="pt-2 pl-1 text-[13px] leading-snug text-secondary">
+              {partner.language === "ar"
+                ? "The PDF and WhatsApp message are written in Arabic. Ask a native speaker to check them before real use."
+                : "The PDF and WhatsApp message the customer receives."}
+            </p>
+          </fieldset>
 
           <fieldset className="flex flex-col">
             <legend className="pb-2 pl-1 text-[13px] font-medium text-secondary">Rates valid for</legend>
@@ -289,28 +353,103 @@ function Field({
   onChange,
   required = false,
   type = "text",
+  placeholder,
+  hint,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
   type?: string;
+  placeholder?: string;
+  /** Shown under the label in amber, e.g. why a value is not used yet */
+  hint?: string;
 }) {
   const empty = required && value.trim() === "";
   return (
     <label className="flex flex-col gap-0.5 px-4 py-2.5 focus-within:bg-fill-soft">
       <span className="text-xs text-secondary">
         {label}
-        {required ? null : <span className="text-tertiary"> · optional</span>}
+        {required ? null : <span> · optional</span>}
         {empty ? <span className="font-medium text-attention-ink"> · required</span> : null}
+        {hint ? <span className="font-medium text-attention-ink"> · {hint}</span> : null}
       </span>
       <input
         type={type}
         value={value}
+        placeholder={placeholder}
         required={required}
         onChange={(event) => onChange(event.target.value)}
-        className="bg-transparent py-0.5 text-base outline-none"
+        className="bg-transparent py-0.5 text-base outline-none placeholder:text-tertiary"
       />
     </label>
+  );
+}
+
+/** The partner's own logo for the PDF header ("in partnership with"), with a preview and Remove. */
+function LogoPicker({
+  logo,
+  error,
+  onPick,
+  onRemove,
+}: {
+  logo: string | null;
+  error: string | null;
+  onPick: (file: File) => void;
+  onRemove: () => void;
+}) {
+  const inputId = useId();
+  return (
+    <fieldset className="flex flex-col">
+      <legend className="pb-2 pl-1 text-[13px] font-medium text-secondary">
+        Your logo · optional
+      </legend>
+      <div className="flex items-center gap-4 rounded-[14px] bg-surface px-4 py-3 shadow-card">
+        <span className="flex h-12 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-separator bg-white">
+          {logo ? (
+            // A data: URL chosen on this device; next/image adds nothing here.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt="Your logo" className="max-h-10 max-w-[88px] object-contain" />
+          ) : (
+            <span className="text-xs text-[#5f6670]">No logo</span>
+          )}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <label
+            htmlFor={inputId}
+            className="pressable inline-flex min-h-10 cursor-pointer items-center rounded-full bg-accent-tint px-4 text-sm font-semibold text-accent focus-within:outline-2 focus-within:outline-accent"
+          >
+            {logo ? "Change" : "Add logo"}
+            <input
+              id={inputId}
+              type="file"
+              accept="image/png,image/jpeg"
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) onPick(file);
+              }}
+            />
+          </label>
+          {logo ? (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="pressable min-h-10 rounded-full px-3 text-sm font-semibold text-secondary hover:bg-fill-soft focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              Remove
+            </button>
+          ) : (
+            <span className="text-xs text-secondary">PNG or JPG, up to 300 KB</span>
+          )}
+        </span>
+      </div>
+      {error ? (
+        <p role="alert" className="pt-2 pl-1 text-[13px] font-medium text-bad">
+          {error}
+        </p>
+      ) : null}
+    </fieldset>
   );
 }

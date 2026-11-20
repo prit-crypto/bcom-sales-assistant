@@ -15,7 +15,7 @@
   --accent: #0b7a75;
   --accent-hover: #086661;
   --on-accent: #ffffff;
-  --accent-tint: #e2f0ee;
+  --accent-tint: #e8f3f1; /* light enough for teal text on it to pass 4.5:1 */
   --fill: #ece6dc;
   --fill-soft: #f1ebe2;
   --separator: rgba(11, 37, 69, 0.08);
@@ -25,7 +25,7 @@
   --attention: #e89b1d;
   --attention-ink: #8a5300;
   --attention-tint: #fff4e0;
-  --whatsapp: #128c4b;
+  --whatsapp: #108646; /* white text on it passes 4.5:1 */
   --chat: #efeae2;
   --bubble: #d9fdd3;
   --bubble-ink: #111b21;

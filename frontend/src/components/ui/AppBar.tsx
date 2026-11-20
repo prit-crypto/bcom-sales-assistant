@@ -22,6 +22,7 @@ export function AppBar({
   reached,
   onSelect,
   onRestart,
+  sampleMode = false,
 }: {
   current: StepId;
   /** Furthest step reached; earlier steps can be revisited from the dots */
@@ -29,6 +30,8 @@ export function AppBar({
   onSelect: (step: StepId) => void;
   /** Shown once there is something to start over from */
   onRestart: (() => void) | null;
+  /** No AI reader is active: only the sample invoices and spreadsheets can be read */
+  sampleMode?: boolean;
 }) {
   const currentIndex = stepIndex(current);
   const reachedIndex = stepIndex(reached);
@@ -47,13 +50,21 @@ export function AppBar({
           />
           <span aria-hidden="true" className="hidden h-5 w-px bg-separator sm:block" />
           <span className="type-headline hidden text-[15px] font-semibold sm:block">Sales Assistant</span>
+          {sampleMode ? (
+            <span
+              title="No AI reader is switched on: the sample PDFs and CSV or Excel statements work."
+              className="rounded-full bg-fill px-2.5 py-0.5 text-xs font-semibold text-secondary"
+            >
+              Sample mode
+            </span>
+          ) : null}
         </div>
 
         <nav aria-label="Progress" className="order-3 flex w-full items-center justify-between gap-3 sm:order-none sm:w-auto sm:justify-start">
           <p className="text-[13px] text-secondary">
             Step {currentIndex + 1} of {STEPS.length} · <span className="font-semibold text-ink">{STEPS[currentIndex]!.label}</span>
           </p>
-          <ol className="flex items-center gap-0.5">
+          <ol className="flex items-center">
             {STEPS.map((step, index) => {
               const isCurrent = index === currentIndex;
               const available = index <= reachedIndex && !isCurrent;
@@ -65,13 +76,13 @@ export function AppBar({
                       type="button"
                       onClick={() => onSelect(step.id)}
                       aria-label={`Go to ${step.label}`}
-                      className="flex h-6 items-center px-[3px] rounded-full focus-visible:outline-2 focus-visible:outline-accent"
+                      className="flex h-6 min-w-6 items-center justify-center rounded-full px-[3px] focus-visible:outline-2 focus-visible:outline-accent"
                     >
                       <span className={dot} />
                     </button>
                   ) : (
                     <span
-                      className="flex h-6 items-center px-[3px]"
+                      className="flex h-6 min-w-6 items-center justify-center px-[3px]"
                       aria-current={isCurrent ? "step" : undefined}
                       aria-label={`${step.label}${isCurrent ? ", current step" : ", not reached yet"}`}
                       role="img"

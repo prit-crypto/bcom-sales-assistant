@@ -11,7 +11,7 @@ test("no-AI mode: AI-only samples are disabled and no setting names are shown", 
 test("a fake PDF is refused with a clear message", async ({ page }) => {
   await openApp(page);
   await page.locator("input[type=file]").setInputFiles({ name: "fake.pdf", mimeType: "application/pdf", buffer: Buffer.from("just text") });
-  await expect(page.getByText("Upload a PDF, JPG, PNG or WEBP file.")).toBeVisible();
+  await expect(page.getByText("Upload a PDF, JPG, PNG or WEBP file, or a CSV or Excel statement.")).toBeVisible();
 });
 
 test("a photo without AI reading is explained", async ({ page }) => {
@@ -43,7 +43,13 @@ test("backend down: a clear message instead of a crash", async ({ page }) => {
 test("AI switched on without a key: the reason is shown", async ({ page }) => {
   await page.route("**/api/v1/config", (route) =>
     route.fulfill({
-      json: { provider: null, problem: "AI_PROVIDER is gemini but GEMINI_API_KEY is empty in .env.", max_upload_mb: 10 },
+      json: {
+        provider: null,
+        problem: "AI_PROVIDER is gemini but GEMINI_API_KEY is empty in .env.",
+        max_upload_mb: 10,
+        privacy_notice: null,
+        samples_only: false,
+      },
     }),
   );
   await page.goto("/");

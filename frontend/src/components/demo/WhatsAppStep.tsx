@@ -7,13 +7,15 @@ import { Banner } from "@/components/ui/Banner";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { errorMessage, postJson } from "@/lib/client/api";
+import { partnerForRequest } from "@/lib/partner";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
-import type { MessageResponse, PartnerDetailsInput } from "@/types/api";
+import type { MessageResponse, PartnerDetailsInput, Scenario } from "@/types/api";
 import type { InvoiceData } from "@/types/invoice";
 import type { ProposalFile } from "./ProposalStep";
 
 interface WhatsAppStepProps {
   invoice: InvoiceData;
+  scenario: Scenario;
   partner: PartnerDetailsInput;
   proposal: ProposalFile | null;
   message: MessageResponse | null;
@@ -21,7 +23,7 @@ interface WhatsAppStepProps {
   onBack: () => void;
 }
 
-export function WhatsAppStep({ invoice, partner, proposal, message, onMessage, onBack }: WhatsAppStepProps) {
+export function WhatsAppStep({ invoice, scenario, partner, proposal, message, onMessage, onBack }: WhatsAppStepProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
@@ -35,7 +37,7 @@ export function WhatsAppStep({ invoice, partner, proposal, message, onMessage, o
     setBusy(true);
     setError(null);
     try {
-      onMessage(await postJson<MessageResponse>("/messages", { invoice, partner }));
+      onMessage(await postJson<MessageResponse>("/messages", { invoice, partner: partnerForRequest(partner), scenario }));
       setEdited(false);
     } catch (writeError) {
       setError(errorMessage(writeError));
@@ -66,6 +68,7 @@ export function WhatsAppStep({ invoice, partner, proposal, message, onMessage, o
   }
 
   const source = message ? (message.source === "ai" ? "Written by AI" : "Standard template") : null;
+  const arabic = partner.language === "ar";
 
   return (
     <>
@@ -111,6 +114,7 @@ export function WhatsAppStep({ invoice, partner, proposal, message, onMessage, o
             {source ? (
               <span className="self-center rounded-lg bg-surface/85 px-3 py-1 text-xs text-secondary">
                 {source}
+                {arabic ? " · Arabic" : ""}
                 {edited ? " · edited" : ""}
               </span>
             ) : null}
@@ -133,9 +137,13 @@ export function WhatsAppStep({ invoice, partner, proposal, message, onMessage, o
                     onMessage({ ...message, message: event.target.value });
                   }}
                   rows={12}
-                  className="min-h-48 w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none [field-sizing:content]"
+                  dir={arabic ? "rtl" : "ltr"}
+                  lang={arabic ? "ar" : "en"}
+                  className={`min-h-48 w-full resize-none bg-transparent leading-relaxed outline-none [field-sizing:content] ${
+                    arabic ? "text-[17px]" : "text-[15px]"
+                  }`}
                 />
-                <span className="self-end text-[11px] opacity-70">Draft</span>
+                <span className="self-end text-[11px] opacity-85">Draft</span>
               </motion.div>
             ) : (
               <div

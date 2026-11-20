@@ -9,14 +9,22 @@ import { Disclosure } from "@/components/ui/Disclosure";
 import { Icon } from "@/components/ui/Icon";
 import { Segmented } from "@/components/ui/Segmented";
 import { StatusPill } from "@/components/ui/StatusPill";
+import { errorMessage, postForBlob, saveBlob } from "@/lib/client/api";
 import { formatMoney, formatMoneyExact, formatPercent } from "@/lib/format";
 import { useCountUp } from "@/lib/hooks";
-import type { ComparisonResult, GroupTotal, ShipmentStatus } from "@/types/api";
+import type { ComparisonResult, GroupTotal, Scenario, ShipmentStatus } from "@/types/api";
 import type { InvoiceData } from "@/types/invoice";
+import { WhatIfPanel } from "./WhatIfPanel";
 
 interface SavingsStepProps {
   invoice: InvoiceData;
   comparison: ComparisonResult;
+  /** The what-if in force; the comparison already includes it */
+  scenario: Scenario;
+  /** New figures for a changed what-if are on their way */
+  updating: boolean;
+  scenarioError: string | null;
+  onScenarioChange: (scenario: Scenario) => void;
   onBack: () => void;
   onContinue: () => void;
 }
@@ -35,7 +43,26 @@ function signedMoney(value: number): string {
   return `${value >= 0 ? "+" : "−"} ${formatMoneyExact(Math.abs(value))}`;
 }
 
-export function SavingsStep({ invoice, comparison, onBack, onContinue }: SavingsStepProps) {
+function volumeLabel(factor: number): string {
+  if (factor === 2) return "Twice the volume";
+  const pct = Math.round((factor - 1) * 100);
+  return `${pct > 0 ? "+" : "−"}${Math.abs(pct)}% volume`;
+}
+
+function exportFileName(prospect: string | null): string {
+  return `BCOM-comparison-${(prospect ?? "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "prospect"}.xlsx`;
+}
+
+export function SavingsStep({
+  invoice,
+  comparison,
+  scenario,
+  updating,
+  scenarioError,
+  onScenarioChange,
+  onBack,
+  onContinue,
+}: SavingsStepProps) {
   const { summary, rows } = comparison;
   const [view, setView] = useState<GroupView>("region");
   const [shipmentsOpen, setShipmentsOpen] = useState(false);
@@ -44,6 +71,25 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
   const headline = useCountUp(Math.abs(summary.monthly_saving));
   const reduce = useReducedMotion();
   const conversion = summary.converted_from;
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  async function downloadExcel() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      saveBlob(await postForBlob("/exports/comparison", { invoice, scenario }), exportFileName(invoice.customer_name));
+    } catch (failure) {
+      setExportError(errorMessage(failure));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const scenarioChips = [
+    scenario.volume_factor !== 1 ? volumeLabel(scenario.volume_factor) : null,
+    scenario.economy_for_non_urgent ? "Non-urgent by Economy" : null,
+  ].filter((chip): chip is string => chip !== null);
 
   const prospect = invoice.customer_name ?? "This prospect";
   const courier = invoice.carrier_name ?? "the current courier";
@@ -90,7 +136,10 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
       <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-5 px-4 pt-8 sm:gap-6 sm:px-6 sm:pt-12">
         <section
           aria-labelledby="savings-title"
-          className="flex flex-wrap items-end justify-between gap-8 rounded-[28px] bg-surface p-6 shadow-raised sm:p-10"
+          aria-busy={updating}
+          className={`flex flex-wrap items-end justify-between gap-8 rounded-[28px] bg-surface p-6 shadow-raised transition-opacity duration-200 sm:p-10 ${
+            updating ? "opacity-60" : ""
+          }`}
         >
           <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2.5">
@@ -102,6 +151,11 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
                   Converted from {conversion.currency}
                 </span>
               ) : null}
+              {scenarioChips.map((chip) => (
+                <span key={chip} className="inline-flex items-center rounded-full bg-attention-tint px-2.5 py-0.5 text-xs font-semibold text-attention-ink">
+                  {chip}
+                </span>
+              ))}
             </div>
             <h1 id="savings-title" className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1 font-bold">
               {sameCost ? (
@@ -122,7 +176,7 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
                 <strong className={`font-semibold ${saves ? "text-accent" : "text-bad"}`}>
                   {formatPercent(Math.abs(summary.saving_pct))} {saves ? "less" : "more"}
                 </strong>{" "}
-                than {courier} for the same services
+                than {courier} {scenario.economy_for_non_urgent ? "for the same parcels" : "for the same services"}
               </p>
             )}
             {conversion ? (
@@ -145,6 +199,14 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
             />
           </dl>
         </section>
+
+        <WhatIfPanel scenario={scenario} summary={summary} updating={updating} error={scenarioError} onChange={onScenarioChange} />
+
+        {exportError ? (
+          <Banner tone="error" title="Could not create the Excel file">
+            {exportError}
+          </Banner>
+        ) : null}
 
         {!saves ? (
           <Banner tone="attention" title="No saving to propose">
@@ -339,7 +401,17 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
         onBack={onBack}
         status={saves ? `Saving ${formatMoney(summary.monthly_saving)} a month` : "No saving to propose"}
       >
-        <Button onClick={onContinue} disabled={!saves} className="flex-1 md:flex-none">
+        <Button variant="tinted" onClick={() => void downloadExcel()} disabled={exporting || updating}>
+          <Icon name="download" className="size-4" />
+          {exporting ? (
+            "Preparing…"
+          ) : (
+            <span>
+              <span className="sr-only sm:not-sr-only">Download </span>Excel
+            </span>
+          )}
+        </Button>
+        <Button onClick={onContinue} disabled={!saves || updating} className="flex-1 md:flex-none">
           Create proposal
         </Button>
       </ActionBar>

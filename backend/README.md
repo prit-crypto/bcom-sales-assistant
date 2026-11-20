@@ -29,17 +29,43 @@ installs it.
 | Method & path | In | Out |
 |---|---|---|
 | `GET /health` | – | `{"status": "ok"}` |
-| `GET /config` | – | active provider (no secrets), upload limit |
-| `POST /invoices/extract` | multipart `file` (PDF/JPG/PNG/WEBP, ≤ `MAX_UPLOAD_MB`) | clean, editable invoice data |
-| `POST /comparisons` | `{invoice}` (after the partner's review) | per-shipment rows + summary |
-| `POST /proposals` | `{invoice, partner}` | `application/pdf` |
-| `POST /messages` | `{invoice, partner}` | WhatsApp text |
+| `GET /config` | – | active provider (no secrets), upload limit, `privacy_notice`, `samples_only` |
+| `POST /invoices/extract` | multipart `file` (PDF/JPG/PNG/WEBP, or a CSV/XLSX statement, ≤ `MAX_UPLOAD_MB`) | clean, editable invoice data |
+| `POST /invoices/check` | `{invoice}` | sanity checks (totals, duplicate waybills, weight and charge outliers) |
+| `POST /comparisons` | `{invoice, scenario?}` (after the partner's review) | per-shipment rows + summary (incl. checks) |
+| `POST /exports/comparison` | `{invoice, scenario?}` | `.xlsx` (Summary, Shipments, By region, By route) |
+| `POST /proposals` | `{invoice, partner, scenario?}` | `application/pdf` (English or Arabic) |
+| `POST /messages` | `{invoice, partner, scenario?}` | WhatsApp text (English or Arabic) |
+
+`scenario` is the what-if from the Savings screen: `volume_factor` (0.8, 1, 1.2, 1.5 or 2; scales the monthly figures
+only) and `economy_for_non_urgent` (international Express parcels priced as BCOM Economy; the summary then also gives
+the like-for-like saving and the delivery-time trade-offs). `partner` may carry `language` (`en`/`ar`), an optional
+`booking_url` (https only) and `partner_logo` (PNG/JPEG data URL, at most 300 KB, checked by its bytes).
 
 Every error has the same body: `{"error": {"code": "...", "message": "..."}}`, with a message safe to show to the
 partner. `/proposals` and `/messages` recalculate the comparison themselves and never trust numbers from the browser;
 they return `422 no_saving` when BCOM is not cheaper, and `422 nothing_to_propose` when no shipment could be compared.
 
 ## Safeguards
+
+- **Sanity checks** (no AI, instant): the line charges are compared with the printed subtotal (warns above
+  max(AED 1, 0.5%)), repeated waybills are flagged, and weights or charges per kg far from those of similar shipments
+  (same service and route) are pointed out. None fire on the six clean samples.
+- **Uncertain values**: the AI readers list fields they could not read clearly; the review screen marks them.
+- **Back-up reader**: `AI_FALLBACK_PROVIDER=openai|gemini` reads with the other provider when the main one is busy,
+  rate-limited, failing or too slow, and adds a note asking the partner to double-check.
+- **Privacy**: with Gemini on the free tier (`GEMINI_PAID_KEY=false`, the default) `/config` returns a notice telling
+  partners to use sample invoices only. `ALLOW_ONLY_SAMPLE_FILES=true` makes `/invoices/extract` accept only the
+  bundled samples (hashes in `app/assets/sample_hashes.json`, rewritten by `scripts/write_sample_hashes.py`).
+- **Security headers** on every API response: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: no-referrer`. `make audit` checks the installed packages for known vulnerabilities (needs the
+  network, so it is not part of `make check`).
+- **Spreadsheets** (CSV/XLSX) are read without AI: common header names are recognised (Date / Ship date, AWB /
+  Waybill, Origin / From, Destination / To, Service, Pieces, Weight, Amount / Charge…), dates are read day first, and
+  total rows are skipped. Missing columns give a `422` naming what was found and what is needed.
+- **Arabic proposals** use the Noto Naskh/Sans Arabic fonts (`fonts-noto-core` in the Docker image) and right-to-left
+  layout; numbers stay Western with "AED". The Arabic wording was written without a native speaker: have one review the
+  PDF and message before using them with customers.
 
 - **Other currencies** are converted to AED before comparing when a rate is set in `FX_RATES_TO_AED` (default
   `{"USD": 3.6725}`, the dirham's fixed peg). The summary's `converted_from` and an assumption line say so; a

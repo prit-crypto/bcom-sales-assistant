@@ -21,6 +21,7 @@ The backend must allow this origin in its `CORS_ORIGINS` (default `http://localh
 | `npm run e2e` | Browser tests of the whole journey (starts its own backend and frontend on ports 18765 / 13765) |
 | `npm run generate:api` | Regenerate API types from `openapi/openapi.json` (after `make openapi` in the backend) |
 | `npm run check:api` | Fails if the generated API types are out of date |
+| `npm run audit` | Known vulnerabilities in the packages the app ships (`npm audit --omit=dev`; needs the network) |
 | `npm run samples` | Regenerate the sample invoices in `public/samples` (needs local Chrome; set `CHROME_PATH` if needed) |
 
 ## Design
@@ -53,6 +54,21 @@ Approved on 19 Nov 2026 (mock-ups: https://claude.ai/artifact/XKyJeNfN3sxunUJWeE
   button or ⌘Z / Ctrl+Z (last 20 edits).
 - **Original invoice beside the table**: "Show invoice" splits the screen at 1280 px and wider; smaller screens open
   it in a sheet.
+- **Second look**: a moment after each edit the shipments are re-checked (totals vs the printed subtotal, repeated
+  waybills, unusual weights or charges). One amber banner lists what was found; flagged rows get a "Check" tag, and
+  values the AI reader was unsure of have a dotted amber underline until the partner taps them.
+- **What if…** on Savings: monthly volume (−20% to ×2) and "send non-urgent parcels by Economy", with the
+  like-for-like figure and the delivery-time trade-offs. The choice carries into the PDF, the message and the Excel
+  download, and survives a refresh.
+- **Proposal options**: customer language (English or Arabic, for the PDF and message only; the screens stay in
+  English), the partner's logo (PNG/JPG up to 300 KB) and an optional booking link (used once it is a full https link).
+- **Spreadsheets**: the upload accepts CSV and Excel statements (read without AI); `public/templates` has a CSV template.
+- **First visit**: a short "How this works" strip, remembered in `localStorage`; "Sample mode" in the top bar when no
+  AI reader is on, and the free-tier or samples-only notice when the backend reports one.
+- **Security headers** (`next.config.ts`): a Content Security Policy (only this site and the API origin; blob/data
+  previews allowed; no framing), `nosniff`, `no-referrer` and a Permissions-Policy.
+- **Accessibility checks**: `e2e/accessibility.spec.ts` runs axe on every step in light and dark, desktop and phone,
+  and fails on serious or critical problems.
 - **Types from the backend**: `src/types/*` re-export types generated from the backend's OpenAPI description, so a
   renamed field fails `npm run typecheck` instead of breaking a screen.
 

@@ -8,6 +8,8 @@ export type Shipment = ShipmentOutput;
 export type InvoiceData = InvoiceDataOutput;
 export type ServiceLevel = NonNullable<Shipment["service"]>;
 export type RequiredShipmentField = ShipmentComparison["missing_fields"][number];
+/** Shipment fields the partner can edit (and the reader can flag as uncertain). */
+export type EditableField = Shipment["uncertain_fields"][number];
 
 /** Fields a shipment needs before it can be priced (highlighted on the review step). */
 export const REQUIRED_SHIPMENT_FIELDS = [

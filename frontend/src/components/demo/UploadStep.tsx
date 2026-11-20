@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useId, useState } from "react";
 import { Banner } from "@/components/ui/Banner";
+import { HowItWorks } from "@/components/ui/HowItWorks";
 import { Icon } from "@/components/ui/Icon";
 import { errorMessage, postForm } from "@/lib/client/api";
 import type { ConfigResponse, ExtractResponse } from "@/types/api";
@@ -39,7 +40,23 @@ const FORMAT_SAMPLES: { file: string; label: string }[] = [
   { file: "sample-6-oryx-usd.pdf", label: "Oryx Express · USD" },
 ];
 
-const ACCEPT = "application/pdf,image/jpeg,image/png,image/webp";
+const ACCEPT = [
+  ".pdf",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".csv",
+  ".xlsx",
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "text/csv",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+].join(",");
+
+const TEMPLATE_URL = "/templates/bcom-shipments-template.csv";
 
 interface UploadStepProps {
   config: ConfigResponse | null;
@@ -106,9 +123,21 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
         </p>
       </div>
 
+      <HowItWorks />
+
       {config?.problem ? (
         <Banner tone="error" title="Invoice reading isn't available right now">
           {config.problem}
+        </Banner>
+      ) : null}
+
+      {config?.samples_only ? (
+        <Banner tone="info" title="This demo server reads only the sample invoices">
+          Use the samples below. Real customer invoices are refused here, to keep customer data off the free AI tier.
+        </Banner>
+      ) : config?.privacy_notice ? (
+        <Banner tone="attention" title="Free AI tier">
+          {config.privacy_notice}
         </Banner>
       ) : null}
 
@@ -152,7 +181,7 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
           </span>
         ) : (
           <>
-            <span className="text-[15px] text-secondary">PDF or photo · up to {config?.max_upload_mb ?? 10} MB</span>
+            <span className="text-[15px] text-secondary">PDF, photo, CSV or Excel · up to {config?.max_upload_mb ?? 10} MB</span>
             <span className="inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-[15px] font-semibold text-on-accent">
               Choose a file
             </span>
@@ -171,6 +200,18 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
           }}
         />
       </label>
+
+      <p className="-mt-6 text-center text-[13px] text-secondary sm:-mt-8">
+        Have shipments in a spreadsheet?{" "}
+        <a
+          href={TEMPLATE_URL}
+          download
+          className="rounded font-semibold text-accent underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          Download the CSV template
+        </a>{" "}
+        · spreadsheets are read without AI.
+      </p>
 
       {error ? (
         <Banner tone="error" title="Could not read the invoice">
@@ -200,12 +241,14 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
                 type="button"
                 disabled={busy || unavailable}
                 onClick={() => void loadSample(sample.file)}
-                aria-label={`Use sample: ${sample.label}${unavailable ? " (needs AI reading)" : ""}`}
                 className="pressable flex flex-1 items-center gap-4 rounded-[20px] bg-surface p-4 text-left shadow-card hover:shadow-raised focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:hover:shadow-card"
               >
                 <Thumbnail kind={sample.thumb} />
                 <span className="flex min-w-0 flex-col gap-1">
-                  <span className={`text-base font-semibold ${unavailable ? "text-secondary" : ""}`}>{sample.label}</span>
+                  <span className={`text-base font-semibold ${unavailable ? "text-secondary" : ""}`}>
+                    <span className="sr-only">Use sample: </span>
+                    {sample.label}
+                  </span>
                   {unavailable ? (
                     <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-fill-soft px-2.5 py-0.5 text-xs font-semibold text-secondary">
                       <Icon name="info" className="size-3" />
@@ -237,7 +280,7 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
         {!aiActive && provider ? (
           <p className="text-[13px] text-secondary">
             Photos and other couriers&apos; layouts need AI reading, which is switched off on this server. The two SwiftLine
-            PDFs work without it.
+            PDFs and CSV or Excel statements work without it.
           </p>
         ) : null}
       </section>

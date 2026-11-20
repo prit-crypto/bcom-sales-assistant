@@ -53,6 +53,10 @@ Details: [backend/README.md](backend/README.md) · [frontend/README.md](frontend
    shipments not included, commercial conditions, assumptions.
 5. **WhatsApp** – write the message, edit a word, click *Open in WhatsApp*. Nothing is sent automatically.
 
+Extras worth showing: on Savings, switch on *Send non-urgent parcels by Economy* (sample 1 goes from about AED 1,854
+to AED 3,916 a month) and try *+20%* volume; *Download Excel*; on the proposal, pick *العربية* to get the Arabic PDF
+and message, add a logo and a booking link; on the shipments step, change a charge to see the totals check.
+
 Sample 1 shows a clean, 2-page invoice with 46 shipments. With Gemini or OpenAI active, the **Other courier formats**
 row on the upload screen shows the same flow on four different invoice designs (codes, grouped sections, cards, USD).
 
@@ -63,6 +67,8 @@ row on the upload screen shows the same flow on four different invoice designs (
 - Monthly figures are scaled only from the **billing period printed on the invoice**. If it is missing, the invoice
   counts as one month and the partner is asked to enter the period; shipment dates are not used to guess it.
 - A missing currency is assumed to be AED, with a warning on the review screen and a line in the assumptions.
+- The line charges are checked against the invoice's printed subtotal, and repeated waybills or unusual weights and
+  charges are flagged for a second look before comparing.
 
 ## Known limitations (POC)
 
@@ -70,7 +76,8 @@ row on the upload screen shows the same flow on four different invoice designs (
 - Mock mode reads only the bundled sample format. Real invoices need `gemini` or `openai`.
 - **Do not upload real customer invoices while using the Gemini free tier** – Google may use free-tier data to improve
   its products. Use the fictional samples, or a paid key.
-- No login and no rate limiting on the API: keep it on a private network until both are added, or anyone with the URL
-  can use up the AI quota.
-- No database, Arabic, or volumetric weight from parcel dimensions.
+- No login: keep it on a private network until there is one. The per-minute limit on the AI endpoints only slows
+  misuse; anyone with the URL can still use up the AI quota over time.
+- No database or volumetric weight from parcel dimensions.
+- Arabic covers the proposal PDF and WhatsApp message only, and has not yet been reviewed by a native speaker.
 - WhatsApp is click-to-chat only; the partner sends the message and attaches the PDF manually.

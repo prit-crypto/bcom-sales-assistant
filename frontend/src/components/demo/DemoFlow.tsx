@@ -9,6 +9,8 @@ import { Toast, type ToastData } from "@/components/ui/Toast";
 import { errorMessage, getJson, postJson } from "@/lib/client/api";
 import {
   clearSession,
+  clearSourceFile,
+  isSpreadsheet,
   loadSession,
   loadSourceFile,
   saveSession,
@@ -23,7 +25,9 @@ import type {
   MessageResponse,
   PartnerDetailsInput,
   ProviderInfo,
+  Scenario,
 } from "@/types/api";
+import { LIKE_FOR_LIKE } from "@/types/api";
 import type { InvoiceData } from "@/types/invoice";
 import { ProposalStep, type ProposalFile } from "./ProposalStep";
 import { ReviewStep } from "./ReviewStep";
@@ -38,7 +42,13 @@ const EXAMPLE_PARTNER: Omit<PartnerDetailsInput, "prospect_name"> = {
   partner_phone: "+971 50 000 0000",
   partner_email: "rahul@example.com",
   validity_days: 30,
+  language: "en",
+  booking_url: "",
+  partner_logo: null,
 };
+
+/** Wait this long after the last what-if change before asking for new figures. */
+const SCENARIO_DELAY_MS = 250;
 
 /** How many edits Undo can step back through. */
 const HISTORY_LIMIT = 20;
@@ -84,6 +94,12 @@ export function DemoFlow() {
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [comparing, setComparing] = useState(false);
   const [compareError, setCompareError] = useState<string | null>(null);
+  /** The what-if on Savings; changing it re-prices without leaving the step */
+  const [scenario, setScenario] = useState<Scenario>(LIKE_FOR_LIKE);
+  const [scenarioUpdating, setScenarioUpdating] = useState(false);
+  const [scenarioError, setScenarioError] = useState<string | null>(null);
+  const scenarioTimer = useRef<number | undefined>(undefined);
+  const scenarioRequest = useRef(0);
   const [partner, setPartner] = useState<PartnerDetailsInput>({ ...EXAMPLE_PARTNER, prospect_name: "" });
   const [proposal, setProposal] = useState<ProposalFile | null>(null);
   const [message, setMessage] = useState<MessageResponse | null>(null);
@@ -101,7 +117,9 @@ export function DemoFlow() {
   useEffect(() => {
     getJson<ConfigResponse>("/config")
       .then(setConfig)
-      .catch((error: unknown) => setConfig({ provider: null, problem: errorMessage(error), max_upload_mb: 10 }));
+      .catch((error: unknown) =>
+        setConfig({ provider: null, problem: errorMessage(error), max_upload_mb: 10, privacy_notice: null, samples_only: false }),
+      );
   }, []);
 
   // Free memory held by the PDF and the invoice file when they are replaced or the page closes.
@@ -116,11 +134,11 @@ export function DemoFlow() {
     };
   }, [source]);
 
-  const loadComparison = useCallback(async (invoice: InvoiceData) => {
+  const loadComparison = useCallback(async (invoice: InvoiceData, what: Scenario) => {
     setComparing(true);
     setCompareError(null);
     try {
-      setComparison(await postJson<ComparisonResult>("/comparisons", { invoice }));
+      setComparison(await postJson<ComparisonResult>("/comparisons", { invoice, scenario: what }));
       return true;
     } catch (error) {
       setCompareError(errorMessage(error));
@@ -136,7 +154,10 @@ export function DemoFlow() {
     if (!saved?.extracted) return;
     const restore = async (session: SavedSession & { extracted: Extracted }) => {
       setExtracted(session.extracted);
-      setPartner(session.partner);
+      // Sessions saved before newer partner fields existed get their defaults.
+      setPartner({ ...EXAMPLE_PARTNER, ...session.partner });
+      const savedScenario = session.scenario ?? LIKE_FOR_LIKE;
+      setScenario(savedScenario);
       setMessage(session.message);
       setReached(session.reached);
       setStep(session.step);
@@ -145,7 +166,7 @@ export function DemoFlow() {
       if (file && session.source) setSource({ url: URL.createObjectURL(file), ...session.source });
       if (stepIndex(session.step) > stepIndex("review")) {
         setRestoring(true);
-        const ok = await loadComparison(session.extracted.invoice);
+        const ok = await loadComparison(session.extracted.invoice, savedScenario);
         if (!ok) setStep("review");
         setRestoring(false);
       }
@@ -168,8 +189,11 @@ export function DemoFlow() {
       partner,
       message,
       source: source ? { name: source.name, kind: source.kind } : null,
+      scenario,
     });
-  }, [step, reached, extracted, partner, message, source]);
+  }, [step, reached, extracted, partner, message, source, scenario]);
+
+  useEffect(() => () => window.clearTimeout(scenarioTimer.current), []);
 
   function goTo(next: StepId) {
     setDirection(stepIndex(next) >= stepIndex(step) ? 1 : -1);
@@ -180,16 +204,57 @@ export function DemoFlow() {
 
   /** Any change to the shipments makes the comparison, proposal and message out of date. */
   function clearOutputs() {
+    cancelScenarioUpdate();
     setComparison(null);
     setCompareError(null);
     setProposal(null);
     setMessage(null);
   }
 
+  function cancelScenarioUpdate() {
+    window.clearTimeout(scenarioTimer.current);
+    scenarioRequest.current += 1;
+    setScenarioUpdating(false);
+    setScenarioError(null);
+  }
+
+  /** A what-if change: the old figures stay on screen (dimmed) until the new ones arrive. */
+  function changeScenario(next: Scenario) {
+    if (!extracted) return;
+    setScenario(next);
+    setProposal(null);
+    setMessage(null);
+    setReached("savings");
+    window.clearTimeout(scenarioTimer.current);
+    const id = ++scenarioRequest.current;
+    const invoice = extracted.invoice;
+    setScenarioUpdating(true);
+    setScenarioError(null);
+    scenarioTimer.current = window.setTimeout(() => {
+      postJson<ComparisonResult>("/comparisons", { invoice, scenario: next })
+        .then((result) => {
+          if (id === scenarioRequest.current) setComparison(result);
+        })
+        .catch((error: unknown) => {
+          if (id === scenarioRequest.current) setScenarioError(errorMessage(error));
+        })
+        .finally(() => {
+          if (id === scenarioRequest.current) setScenarioUpdating(false);
+        });
+    }, SCENARIO_DELAY_MS);
+  }
+
   function handleExtracted(result: ExtractResponse, file: File) {
     setExtracted({ invoice: result.invoice, provider: result.provider, fileName: file.name });
-    setSource({ url: URL.createObjectURL(file), name: file.name, kind: sourceKind(file.type) });
-    saveSourceFile(file);
+    if (isSpreadsheet(file)) {
+      // A statement has no pages to show beside the table.
+      setSource(null);
+      clearSourceFile();
+    } else {
+      setSource({ url: URL.createObjectURL(file), name: file.name, kind: sourceKind(file.type) });
+      saveSourceFile(file);
+    }
+    setScenario(LIKE_FOR_LIKE);
     setPartner((current) => ({ ...current, prospect_name: result.invoice.customer_name ?? "" }));
     history.current = [];
     setUndoCount(0);
@@ -218,6 +283,9 @@ export function DemoFlow() {
     history.current = history.current.slice(0, -1);
     setUndoCount(history.current.length);
     setExtracted((current) => (current ? { ...current, invoice: previous } : current));
+    window.clearTimeout(scenarioTimer.current);
+    scenarioRequest.current += 1;
+    setScenarioUpdating(false);
     setComparison(null);
     setProposal(null);
     setMessage(null);
@@ -228,7 +296,7 @@ export function DemoFlow() {
 
   async function compare() {
     if (!extracted) return;
-    if (await loadComparison(extracted.invoice)) goTo("savings");
+    if (await loadComparison(extracted.invoice, scenario)) goTo("savings");
   }
 
   function restart() {
@@ -240,6 +308,7 @@ export function DemoFlow() {
     setToast(null);
     setRestoredNotice(false);
     clearOutputs();
+    setScenario(LIKE_FOR_LIKE);
     setPartner({ ...EXAMPLE_PARTNER, prospect_name: "" });
     setReached("upload");
     goTo("upload");
@@ -295,6 +364,10 @@ export function DemoFlow() {
         <SavingsStep
           invoice={extracted.invoice}
           comparison={comparison}
+          scenario={scenario}
+          updating={scenarioUpdating}
+          scenarioError={scenarioError}
+          onScenarioChange={changeScenario}
           onBack={() => goTo("review")}
           onContinue={() => goTo("proposal")}
         />
@@ -304,6 +377,7 @@ export function DemoFlow() {
       return (
         <ProposalStep
           invoice={extracted.invoice}
+          scenario={scenario}
           partner={partner}
           proposal={proposal}
           onPartnerChange={(next) => {
@@ -323,6 +397,7 @@ export function DemoFlow() {
     return (
       <WhatsAppStep
         invoice={extracted.invoice}
+        scenario={scenario}
         partner={partner}
         proposal={proposal}
         message={message}
@@ -334,7 +409,13 @@ export function DemoFlow() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <AppBar current={current} reached={reached} onSelect={goTo} onRestart={extracted ? restart : null} />
+      <AppBar
+        current={current}
+        reached={reached}
+        onSelect={goTo}
+        onRestart={extracted ? restart : null}
+        sampleMode={config?.provider?.id === "mock"}
+      />
       {restoredNotice && extracted ? (
         <div className="mx-auto w-full max-w-[1200px] px-4 pt-4 sm:px-6">
           <Banner

@@ -9,10 +9,12 @@ import { Icon } from "@/components/ui/Icon";
 import { InvoiceViewer, type InvoiceSource } from "@/components/ui/InvoiceViewer";
 import { Segmented } from "@/components/ui/Segmented";
 import { Sheet } from "@/components/ui/Sheet";
+import { postJson } from "@/lib/client/api";
 import { formatDate, formatMoneyExact } from "@/lib/format";
 import { useMinWidth } from "@/lib/hooks";
 import { getMissingFields } from "@/lib/validation";
-import type { InvoiceData, RequiredShipmentField, ServiceLevel, Shipment } from "@/types/invoice";
+import type { CheckResponse, InvoiceCheck } from "@/types/api";
+import type { EditableField, InvoiceData, RequiredShipmentField, ServiceLevel, Shipment } from "@/types/invoice";
 
 interface ReviewStepProps {
   invoice: InvoiceData;
@@ -32,9 +34,19 @@ interface ReviewStepProps {
   onContinue: () => void;
 }
 
-type Filter = "all" | "attention";
+type Filter = "all" | "attention" | "second-look";
 type CellKind = "text" | "number" | "date" | "country" | "service";
-type EditableField = Exclude<keyof Shipment, "id" | "included">;
+
+/** Wait this long after the last edit before re-running the sanity checks. */
+const CHECK_DELAY_MS = 400;
+
+/** Short reasons for the amber "Check" tag on a row (the banner has the full sentence). */
+const CHECK_TAG: Record<InvoiceCheck["kind"], string> = {
+  total_mismatch: "Totals differ",
+  duplicate_waybill: "Same waybill on another line",
+  weight_outlier: "Unusual weight",
+  charge_outlier: "Unusual charge for its weight",
+};
 
 const FIELD_NAMES: Record<RequiredShipmentField, string> = {
   origin_country: "origin country",
@@ -117,6 +129,35 @@ export function ReviewStep({
   const currencyInvalid = invoice.currency !== null && !/^[A-Z]{3}$/.test(invoice.currency);
   const periodMissing = invoice.period_start === null || invoice.period_end === null;
   const [detailsOpen, setDetailsOpen] = useState(periodMissing || currencyInvalid);
+  const [checks, setChecks] = useState<InvoiceCheck[]>([]);
+
+  // Sanity checks (totals, duplicates, outliers) a moment after the shipments stop changing. They only
+  // help: if the request fails, the last result stays and nothing else is affected.
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      postJson<CheckResponse>("/invoices/check", { invoice }, controller.signal)
+        .then((result) => setChecks(result.checks))
+        .catch(() => undefined);
+    }, CHECK_DELAY_MS);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [invoice]);
+
+  /** Shipment id → short reasons from the checks */
+  const checkReasons = useMemo(() => {
+    const map = new Map<string, string[]>();
+    checks.forEach((check) =>
+      check.shipment_ids.forEach((id) => map.set(id, [...(map.get(id) ?? []), CHECK_TAG[check.kind]])),
+    );
+    return map;
+  }, [checks]);
+  const uncertainCount = invoice.shipments.reduce((count, shipment) => count + shipment.uncertain_fields.length, 0);
+  const secondLook = invoice.shipments.filter(
+    (shipment) => checkReasons.has(shipment.id) || shipment.uncertain_fields.length > 0,
+  );
 
   const missingById = useMemo(() => {
     const map = new Map<string, Set<RequiredShipmentField>>();
@@ -129,7 +170,9 @@ export function ReviewStep({
   );
   const includedCount = invoice.shipments.filter((shipment) => shipment.included).length;
   const readyCount = includedCount - needsAttention.length;
-  const visible = filter === "attention" ? needsAttention : invoice.shipments;
+  // "Second look" falls back to all once nothing is left to look at.
+  const shownFilter: Filter = filter === "second-look" && secondLook.length === 0 ? "all" : filter;
+  const visible = shownFilter === "attention" ? needsAttention : shownFilter === "second-look" ? secondLook : invoice.shipments;
 
   // Which details are missing, e.g. "weight (2)" — counted live, so it updates as the partner fixes rows.
   const missingSummary = useMemo(() => {
@@ -173,12 +216,19 @@ export function ReviewStep({
     updateShipment(shipment.id, { included }, included ? `${ref} included again` : `${ref} left out`);
   }
 
+  /** Saves an edited value. Touching a value the reader wasn't sure about counts as checking it. */
   function commit(shipment: Shipment, field: EditableField, kind: CellKind, raw: string) {
     let value = toValue(kind, raw);
     if (field === "pieces" && typeof value === "number") value = Math.max(1, Math.round(value));
-    if (value === shipment[field]) return;
-    const note = `${CELL_LABEL[field]} set to ${describe(field, value, currency)} · ${shipment.reference ?? shipment.id}`;
-    updateShipment(shipment.id, { [field]: value } as Partial<Shipment>, note);
+    const ref = shipment.reference ?? shipment.id;
+    const wasUncertain = shipment.uncertain_fields.includes(field);
+    const uncertain_fields = shipment.uncertain_fields.filter((name) => name !== field);
+    if (value === shipment[field]) {
+      if (wasUncertain) updateShipment(shipment.id, { uncertain_fields }, `${CELL_LABEL[field]} confirmed · ${ref}`);
+      return;
+    }
+    const note = `${CELL_LABEL[field]} set to ${describe(field, value, currency)} · ${ref}`;
+    updateShipment(shipment.id, { [field]: value, uncertain_fields } as Partial<Shipment>, note);
   }
   const status = currencyInvalid
     ? "Enter the currency as a 3-letter code"
@@ -223,11 +273,12 @@ export function ReviewStep({
             ) : null}
             <Segmented
               label="Show"
-              value={filter}
+              value={shownFilter}
               onChange={setFilter}
               options={[
                 { value: "all", label: `All ${invoice.shipments.length}` },
                 { value: "attention", label: `Needs attention · ${needsAttention.length}` },
+                ...(secondLook.length > 0 ? [{ value: "second-look" as const, label: `Second look · ${secondLook.length}` }] : []),
               ]}
             />
           </div>
@@ -250,6 +301,35 @@ export function ReviewStep({
             }
           >
             Missing: {missingSummary}. Fill them in, or untick the rows to leave them out.
+          </Banner>
+        ) : null}
+
+        {checks.length > 0 || uncertainCount > 0 ? (
+          <Banner
+            tone="attention"
+            title="Worth a second look"
+            action={
+              secondLook.length > 0 && shownFilter !== "second-look" ? (
+                <button
+                  type="button"
+                  onClick={() => setFilter("second-look")}
+                  className="rounded-full px-2 py-2 text-sm font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+                >
+                  Show
+                </button>
+              ) : null
+            }
+          >
+            <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-5">
+              {checks.map((check) => (
+                <li key={`${check.kind}-${check.shipment_ids.join(",")}`}>{check.message}</li>
+              ))}
+              {uncertainCount > 0 ? (
+                <li>
+                  The reader wasn&apos;t sure about {plural(uncertainCount, "value")} (dotted underline). Tap each one to check it.
+                </li>
+              ) : null}
+            </ul>
           </Banner>
         ) : null}
 
@@ -305,6 +385,7 @@ export function ReviewStep({
                     value={shipment[field]}
                     display={display}
                     missing={isMissing(field as RequiredShipmentField)}
+                    uncertain={shipment.uncertain_fields.includes(field)}
                     align={align}
                     onCommit={(raw) => commit(shipment, field, kind, raw)}
                   />
@@ -326,7 +407,12 @@ export function ReviewStep({
                         className="size-[18px] accent-accent"
                       />
                     </td>
-                    <td className="tabular px-1 py-1.5 whitespace-nowrap">{cell("reference", "text", "Waybill", shipment.reference ?? "—")}</td>
+                    <td className="tabular px-1 py-1.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        {cell("reference", "text", "Waybill", shipment.reference ?? "—")}
+                        {checkReasons.has(shipment.id) ? <CheckTag reasons={checkReasons.get(shipment.id)!} /> : null}
+                      </div>
+                    </td>
                     {split ? null : <td className="px-1 py-1.5 whitespace-nowrap">{cell("date", "date", "Date", formatDate(shipment.date))}</td>}
                     <td className="px-1 py-1.5">
                       <div className="flex items-center gap-0.5 whitespace-nowrap">
@@ -366,6 +452,7 @@ export function ReviewStep({
               shipment={shipment}
               currency={currency}
               missing={missingById.get(shipment.id) ?? new Set()}
+              reasons={checkReasons.get(shipment.id) ?? []}
               onToggleIncluded={(included) => setIncluded(shipment, included)}
               onCommit={(field, kind, raw) => commit(shipment, field, kind, raw)}
             />
@@ -531,14 +618,17 @@ function EditableCell({
   value,
   display,
   missing,
+  uncertain = false,
   align = "left",
   onCommit,
 }: {
   kind: CellKind;
   label: string;
-  value: string | number | boolean | null;
+  value: string | number | null;
   display: string;
   missing: boolean;
+  /** The reader wasn't sure of this value: dotted amber underline until the partner touches it */
+  uncertain?: boolean;
   align?: "left" | "right";
   onCommit: (raw: string) => void;
 }) {
@@ -593,8 +683,9 @@ function EditableCell({
       <button
         type="button"
         onClick={start}
-        aria-label={`${label}: ${display}. Edit`}
-        className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 hover:bg-fill-soft focus-visible:outline-2 focus-visible:outline-accent ${
+        aria-label={`${label}: ${display}.${uncertain ? " Reader wasn't sure." : ""} Edit`}
+        title={uncertain ? "The reader wasn't sure of this value. Tap to check it." : undefined}
+        className={`inline-flex min-h-8 min-w-8 items-center gap-1.5 rounded-lg px-2 py-1.5 hover:bg-fill-soft focus-visible:outline-2 focus-visible:outline-accent ${
           align === "right" ? "w-full justify-end" : "text-left"
         }`}
       >
@@ -620,7 +711,9 @@ function EditableCell({
             />
           </motion.svg>
         ) : null}
-        {display}
+        <span className={uncertain ? "underline decoration-attention decoration-dotted decoration-2 underline-offset-4" : undefined}>
+          {display}
+        </span>
       </button>
     );
   }
@@ -673,12 +766,15 @@ function ShipmentCard({
   shipment,
   currency,
   missing,
+  reasons,
   onToggleIncluded,
   onCommit,
 }: {
   shipment: Shipment;
   currency: string;
   missing: Set<RequiredShipmentField>;
+  /** Short reasons from the sanity checks, shown as a "Check" tag */
+  reasons: string[];
   onToggleIncluded: (included: boolean) => void;
   onCommit: (field: EditableField, kind: CellKind, raw: string) => void;
 }) {
@@ -705,7 +801,12 @@ function ShipmentCard({
     { field: "weight_kg", kind: "number", label: "Weight (kg)" },
     { field: "charge", kind: "number", label: `Charge (${currency})` },
   ];
-  const shown = open ? fields : fields.filter(({ field }) => shipment.included && missing.has(field as RequiredShipmentField));
+  const shown = open
+    ? fields
+    : fields.filter(
+        ({ field }) =>
+          (shipment.included && missing.has(field as RequiredShipmentField)) || shipment.uncertain_fields.includes(field),
+      );
 
   return (
     <article
@@ -719,7 +820,7 @@ function ShipmentCard({
           aria-label={`Include shipment ${ref}`}
           checked={shipment.included}
           onChange={(event) => onToggleIncluded(event.target.checked)}
-          className="mt-1 size-5 shrink-0 accent-accent"
+          className="mt-0.5 size-6 shrink-0 accent-accent"
         />
         <button
           type="button"
@@ -736,7 +837,10 @@ function ShipmentCard({
               {shipment.charge === null ? "—" : formatMoneyExact(shipment.charge, currency)}
             </span>
           </span>
-          <span className="text-[13px] text-secondary">{meta || "Tap to add details"}</span>
+          <span className="flex flex-wrap items-center gap-1.5 text-[13px] text-secondary">
+            {meta || "Tap to add details"}
+            {reasons.length > 0 ? <CheckTag reasons={reasons} /> : null}
+          </span>
         </button>
       </div>
       {shown.length > 0 ? (
@@ -748,6 +852,7 @@ function ShipmentCard({
               kind={kind}
               value={shipment[field]}
               missing={shipment.included && missing.has(field as RequiredShipmentField)}
+              uncertain={shipment.uncertain_fields.includes(field)}
               onCommit={(raw) => onCommit(field, kind, raw)}
             />
           ))}
@@ -763,12 +868,14 @@ function CardField({
   kind,
   value,
   missing,
+  uncertain = false,
   onCommit,
 }: {
   label: string;
   kind: CellKind;
-  value: string | number | boolean | null;
+  value: string | number | null;
   missing: boolean;
+  uncertain?: boolean;
   onCommit: (raw: string) => void;
 }) {
   const [draft, setDraft] = useState(value === null ? "" : String(value));
@@ -778,13 +885,14 @@ function CardField({
     setDraft(value === null ? "" : String(value));
   }
   const className = `h-11 w-full rounded-xl border bg-surface px-3 text-[15px] outline-none focus:border-accent focus:ring-4 focus:ring-accent/20 ${
-    missing ? "border-attention bg-attention-tint" : "border-separator"
+    missing ? "border-attention bg-attention-tint" : uncertain ? "border-dashed border-attention" : "border-separator"
   }`;
   return (
     <label className="flex flex-col gap-1">
       <span className="flex items-center gap-1.5 text-xs text-secondary">
         {missing ? <span aria-hidden="true" className="size-1.5 rounded-full bg-attention" /> : null}
         {label}
+        {uncertain ? <span className="font-medium text-attention-ink"> · reader wasn&apos;t sure</span> : null}
       </span>
       {kind === "service" ? (
         <select value={draft} onChange={(event) => onCommit(event.target.value)} className={className}>
@@ -808,5 +916,17 @@ function CardField({
         />
       )}
     </label>
+  );
+}
+
+/** Small amber tag on a row the sanity checks flagged; the reasons are read out to screen readers. */
+function CheckTag({ reasons }: { reasons: string[] }) {
+  return (
+    <span
+      title={reasons.join(" · ")}
+      className="inline-flex shrink-0 items-center rounded-full bg-attention-tint px-2 py-0.5 text-[11px] font-semibold text-attention-ink"
+    >
+      Check<span className="sr-only">: {reasons.join("; ")}</span>
+    </span>
   );
 }

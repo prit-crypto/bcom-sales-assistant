@@ -15,10 +15,28 @@ export type BodyExtractInvoiceApiV1InvoicesExtractPost = {
 };
 
 /**
+ * CheckRequest
+ */
+export type CheckRequest = {
+    invoice: InvoiceDataInput;
+};
+
+/**
+ * CheckResponse
+ */
+export type CheckResponse = {
+    /**
+     * Checks
+     */
+    checks: Array<InvoiceCheck>;
+};
+
+/**
  * ComparisonRequest
  */
 export type ComparisonRequest = {
     invoice: InvoiceDataInput;
+    scenario?: ScenarioInput;
 };
 
 /**
@@ -49,6 +67,10 @@ export type ComparisonSummary = {
      */
     by_zone: Array<GroupTotal>;
     /**
+     * Checks
+     */
+    checks: Array<InvoiceCheck>;
+    /**
      * Compared Shipments
      */
     compared_shipments: number;
@@ -73,6 +95,10 @@ export type ComparisonSummary = {
      * Invoice Spend
      */
     invoice_spend: number;
+    /**
+     * Like For Like Monthly Saving
+     */
+    like_for_like_monthly_saving: number;
     /**
      * Monthly Current
      */
@@ -105,6 +131,7 @@ export type ComparisonSummary = {
      * Saving Pct
      */
     saving_pct: number;
+    scenario: ScenarioOutput;
     /**
      * Shipment Coverage Pct
      */
@@ -123,6 +150,10 @@ export type ComparisonSummary = {
      */
     total_shipments: number;
     /**
+     * Transit Tradeoffs
+     */
+    transit_tradeoffs: Array<TransitTradeoff>;
+    /**
      * Yearly Saving
      */
     yearly_saving: number;
@@ -137,10 +168,18 @@ export type ConfigResponse = {
      */
     max_upload_mb: number;
     /**
+     * Privacy Notice
+     */
+    privacy_notice: string | null;
+    /**
      * Problem
      */
     problem: string | null;
     provider: ProviderInfo | null;
+    /**
+     * Samples Only
+     */
+    samples_only: boolean;
 };
 
 /**
@@ -222,6 +261,26 @@ export type HealthResponse = {
 };
 
 /**
+ * InvoiceCheck
+ *
+ * Something on the invoice worth a second look (see app/services/invoice/checks.py).
+ */
+export type InvoiceCheck = {
+    /**
+     * Kind
+     */
+    kind: 'total_mismatch' | 'duplicate_waybill' | 'weight_outlier' | 'charge_outlier';
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Shipment Ids
+     */
+    shipment_ids: Array<string>;
+};
+
+/**
  * InvoiceData
  *
  * Everything read from one invoice.
@@ -255,6 +314,10 @@ export type InvoiceDataInput = {
      * Period Start
      */
     period_start?: string | null;
+    /**
+     * Printed Subtotal
+     */
+    printed_subtotal?: number | null;
     /**
      * Shipments
      */
@@ -300,6 +363,10 @@ export type InvoiceDataOutput = {
      */
     period_start: string | null;
     /**
+     * Printed Subtotal
+     */
+    printed_subtotal: number | null;
+    /**
      * Shipments
      */
     shipments: Array<ShipmentOutput>;
@@ -334,6 +401,14 @@ export type MessageResponse = {
  */
 export type PartnerInput = {
     /**
+     * Booking Url
+     */
+    booking_url?: string;
+    /**
+     * Language
+     */
+    language?: 'en' | 'ar';
+    /**
      * Partner Company
      */
     partner_company: string;
@@ -341,6 +416,10 @@ export type PartnerInput = {
      * Partner Email
      */
     partner_email?: string;
+    /**
+     * Partner Logo
+     */
+    partner_logo?: string | null;
     /**
      * Partner Name
      */
@@ -365,6 +444,7 @@ export type PartnerInput = {
 export type ProposalRequest = {
     invoice: InvoiceDataInput;
     partner: PartnerInput;
+    scenario?: ScenarioInput;
 };
 
 /**
@@ -389,6 +469,38 @@ export type ProviderInfo = {
      * Reads Images
      */
     reads_images: boolean;
+};
+
+/**
+ * Scenario
+ *
+ * A "what if" the partner tries with the prospect. The default is like for like.
+ */
+export type ScenarioInput = {
+    /**
+     * Economy For Non Urgent
+     */
+    economy_for_non_urgent?: boolean;
+    /**
+     * Volume Factor
+     */
+    volume_factor?: number;
+};
+
+/**
+ * Scenario
+ *
+ * A "what if" the partner tries with the prospect. The default is like for like.
+ */
+export type ScenarioOutput = {
+    /**
+     * Economy For Non Urgent
+     */
+    economy_for_non_urgent: boolean;
+    /**
+     * Volume Factor
+     */
+    volume_factor: number;
 };
 
 /**
@@ -441,6 +553,10 @@ export type ShipmentInput = {
      * Service
      */
     service?: 'express' | 'economy' | null;
+    /**
+     * Uncertain Fields
+     */
+    uncertain_fields?: Array<'date' | 'reference' | 'origin_city' | 'origin_country' | 'destination_city' | 'destination_country' | 'weight_kg' | 'pieces' | 'service' | 'charge'>;
     /**
      * Weight Kg
      */
@@ -498,6 +614,10 @@ export type ShipmentOutput = {
      */
     service: 'express' | 'economy' | null;
     /**
+     * Uncertain Fields
+     */
+    uncertain_fields: Array<'date' | 'reference' | 'origin_city' | 'origin_country' | 'destination_city' | 'destination_country' | 'weight_kg' | 'pieces' | 'service' | 'charge'>;
+    /**
      * Weight Kg
      */
     weight_kg: number | null;
@@ -523,6 +643,10 @@ export type ShipmentComparison = {
      * Proposed
      */
     proposed: number | null;
+    /**
+     * Proposed Service
+     */
+    proposed_service: 'express' | 'economy' | null;
     /**
      * Reason
      */
@@ -581,6 +705,30 @@ export type StatusCounts = {
      * Not Eligible
      */
     not_eligible: number;
+};
+
+/**
+ * TransitTradeoff
+ *
+ * What the prospect gives up when a region's Express shipments move to Economy.
+ */
+export type TransitTradeoff = {
+    /**
+     * Economy
+     */
+    economy: string;
+    /**
+     * Express
+     */
+    express: string;
+    /**
+     * Shipments
+     */
+    shipments: number;
+    /**
+     * Zone Label
+     */
+    zone_label: string;
 };
 
 /**
@@ -652,6 +800,29 @@ export type ReadConfigApiV1ConfigGetResponses = {
 
 export type ReadConfigApiV1ConfigGetResponse = ReadConfigApiV1ConfigGetResponses[keyof ReadConfigApiV1ConfigGetResponses];
 
+export type ExportComparisonApiV1ExportsComparisonPostData = {
+    body: ComparisonRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/exports/comparison';
+};
+
+export type ExportComparisonApiV1ExportsComparisonPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExportComparisonApiV1ExportsComparisonPostError = ExportComparisonApiV1ExportsComparisonPostErrors[keyof ExportComparisonApiV1ExportsComparisonPostErrors];
+
+export type ExportComparisonApiV1ExportsComparisonPostResponses = {
+    /**
+     * The comparison as an Excel workbook
+     */
+    200: unknown;
+};
+
 export type HealthApiV1HealthGetData = {
     body?: never;
     path?: never;
@@ -667,6 +838,31 @@ export type HealthApiV1HealthGetResponses = {
 };
 
 export type HealthApiV1HealthGetResponse = HealthApiV1HealthGetResponses[keyof HealthApiV1HealthGetResponses];
+
+export type CheckApiV1InvoicesCheckPostData = {
+    body: CheckRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/invoices/check';
+};
+
+export type CheckApiV1InvoicesCheckPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CheckApiV1InvoicesCheckPostError = CheckApiV1InvoicesCheckPostErrors[keyof CheckApiV1InvoicesCheckPostErrors];
+
+export type CheckApiV1InvoicesCheckPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: CheckResponse;
+};
+
+export type CheckApiV1InvoicesCheckPostResponse = CheckApiV1InvoicesCheckPostResponses[keyof CheckApiV1InvoicesCheckPostResponses];
 
 export type ExtractInvoiceApiV1InvoicesExtractPostData = {
     body?: BodyExtractInvoiceApiV1InvoicesExtractPost;

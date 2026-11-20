@@ -4,7 +4,7 @@
  * blocked (private windows, strict settings) and the app must still work without it.
  */
 import type { StepId } from "@/components/ui/AppBar";
-import type { MessageResponse, PartnerDetailsInput, ProviderInfo } from "@/types/api";
+import type { MessageResponse, PartnerDetailsInput, ProviderInfo, Scenario } from "@/types/api";
 import type { InvoiceData } from "@/types/invoice";
 
 const SESSION_KEY = "bcom-sales-session-v1";
@@ -22,6 +22,8 @@ export interface SavedSession {
   partner: PartnerDetailsInput;
   message: MessageResponse | null;
   source: { name: string; kind: SourceKind } | null;
+  /** The what-if chosen on Savings (absent in sessions saved before it existed) */
+  scenario?: Scenario;
 }
 
 export function loadSession(): SavedSession | null {
@@ -73,18 +75,29 @@ export async function loadSourceFile(): Promise<Blob | null> {
   try {
     const dataUrl = window.sessionStorage.getItem(FILE_KEY);
     if (!dataUrl) return null;
-    return await (await fetch(dataUrl)).blob();
+    // Decoded by hand: the page's security policy does not let fetch() read data: URLs.
+    const match = /^data:([^;,]*);base64,(.*)$/.exec(dataUrl);
+    if (!match) return null;
+    const binary = window.atob(match[2]!);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return new Blob([bytes], { type: match[1] || "application/octet-stream" });
   } catch {
     return null;
   }
 }
 
-function clearSourceFile(): void {
+export function clearSourceFile(): void {
   try {
     window.sessionStorage.removeItem(FILE_KEY);
   } catch {
     // Nothing to clear.
   }
+}
+
+/** CSV and Excel statements: read without AI, and there is nothing to show in the invoice viewer. */
+export function isSpreadsheet(file: File): boolean {
+  return /\.(csv|xlsx)$/i.test(file.name) || file.type === "text/csv" || file.type.includes("spreadsheetml");
 }
 
 export function sourceKind(type: string): SourceKind {
