@@ -12,7 +12,7 @@ from app.schemas.comparison import ComparisonResult, GroupTotal
 from app.schemas.invoice import InvoiceData
 from app.utils.formatting import format_money, format_percent
 
-_HEADER_FILL = PatternFill("solid", fgColor="0B2545")
+_HEADER_FILL = PatternFill("solid", fgColor="141416")
 _HEADER_FONT = Font(bold=True, color="FFFFFF")
 _MONEY = "#,##0.00"
 _STATUS = {
@@ -63,7 +63,7 @@ def build_workbook(invoice: InvoiceData, comparison: ComparisonResult) -> bytes:
     prospect = invoice.customer_name or "Prospect"
     saves = summary.monthly_saving > 0
     overview.append([f"{prospect}: BCOM savings estimate"])
-    overview["A1"].font = Font(bold=True, size=14, color="0B2545")
+    overview["A1"].font = Font(bold=True, size=14, color="1D1D1F")
     overview.append([])
     facts: list[tuple[str, object]] = [
         (
@@ -92,7 +92,7 @@ def build_workbook(invoice: InvoiceData, comparison: ComparisonResult) -> bytes:
             overview.cell(row=overview.max_row, column=2).number_format = _MONEY
     overview.append([])
     overview.append(["How this was calculated"])
-    overview.cell(row=overview.max_row, column=1).font = Font(bold=True, color="0B2545")
+    overview.cell(row=overview.max_row, column=1).font = Font(bold=True, color="1D1D1F")
     for line in summary.assumptions:
         overview.append([line])
     overview.column_dimensions["A"].width = 44

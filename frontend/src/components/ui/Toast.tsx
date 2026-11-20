@@ -34,7 +34,7 @@ export function Toast({ toast, onDismiss }: { toast: ToastData | null; onDismiss
             animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
             transition={reduce ? { duration: 0.15 } : { type: "spring", bounce: 0, duration: 0.3 }}
-            className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full bg-[#0b2545] py-2 pr-2 pl-4 text-sm text-white shadow-float dark:bg-[#e6edf3] dark:text-[#0d1117]"
+            className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full bg-hero py-2 pr-2 pl-4 text-sm text-white shadow-float dark:bg-hero-ink dark:text-hero"
           >
             <span className="min-w-0 truncate">{toast.message}</span>
             {toast.onAction ? (

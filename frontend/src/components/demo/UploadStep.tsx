@@ -379,7 +379,7 @@ function Thumbnail({ kind }: { kind: Thumb }) {
     <span
       aria-hidden="true"
       className={`flex h-[52px] w-10 shrink-0 flex-col gap-1 rounded-md border border-separator px-1.5 py-2 ${
-        kind === "photo" ? "-rotate-3 bg-[#e9e4dc] dark:bg-[#2a2620]" : "bg-canvas"
+        kind === "photo" ? "-rotate-3 bg-[#e5e5ea] dark:bg-[#2c2c2e]" : "bg-canvas"
       }`}
     >
       <span className={`h-[5px] w-3/5 rounded-full ${kind === "photo" ? "bg-tertiary" : "bg-accent"}`} />

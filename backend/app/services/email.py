@@ -72,12 +72,17 @@ def _as_html(text: str, rtl: bool) -> str:
     paragraphs = []
     for block in text.split("\n\n"):
         escaped = html.escape(block).replace("\n", "<br>")
-        linked = _URL.sub(lambda m: f'<a href="{m.group(1)}">{m.group(1)}</a>', escaped)
+        linked = _URL.sub(
+            lambda m: (
+                f'<a href="{m.group(1)}" style="color:#19764d;font-weight:600">{m.group(1)}</a>'
+            ),
+            escaped,
+        )
         paragraphs.append(f"<p>{linked}</p>")
     direction = ' dir="rtl"' if rtl else ""
     return (
         f'<!doctype html><html><body{direction} style="font-family:Arial,Helvetica,sans-serif;'
-        f'font-size:15px;line-height:1.5;color:#0b2545">{"".join(paragraphs)}</body></html>'
+        f'font-size:15px;line-height:1.5;color:#1d1d1f">{"".join(paragraphs)}</body></html>'
     )
 
 

@@ -33,7 +33,8 @@ spirit of Apple's product pages. No blue: the company's other product uses navy.
   bands (`bg-hero`, `#141416`) with their own text colours (`text-hero-ink`, `text-hero-secondary`,
   `text-hero-save`), gold for special moments (`gold`, `#D4AF6A`: follow-ups, "a month", the customer's Accept),
   green for savings and actions (`accent`, `#19764D`), Apple grey canvas `#F5F5F7`; red only for "costs more",
-  amber for "needs attention". Use the semantic classes, never raw hex values.
+  gold for "needs attention" too (one warm colour across the app). Use the semantic classes, never raw hex values.
+  The proposal PDF, the email and the Excel export use the same graphite, gold and green.
 - **Hero bands** (`HeroBand`, `PageHeader` in `src/components/ui/Hero.tsx`): the home, upload, savings, proposal
   and customer pages open on a graphite band with cards floating over its lower edge; the working steps get a
   compact graphite header. The savings region view draws the routes from Dubai (`RouteMap`).
@@ -51,7 +52,8 @@ spirit of Apple's product pages. No blue: the company's other product uses navy.
   `opacity` are animated, nothing runs longer than about 0.5 s, and "reduce motion" turns all of it off.
 - **Logo**: on graphite the bar uses `public/brand/bcom-global-logo-light.png` (white BCOM, gold GLOBAL); a graphite
   version for light surfaces is `bcom-global-logo-graphite.png`. Both were made from the original logo (kept for the
-  PDF) by turning its ink into one colour with transparency.
+  PDF's former logo) by turning its ink into one colour with transparency. The PDF header is graphite with the
+  light logo; the browser tab icon (`src/app/icon.png`, `apple-icon.png`) is the gold globe on graphite.
 - **Layout**: a solid graphite top bar (`AppBar`, with the journey as a breadcrumb) and a floating bottom bar
   (`ActionBar`) on every step, so the next action is always in reach. Lists are grouped iPhone-style rows with
   hairline dividers. Phones get shipment cards and a bottom sheet for the PDF preview.

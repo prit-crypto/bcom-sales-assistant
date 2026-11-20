@@ -342,7 +342,7 @@ def test_scenario_rejects_other_volumes(client: TestClient) -> None:
 
 def logo_data_url() -> str:
     data = (
-        Path(__file__).resolve().parents[1] / "app" / "assets" / "bcom-global-logo.png"
+        Path(__file__).resolve().parents[1] / "app" / "assets" / "bcom-global-logo-light.png"
     ).read_bytes()
     return "data:image/png;base64," + base64.b64encode(data).decode()
 

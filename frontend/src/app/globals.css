@@ -23,9 +23,10 @@
   --bad: #b42318;
   --bad-bar: #c2410c;
   --bad-tint: #fde8e6;
-  --attention: #e89b1d;
-  --attention-ink: #8a5300;
-  --attention-tint: #fff4e0;
+  /* Warnings use the same gold as the highlights: one warm colour across the app */
+  --attention: #d4af6a;
+  --attention-ink: #8a6416;
+  --attention-tint: #f7eedc;
   --whatsapp: #108646; /* white text on it passes 4.5:1 */
   --chat: #efeae2;
   --bubble: #d9fdd3;
@@ -68,9 +69,9 @@
     --bad: #ff7b72;
     --bad-bar: #f0883e;
     --bad-tint: rgba(255, 123, 114, 0.14);
-    --attention: #e89b1d;
-    --attention-ink: #f2b35b;
-    --attention-tint: rgba(232, 155, 29, 0.14);
+    --attention: #d4af6a;
+    --attention-ink: #e3c27f;
+    --attention-tint: rgba(212, 175, 106, 0.16);
     --chat: #0b141a;
     --bubble: #005c4b;
     --bubble-ink: #e9edef;

@@ -9,23 +9,24 @@
   @page {
     size: A4;
     margin: 34pt 38pt 50pt;
-    @bottom-left { content: element(footer-start); vertical-align: top; width: 70%; border-top: 1pt solid #d8dee6; }
-    @bottom-right { content: element(footer-end); vertical-align: top; width: 30%; border-top: 1pt solid #d8dee6; }
+    @bottom-left { content: element(footer-start); vertical-align: top; width: 70%; border-top: 1pt solid #e5e5ea; }
+    @bottom-right { content: element(footer-end); vertical-align: top; width: 30%; border-top: 1pt solid #e5e5ea; }
   }
-  .footer-start, .footer-end { font-size: 7pt; color: #5d6b7c; padding-top: 5pt; }
+  .footer-start, .footer-end { font-size: 7pt; color: #636366; padding-top: 5pt; }
   .footer-start { position: running(footer-start); text-align: {{ 'right' if dir == 'rtl' else 'left' }}; }
   .footer-end { position: running(footer-end); text-align: {{ 'left' if dir == 'rtl' else 'right' }}; }
   .page-number::after { content: "{{ L.page }} " counter(page) " {{ L.of }} " counter(pages); }
-  :root { --ink: #02386b; --muted: #5d6b7c; --line: #d8dee6; --band: #f2f5f8; --accent: #0b7a75; --good: #0b7a75; --bad: #b23a2e; }
+  /* The app's colours: graphite, gold for highlights, green for savings (same values as the frontend). */
+  :root { --ink: #1d1d1f; --muted: #636366; --line: #e5e5ea; --band: #f5f5f7; --hero: #141416; --hero-muted: #a1a1a6; --gold: #d4af6a; --gold-ink: #8a6416; --accent: #19764d; --good: #19764d; --bad: #b42318; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 9pt/1.4 {{ font }}; color: var(--ink); }
-  .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2pt solid var(--ink); padding-bottom: 8pt; margin-bottom: 14pt; }
+  .header { display: flex; justify-content: space-between; align-items: flex-end; background: var(--hero); color: #f5f5f7; border-bottom: 2.5pt solid var(--gold); border-radius: 4pt 4pt 0 0; padding: 12pt 14pt 10pt; margin-bottom: 14pt; }
   .brand { display: flex; align-items: center; gap: 14pt; }
   .logo { width: 104pt; height: 48pt; object-fit: contain; display: block; }
-  .partner-logo { max-width: 90pt; max-height: 40pt; object-fit: contain; display: block; }
-  .partner-with { font-size: 6.5pt; color: var(--muted); margin-bottom: 2pt; }
-  .brand-sub { color: var(--accent); margin-top: 4pt; }
-  .header-end { text-align: end; font-size: 8pt; color: var(--muted); }
+  .partner-logo { max-width: 90pt; max-height: 40pt; object-fit: contain; display: block; background: #ffffff; padding: 3pt; border-radius: 3pt; }
+  .partner-with { font-size: 6.5pt; color: var(--hero-muted); margin-bottom: 2pt; }
+  .brand-sub { color: var(--gold); margin-top: 4pt; }
+  .header-end { text-align: end; font-size: 8pt; color: var(--hero-muted); }
   .parties { display: flex; gap: 12pt; margin-bottom: 14pt; }
   .party { flex: 1; background: var(--band); padding: 8pt; border-radius: 3pt; }
   .label { font-size: 7pt; color: var(--muted); {{ 'text-transform: uppercase; letter-spacing: .8pt;' if lang == 'en' else '' }} margin-bottom: 3pt; }
@@ -79,7 +80,7 @@
 <div class="header">
   <div class="brand">
     <div>
-      <img class="logo" src="bcom-global-logo.png" alt="BCOM Global">
+      <img class="logo" src="bcom-global-logo-light.png" alt="BCOM Global">
       <div class="brand-sub">{{ L.subtitle }}</div>
     </div>
     {% if partner.partner_logo %}
