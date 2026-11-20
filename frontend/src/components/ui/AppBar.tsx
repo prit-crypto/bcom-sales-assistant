@@ -57,29 +57,29 @@ export function AppBar({
   const reachedIndex = reached ? stepIndex(reached) : -1;
 
   return (
-    <header className="material sticky top-0 z-30 border-b border-separator bg-bar">
+    <header className="sticky top-0 z-30 border-b border-hero-line bg-bar-dark text-hero-ink">
       <div className="mx-auto flex min-h-[60px] max-w-[1200px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2.5 sm:px-6">
         <div className="flex items-center gap-3">
           <Link
             href="/"
             aria-label="BCOM Global Sales Assistant: all proposals"
-            className="flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+            className="flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
           >
             <Image
-              src="/brand/bcom-global-logo.png"
+              src="/brand/bcom-global-logo-light.png"
               alt="BCOM Global"
               width={464}
               height={213}
               priority
-              className="h-7 w-auto dark:rounded-md dark:bg-white dark:px-1.5 dark:py-0.5"
+              className="h-7 w-auto"
             />
-            <span aria-hidden="true" className="hidden h-5 w-px bg-separator sm:block" />
+            <span aria-hidden="true" className="hidden h-5 w-px bg-hero-line sm:block" />
             <span className="type-headline hidden text-[15px] font-semibold sm:block">Sales Assistant</span>
           </Link>
           {sampleMode ? (
             <span
               title="No AI reader is switched on: the sample PDFs and CSV or Excel statements work."
-              className="rounded-full bg-gold-tint px-2.5 py-0.5 text-xs font-semibold text-gold-ink"
+              className="rounded-full bg-hero-raised px-2.5 py-0.5 text-xs font-semibold text-gold"
             >
               Sample mode
             </span>
@@ -92,9 +92,9 @@ export function AppBar({
             className="order-3 flex w-full items-center justify-between gap-3 sm:order-none sm:w-auto sm:justify-start"
           >
             {/* Phones: where you are, in words. */}
-            <p className="text-[13px] text-secondary md:hidden">
+            <p className="text-[13px] text-hero-secondary md:hidden">
               Step {currentIndex + 1} of {STEPS.length} ·{" "}
-              <span className="font-semibold text-ink">{STEPS[currentIndex]!.label}</span>
+              <span className="font-semibold text-hero-ink">{STEPS[currentIndex]!.label}</span>
             </p>
             {/* Wider screens: the whole journey as a breadcrumb; steps already reached can be revisited. */}
             <ol className="hidden items-center gap-0.5 text-[13px] md:flex">
@@ -104,7 +104,16 @@ export function AppBar({
                 return (
                   <li key={step.id} className="flex items-center gap-0.5">
                     {index > 0 ? (
-                      <svg aria-hidden="true" viewBox="0 0 24 24" className="size-3 text-tertiary" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="size-3 text-hero-secondary"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <path d="M9 18l6-6-6-6" />
                       </svg>
                     ) : null}
@@ -113,14 +122,14 @@ export function AppBar({
                         type="button"
                         onClick={() => onSelect?.(step.id)}
                         aria-label={`Go to ${step.label}`}
-                        className="pressable min-h-8 rounded-full px-2.5 font-medium text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
+                        className="pressable min-h-8 rounded-full px-2.5 font-medium text-gold hover:bg-hero-raised focus-visible:outline-2 focus-visible:outline-gold"
                       >
                         {step.label}
                       </button>
                     ) : (
                       <span
                         aria-current={isCurrent ? "step" : undefined}
-                        className={`px-2.5 ${isCurrent ? "font-semibold text-ink" : "text-secondary"}`}
+                        className={`px-2.5 ${isCurrent ? "font-semibold text-hero-ink" : "text-hero-secondary"}`}
                       >
                         {step.label}
                         {isCurrent ? null : <span className="sr-only">, not reached yet</span>}
@@ -137,7 +146,7 @@ export function AppBar({
           {saveState ? (
             <span
               role="status"
-              className={`hidden px-1 text-[13px] sm:inline ${saveState === "error" ? "font-semibold text-bad" : "text-secondary"}`}
+              className={`hidden px-1 text-[13px] sm:inline ${saveState === "error" ? "font-semibold text-[#ff9b94]" : "text-hero-secondary"}`}
             >
               {SAVE_TEXT[saveState]}
             </span>
@@ -146,7 +155,7 @@ export function AppBar({
           {current ? (
             <Link
               href="/"
-              className="pressable rounded-full px-2 py-2 text-sm font-medium text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
+              className="pressable rounded-full px-3 py-2 text-sm font-medium text-hero-ink hover:bg-hero-raised focus-visible:outline-2 focus-visible:outline-gold"
             >
               Proposals
             </Link>
@@ -155,7 +164,7 @@ export function AppBar({
             <button
               type="button"
               onClick={onRestart}
-              className="pressable rounded-full px-2 py-2 text-sm font-medium text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
+              className="pressable rounded-full px-3 py-2 text-sm font-medium text-hero-ink hover:bg-hero-raised focus-visible:outline-2 focus-visible:outline-gold"
             >
               Start over
             </button>

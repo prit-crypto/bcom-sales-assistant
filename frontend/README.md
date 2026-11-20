@@ -49,7 +49,10 @@ spirit of Apple's product pages. No blue: the company's other product uses navy.
   figures count up once, a tick draws in when a missing value is filled, "Copy" turns into "Copied ✓", the PDF
   preview cross-fades when it updates, a half-typed currency gives one small shake. Only `transform` and
   `opacity` are animated, nothing runs longer than about 0.5 s, and "reduce motion" turns all of it off.
-- **Layout**: a translucent top bar (`AppBar`, with the journey as a breadcrumb) and a floating bottom bar
+- **Logo**: on graphite the bar uses `public/brand/bcom-global-logo-light.png` (white BCOM, gold GLOBAL); a graphite
+  version for light surfaces is `bcom-global-logo-graphite.png`. Both were made from the original logo (kept for the
+  PDF) by turning its ink into one colour with transparency.
+- **Layout**: a solid graphite top bar (`AppBar`, with the journey as a breadcrumb) and a floating bottom bar
   (`ActionBar`) on every step, so the next action is always in reach. Lists are grouped iPhone-style rows with
   hairline dividers. Phones get shipment cards and a bottom sheet for the PDF preview.
 

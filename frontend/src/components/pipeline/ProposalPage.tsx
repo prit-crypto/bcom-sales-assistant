@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AppBar } from "@/components/ui/AppBar";
 import { Banner } from "@/components/ui/Banner";
-import { Button, buttonClasses } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
 import { HeroBand } from "@/components/ui/Hero";
 import { Icon } from "@/components/ui/Icon";
 import { errorMessage, getFile, getJson, patchJson, saveBlob, sendNoContent } from "@/lib/client/api";
@@ -21,7 +21,9 @@ type Event = ProposalDetail["events"][number];
 const NOTES_DELAY_MS = 800;
 
 function volumeText(factor: number): string {
-  return factor === 2 ? "twice the volume" : `${factor > 1 ? "+" : "−"}${Math.round(Math.abs(factor - 1) * 100)}% volume`;
+  return factor === 2
+    ? "twice the volume"
+    : `${factor > 1 ? "+" : "−"}${Math.round(Math.abs(factor - 1) * 100)}% volume`;
 }
 
 /** One history line in plain words. */
@@ -34,7 +36,9 @@ function describeEvent(event: Event): string {
       return "Shipments edited";
     case "scenario_changed": {
       const parts = [
-        typeof detail.volume_factor === "number" && detail.volume_factor !== 1 ? volumeText(detail.volume_factor) : null,
+        typeof detail.volume_factor === "number" && detail.volume_factor !== 1
+          ? volumeText(detail.volume_factor)
+          : null,
         detail.economy_for_non_urgent ? "non-urgent parcels by Economy" : null,
       ].filter(Boolean);
       return parts.length ? `What-if: ${parts.join(", ")}` : "What-if reset to like for like";
@@ -223,7 +227,10 @@ export function ProposalPage({ id }: { id: string }) {
     <div className="flex min-h-screen flex-col">
       <AppBar
         actions={
-          <Link href={`/proposals/${id}/edit`} className={buttonClasses("tinted")}>
+          <Link
+            href={`/proposals/${id}/edit`}
+            className="pressable inline-flex min-h-11 items-center gap-2 rounded-full bg-hero-raised px-5 text-[15px] font-semibold text-gold hover:bg-hero-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+          >
             <Icon name="pencil" className="size-4" />
             <span>
               <span className="sr-only sm:not-sr-only">Continue </span>editing
@@ -269,21 +276,21 @@ export function ProposalPage({ id }: { id: string }) {
               </span>
               <span className="type-title text-2xl font-semibold text-gold">a month</span>
               <span className="w-full text-[15px] text-hero-secondary sm:text-[17px]">
-                {formatMoney(summary.yearly_saving, summary.currency)} a year · {formatPercent(summary.saving_pct)} less ·{" "}
-                {summary.compared_shipments} of {summary.total_shipments} shipments compared
+                {formatMoney(summary.yearly_saving, summary.currency)} a year ·{" "}
+                {formatPercent(summary.saving_pct)} less · {summary.compared_shipments} of{" "}
+                {summary.total_shipments} shipments compared
                 {scenarioParts.length ? ` · with ${scenarioParts.join(" and ")}` : ""}
               </span>
             </div>
           ) : (
             <p className="rounded-2xl bg-hero-raised px-4 py-3 text-[15px] text-hero-ink">
-              <strong className="font-semibold">No saving to propose.</strong> BCOM is not cheaper for these shipments.
-              Continue editing to check them.
+              <strong className="font-semibold">No saving to propose.</strong> BCOM is not cheaper for these
+              shipments. Continue editing to check them.
             </p>
           )}
         </section>
       </HeroBand>
       <main className="mx-auto -mt-14 flex w-full max-w-[1000px] flex-1 flex-col gap-5 px-4 pb-16 sm:px-6">
-
         {actionError ? (
           <Banner tone="error" title="That didn't work">
             {actionError}
@@ -292,7 +299,10 @@ export function ProposalPage({ id }: { id: string }) {
 
         <div className="grid items-start gap-5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-5">
-            <section aria-labelledby="stands-title" className="flex flex-col gap-4 rounded-[22px] bg-surface p-5 shadow-raised sm:p-6">
+            <section
+              aria-labelledby="stands-title"
+              className="flex flex-col gap-4 rounded-[22px] bg-surface p-5 shadow-raised sm:p-6"
+            >
               <h2 id="stands-title" className="type-headline text-lg font-semibold">
                 Where it stands
               </h2>
@@ -310,7 +320,11 @@ export function ProposalPage({ id }: { id: string }) {
                     />
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="primary" onClick={() => void setStatus("lost", { lost_reason: lostReason })} disabled={busy !== null}>
+                    <Button
+                      variant="primary"
+                      onClick={() => void setStatus("lost", { lost_reason: lostReason })}
+                      disabled={busy !== null}
+                    >
                       Mark as lost
                     </Button>
                     <Button variant="plain" onClick={() => setAskingLost(false)}>
@@ -321,7 +335,10 @@ export function ProposalPage({ id }: { id: string }) {
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {proposal.status === "draft" ? (
-                    <Button onClick={() => void setStatus("sent")} disabled={busy !== null || !proposal.has_saving}>
+                    <Button
+                      onClick={() => void setStatus("sent")}
+                      disabled={busy !== null || !proposal.has_saving}
+                    >
                       <Icon name="check" className="size-4" />
                       Mark as sent
                     </Button>
@@ -334,7 +351,11 @@ export function ProposalPage({ id }: { id: string }) {
                       <Button variant="tinted" onClick={() => setAskingLost(true)} disabled={busy !== null}>
                         Lost
                       </Button>
-                      <Button variant="plain" onClick={() => void setStatus("draft")} disabled={busy !== null}>
+                      <Button
+                        variant="plain"
+                        onClick={() => void setStatus("draft")}
+                        disabled={busy !== null}
+                      >
                         Back to draft
                       </Button>
                     </>
@@ -355,19 +376,28 @@ export function ProposalPage({ id }: { id: string }) {
                   <input
                     type="date"
                     value={proposal.follow_up_on ?? ""}
-                    onChange={(event) => void update("follow_up", { follow_up_on: event.target.value || null })}
+                    onChange={(event) =>
+                      void update("follow_up", { follow_up_on: event.target.value || null })
+                    }
                     className="h-10 rounded-xl border border-separator bg-surface px-3 text-[15px] outline-none focus:border-accent focus:ring-4 focus:ring-accent/20"
                   />
                 </label>
               ) : null}
             </section>
 
-            <section aria-labelledby="files-title" className="flex flex-col gap-3 rounded-[22px] bg-surface p-5 shadow-card sm:p-6">
+            <section
+              aria-labelledby="files-title"
+              className="flex flex-col gap-3 rounded-[22px] bg-surface p-5 shadow-card sm:p-6"
+            >
               <h2 id="files-title" className="type-headline text-lg font-semibold">
                 Send again
               </h2>
               <div className="flex flex-wrap gap-2">
-                <Button variant="tinted" onClick={() => void download("pdf")} disabled={busy !== null || !proposal.has_saving}>
+                <Button
+                  variant="tinted"
+                  onClick={() => void download("pdf")}
+                  disabled={busy !== null || !proposal.has_saving}
+                >
                   <Icon name="download" className="size-4" />
                   {busy === "pdf" ? "Preparing…" : "Download PDF"}
                 </Button>
@@ -391,14 +421,19 @@ export function ProposalPage({ id }: { id: string }) {
                   {proposal.message}
                 </p>
               ) : (
-                <p className="text-[13px] text-secondary">The WhatsApp message is written on the last step of the journey.</p>
+                <p className="text-[13px] text-secondary">
+                  The WhatsApp message is written on the last step of the journey.
+                </p>
               )}
             </section>
 
             <ShareCard proposal={proposal} onChange={setProposal} />
             <EmailCard proposal={proposal} onSent={setProposal} />
 
-            <section aria-labelledby="notes-title" className="flex flex-col gap-2 rounded-[22px] bg-surface p-5 shadow-card sm:p-6">
+            <section
+              aria-labelledby="notes-title"
+              className="flex flex-col gap-2 rounded-[22px] bg-surface p-5 shadow-card sm:p-6"
+            >
               <div className="flex items-center justify-between">
                 <h2 id="notes-title" className="type-headline text-lg font-semibold">
                   <label htmlFor="proposal-notes">Notes</label>
@@ -419,7 +454,10 @@ export function ProposalPage({ id }: { id: string }) {
             </section>
           </div>
 
-          <section aria-labelledby="history-title" className="flex flex-col gap-3 rounded-[22px] bg-surface p-5 shadow-card sm:p-6">
+          <section
+            aria-labelledby="history-title"
+            className="flex flex-col gap-3 rounded-[22px] bg-surface p-5 shadow-card sm:p-6"
+          >
             <h2 id="history-title" className="type-headline text-lg font-semibold">
               History
             </h2>
@@ -427,8 +465,12 @@ export function ProposalPage({ id }: { id: string }) {
               {proposal.events.map((event, index) => (
                 <li key={`${event.at}-${index}`} className="relative flex gap-3 pb-4 last:pb-0">
                   <span aria-hidden="true" className="flex flex-col items-center">
-                    <span className={`mt-1.5 size-2.5 rounded-full ${index === 0 ? "bg-accent" : "bg-fill"}`} />
-                    {index < proposal.events.length - 1 ? <span className="mt-1 w-px flex-1 bg-separator" /> : null}
+                    <span
+                      className={`mt-1.5 size-2.5 rounded-full ${index === 0 ? "bg-accent" : "bg-fill"}`}
+                    />
+                    {index < proposal.events.length - 1 ? (
+                      <span className="mt-1 w-px flex-1 bg-separator" />
+                    ) : null}
                   </span>
                   <span className="flex min-w-0 flex-col">
                     <span className="text-[15px]">{describeEvent(event)}</span>
@@ -440,12 +482,15 @@ export function ProposalPage({ id }: { id: string }) {
           </section>
         </div>
 
-        <section aria-label="Delete" className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] bg-surface px-5 py-4 shadow-card sm:px-6">
+        <section
+          aria-label="Delete"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] bg-surface px-5 py-4 shadow-card sm:px-6"
+        >
           {confirmDelete ? (
             <>
               <span className="text-[15px]">
-                <strong className="font-semibold">Delete this proposal?</strong> Its data and history are removed. This
-                can&apos;t be undone.
+                <strong className="font-semibold">Delete this proposal?</strong> Its data and history are
+                removed. This can&apos;t be undone.
               </span>
               <span className="flex gap-2">
                 <Button variant="plain" onClick={() => setConfirmDelete(false)}>
@@ -464,7 +509,9 @@ export function ProposalPage({ id }: { id: string }) {
             </>
           ) : (
             <>
-              <span className="text-[13px] text-secondary">Last change {formatWhen(proposal.updated_at)}</span>
+              <span className="text-[13px] text-secondary">
+                Last change {formatWhen(proposal.updated_at)}
+              </span>
               <button
                 type="button"
                 onClick={() => setConfirmDelete(true)}
@@ -500,6 +547,10 @@ function StatusText({ proposal }: { proposal: ProposalDetail }) {
     }.`;
   }
   return (
-    <p className={`text-[15px] ${proposal.follow_up_due ? "font-semibold text-attention-ink" : "text-secondary"}`}>{text}</p>
+    <p
+      className={`text-[15px] ${proposal.follow_up_due ? "font-semibold text-attention-ink" : "text-secondary"}`}
+    >
+      {text}
+    </p>
   );
 }

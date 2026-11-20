@@ -199,14 +199,14 @@ export function CustomerProposal({ token }: { token: string }) {
     <div dir={dir} lang={language} className="flex min-h-screen flex-col">
       <HeroBand width="max-w-[880px]" inner="flex flex-col gap-8 pt-4 pb-24 sm:pb-28">
         <header className="flex items-center justify-between gap-4">
-          <span className="flex rounded-lg bg-white px-2 py-1">
+          <span className="flex">
             <Image
-              src="/brand/bcom-global-logo.png"
+              src="/brand/bcom-global-logo-light.png"
               alt="BCOM Global"
               width={464}
               height={213}
               priority
-              className="h-6 w-auto"
+              className="h-7 w-auto"
             />
           </span>
           <span className="flex items-center gap-2 text-end text-xs leading-snug text-hero-secondary">
