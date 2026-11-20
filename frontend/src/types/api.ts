@@ -4,7 +4,7 @@
  * because FastAPI's exception handlers are not part of the OpenAPI description.
  */
 import type {
-  PartnerInputInput as PartnerInput,
+  PartnerInput,
   ScenarioInput,
   ShipmentComparison as GeneratedShipmentComparison,
 } from "@/lib/api/generated";

@@ -6,7 +6,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BeforeValidator, Field
 
-from app.schemas.api import PartnerInput
+from app.schemas.api import SavedPartner
 from app.schemas.base import ApiModel
 from app.schemas.comparison import ComparisonResult, Scenario
 from app.schemas.invoice import InvoiceData
@@ -38,7 +38,7 @@ class ProposalCreate(ApiModel):
 
     invoice: InvoiceData
     scenario: Scenario = Field(default_factory=Scenario)
-    partner: PartnerInput
+    partner: SavedPartner
     source_file_name: FileName | None = None
     source_files: list[FileName] = Field(default_factory=list, max_length=3)
     original_invoice: InvoiceData | None = None
@@ -50,7 +50,7 @@ class ProposalUpdate(ApiModel):
 
     invoice: InvoiceData | None = None
     scenario: Scenario | None = None
-    partner: PartnerInput | None = None
+    partner: SavedPartner | None = None
     message: Annotated[str, Field(max_length=4000)] | None = None
     status: ProposalStatus | None = None
     follow_up_on: date | None = None
@@ -95,7 +95,7 @@ class ProposalEventOut(ApiModel):
 class ProposalDetail(ProposalItem):
     invoice: InvoiceData
     scenario: Scenario
-    partner: PartnerInput
+    partner: SavedPartner
     message: str | None
     notes: str
     lost_reason: str | None

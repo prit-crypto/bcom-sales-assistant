@@ -1,7 +1,7 @@
 /**
  * The partner's own details ("Prepared by", logo, booking link, language, validity), remembered on this
  * device so every new proposal starts filled in. There are no accounts yet, so this lives in localStorage;
- * every access is guarded because storage can be blocked.
+ * every access is guarded because storage can be blocked. Nothing is filled in until the partner types it.
  */
 import type { PartnerDetailsInput } from "@/types/api";
 
@@ -9,12 +9,12 @@ const KEY = "bcom-partner-defaults-v1";
 
 export type PartnerDefaults = Omit<PartnerDetailsInput, "prospect_name">;
 
-/** Clearly placeholder details for a first visit; edited on the proposal step. */
-export const EXAMPLE_PARTNER: PartnerDefaults = {
-  partner_name: "Rahul Mehta",
-  partner_company: "Sharjah Logistics Partners",
-  partner_phone: "+971 50 000 0000",
-  partner_email: "rahul@example.com",
+/** A first visit starts with empty fields; the partner fills them in on the proposal step. */
+export const EMPTY_PARTNER: PartnerDefaults = {
+  partner_name: "",
+  partner_company: "",
+  partner_phone: "",
+  partner_email: "",
   validity_days: 30,
   language: "en",
   booking_url: "",
@@ -24,10 +24,10 @@ export const EXAMPLE_PARTNER: PartnerDefaults = {
 export function loadPartnerDefaults(): PartnerDefaults {
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return EXAMPLE_PARTNER;
-    return { ...EXAMPLE_PARTNER, ...(JSON.parse(raw) as Partial<PartnerDefaults>) };
+    if (!raw) return EMPTY_PARTNER;
+    return { ...EMPTY_PARTNER, ...(JSON.parse(raw) as Partial<PartnerDefaults>) };
   } catch {
-    return EXAMPLE_PARTNER;
+    return EMPTY_PARTNER;
   }
 }
 

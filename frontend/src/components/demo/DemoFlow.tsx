@@ -10,7 +10,7 @@ import { Toast, type ToastData } from "@/components/ui/Toast";
 import { errorMessage, getJson, patchJson, postJson, sendNoContent } from "@/lib/client/api";
 import { readInvoiceWithProgress, type StageEvent } from "@/lib/client/stream";
 import { partnerForRequest } from "@/lib/partner";
-import { EXAMPLE_PARTNER, loadPartnerDefaults, savePartnerDefaults } from "@/lib/partnerDefaults";
+import { loadPartnerDefaults, savePartnerDefaults } from "@/lib/partnerDefaults";
 import { partnerSavable, useProposalSync } from "@/lib/useProposalSync";
 import {
   clearSession,
@@ -222,7 +222,7 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
     const restore = async (session: SavedSession & { extracted: Extracted }) => {
       setExtracted(session.extracted);
       // Sessions saved before newer partner fields existed get their defaults.
-      setPartner({ ...EXAMPLE_PARTNER, ...session.partner });
+      setPartner({ ...loadPartnerDefaults(), ...session.partner });
       const savedScenario = session.scenario ?? LIKE_FOR_LIKE;
       setScenario(savedScenario);
       setMessage(session.message);
@@ -392,17 +392,11 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
     if (!saved && result.summary.compared_shipments > 0) void saveDraft(extracted);
   }
 
-  /** First save, at Compare. Blank names are filled from the remembered details so it can be stored. */
+  /** First save, at Compare. The partner's own name may still be empty; the prospect needs a name. */
   async function saveDraft(current: Extracted) {
-    const defaults = loadPartnerDefaults();
     const details: PartnerDetailsInput = partnerSavable(partner)
       ? partner
-      : {
-          ...partner,
-          prospect_name: partner.prospect_name.trim() || current.invoice.customer_name || "Unnamed prospect",
-          partner_name: partner.partner_name.trim() || defaults.partner_name || EXAMPLE_PARTNER.partner_name,
-          partner_company: partner.partner_company.trim() || defaults.partner_company || EXAMPLE_PARTNER.partner_company,
-        };
+      : { ...partner, prospect_name: current.invoice.customer_name || "Unnamed prospect" };
     try {
       const detail = await postJson<ProposalDetail>("/proposals", {
         invoice: current.invoice,

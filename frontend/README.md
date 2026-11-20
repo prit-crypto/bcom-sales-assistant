@@ -91,7 +91,8 @@ migrates its own `bcom_e2e` database on every run.
 - **Mark as sent** (WhatsApp step or proposal page) sets a follow-up date; on that day the proposal appears under
   "Follow up today" on the list.
 - **Your details are remembered** on this device (name, company, logo, booking link, language, validity) for the next
-  proposal. There are no accounts yet.
+  proposal. A first visit starts with empty fields; the PDF is built once your name and company are filled in.
+  There are no accounts yet.
 
 - **Work survives a refresh**: the journey is kept in this tab's `sessionStorage` (cleared when the tab closes), and
   invoices up to 3 MB are kept for the viewer. A "Restored your last session · Discard" notice appears after a reload.

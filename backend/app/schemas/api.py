@@ -105,6 +105,14 @@ class PartnerInput(ApiModel):
     ] = None
 
 
+class SavedPartner(PartnerInput):
+    """Partner details as a saved proposal keeps them. The partner's own name and company may still be empty
+    (the draft is saved at Compare, before the proposal step); a PDF needs them (see `require_partner`)."""
+
+    partner_name: Annotated[OptionalText, Field(max_length=80)] = ""
+    partner_company: Annotated[OptionalText, Field(max_length=120)] = ""
+
+
 class ProposalRequest(ApiModel):
     invoice: InvoiceData
     partner: PartnerInput

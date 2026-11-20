@@ -18,9 +18,9 @@ interface Draft {
   message: string | null;
 }
 
-/** The partner details can be saved once the required names are there. */
+/** The partner details can be saved once the prospect has a name (the partner's own may still be empty). */
 export function partnerSavable(partner: PartnerDetailsInput): boolean {
-  return [partner.prospect_name, partner.partner_name, partner.partner_company].every((value) => value.trim() !== "");
+  return partner.prospect_name.trim() !== "";
 }
 
 /**

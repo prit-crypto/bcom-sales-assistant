@@ -104,3 +104,19 @@ test("the partner's own details are remembered for the next proposal", async ({ 
   await expect(page.getByLabel("Your name")).toHaveValue("Aisha Khan");
   await expect(page.getByLabel("Your company")).toHaveValue("Ajman Freight Partners");
 });
+
+test("a first visit starts with empty partner details; the PDF waits for them", async ({ page }) => {
+  await openApp(page, { partner: false });
+  await loadSample(page, "Clean PDF");
+  await compare(page);
+  // Saved as a draft even before the partner's name is known.
+  await expect(page.getByText(/Saved to your proposals/)).toBeVisible();
+  await page.getByRole("button", { name: "Create proposal" }).click();
+  await expect(page.getByLabel("Your name")).toHaveValue("");
+  await expect(page.getByLabel("Your company")).toHaveValue("");
+  await expect(page.getByLabel("Phone")).toHaveValue("");
+  await expect(page.getByText("Add the required names to build the PDF").first()).toBeVisible();
+  await page.getByLabel("Your name").fill("Aisha Khan");
+  await page.getByLabel("Your company").fill("Ajman Freight Partners");
+  await expect(page.getByText("Preview up to date")).toBeVisible();
+});

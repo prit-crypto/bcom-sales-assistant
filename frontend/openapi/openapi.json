@@ -937,7 +937,7 @@
         "title": "MessageResponse",
         "type": "object"
       },
-      "PartnerInput-Input": {
+      "PartnerInput": {
         "description": "Partner details entered on the proposal step.",
         "properties": {
           "booking_url": {
@@ -1013,87 +1013,6 @@
         "title": "PartnerInput",
         "type": "object"
       },
-      "PartnerInput-Output": {
-        "description": "Partner details entered on the proposal step.",
-        "properties": {
-          "booking_url": {
-            "default": "",
-            "maxLength": 300,
-            "title": "Booking Url",
-            "type": "string"
-          },
-          "language": {
-            "default": "en",
-            "enum": [
-              "en",
-              "ar"
-            ],
-            "title": "Language",
-            "type": "string"
-          },
-          "partner_company": {
-            "maxLength": 120,
-            "minLength": 1,
-            "title": "Partner Company",
-            "type": "string"
-          },
-          "partner_email": {
-            "default": "",
-            "maxLength": 120,
-            "title": "Partner Email",
-            "type": "string"
-          },
-          "partner_logo": {
-            "anyOf": [
-              {
-                "maxLength": 420000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Partner Logo"
-          },
-          "partner_name": {
-            "maxLength": 80,
-            "minLength": 1,
-            "title": "Partner Name",
-            "type": "string"
-          },
-          "partner_phone": {
-            "default": "",
-            "maxLength": 30,
-            "title": "Partner Phone",
-            "type": "string"
-          },
-          "prospect_name": {
-            "maxLength": 120,
-            "minLength": 1,
-            "title": "Prospect Name",
-            "type": "string"
-          },
-          "validity_days": {
-            "maximum": 90.0,
-            "minimum": 7.0,
-            "title": "Validity Days",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "partner_name",
-          "partner_company",
-          "partner_phone",
-          "partner_email",
-          "prospect_name",
-          "validity_days",
-          "language",
-          "booking_url",
-          "partner_logo"
-        ],
-        "title": "PartnerInput",
-        "type": "object"
-      },
       "ProposalCreate": {
         "description": "Saved at \"Compare with BCOM rates\": the reviewed invoice, the what-if and the partner details.\n`original_invoice` (as first read) and `reader` let the app learn from the partner's corrections.",
         "properties": {
@@ -1111,7 +1030,7 @@
             ]
           },
           "partner": {
-            "$ref": "#/components/schemas/PartnerInput-Input"
+            "$ref": "#/components/schemas/SavedPartner-Input"
           },
           "reader": {
             "anyOf": [
@@ -1251,7 +1170,7 @@
             "type": "string"
           },
           "partner": {
-            "$ref": "#/components/schemas/PartnerInput-Output"
+            "$ref": "#/components/schemas/SavedPartner-Output"
           },
           "prospect_name": {
             "title": "Prospect Name",
@@ -1572,7 +1491,7 @@
             "$ref": "#/components/schemas/InvoiceData-Input"
           },
           "partner": {
-            "$ref": "#/components/schemas/PartnerInput-Input"
+            "$ref": "#/components/schemas/PartnerInput"
           },
           "scenario": {
             "$ref": "#/components/schemas/Scenario-Input"
@@ -1649,7 +1568,7 @@
           "partner": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PartnerInput-Input"
+                "$ref": "#/components/schemas/SavedPartner-Input"
               },
               {
                 "type": "null"
@@ -2098,6 +2017,161 @@
           "hints"
         ],
         "title": "ReadingReport",
+        "type": "object"
+      },
+      "SavedPartner-Input": {
+        "description": "Partner details as a saved proposal keeps them. The partner's own name and company may still be empty\n(the draft is saved at Compare, before the proposal step); a PDF needs them (see `require_partner`).",
+        "properties": {
+          "booking_url": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Booking Url",
+            "type": "string"
+          },
+          "language": {
+            "default": "en",
+            "enum": [
+              "en",
+              "ar"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "partner_company": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Partner Company",
+            "type": "string"
+          },
+          "partner_email": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Partner Email",
+            "type": "string"
+          },
+          "partner_logo": {
+            "anyOf": [
+              {
+                "maxLength": 420000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Logo"
+          },
+          "partner_name": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Partner Name",
+            "type": "string"
+          },
+          "partner_phone": {
+            "default": "",
+            "maxLength": 30,
+            "title": "Partner Phone",
+            "type": "string"
+          },
+          "prospect_name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Prospect Name",
+            "type": "string"
+          },
+          "validity_days": {
+            "maximum": 90.0,
+            "minimum": 7.0,
+            "title": "Validity Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prospect_name",
+          "validity_days"
+        ],
+        "title": "SavedPartner",
+        "type": "object"
+      },
+      "SavedPartner-Output": {
+        "description": "Partner details as a saved proposal keeps them. The partner's own name and company may still be empty\n(the draft is saved at Compare, before the proposal step); a PDF needs them (see `require_partner`).",
+        "properties": {
+          "booking_url": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Booking Url",
+            "type": "string"
+          },
+          "language": {
+            "default": "en",
+            "enum": [
+              "en",
+              "ar"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "partner_company": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Partner Company",
+            "type": "string"
+          },
+          "partner_email": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Partner Email",
+            "type": "string"
+          },
+          "partner_logo": {
+            "anyOf": [
+              {
+                "maxLength": 420000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Logo"
+          },
+          "partner_name": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Partner Name",
+            "type": "string"
+          },
+          "partner_phone": {
+            "default": "",
+            "maxLength": 30,
+            "title": "Partner Phone",
+            "type": "string"
+          },
+          "prospect_name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Prospect Name",
+            "type": "string"
+          },
+          "validity_days": {
+            "maximum": 90.0,
+            "minimum": 7.0,
+            "title": "Validity Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "partner_name",
+          "partner_company",
+          "partner_phone",
+          "partner_email",
+          "prospect_name",
+          "validity_days",
+          "language",
+          "booking_url",
+          "partner_logo"
+        ],
+        "title": "SavedPartner",
         "type": "object"
       },
       "Scenario-Input": {

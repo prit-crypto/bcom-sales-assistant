@@ -26,7 +26,7 @@ from app.services import email as mail
 from app.services.export import build_workbook, export_file_name
 from app.services.pricing.comparison import compare_invoice
 from app.services.proposal.render import render_proposal_pdf
-from app.services.proposals import parts, to_item, today
+from app.services.proposals import parts, require_partner, to_item, today
 from app.services.sharing import link_path, link_url, new_token, valid_until
 
 router = APIRouter(prefix="/proposals", tags=["saved proposals"])
@@ -83,7 +83,7 @@ async def proposal_pdf(proposal_id: uuid.UUID, service: Proposals) -> Response:
     proposal = await service.get(proposal_id)
     invoice, scenario, partner = parts(proposal)
     pdf = await asyncio.to_thread(
-        render_proposal_pdf, invoice, partner, scenario, None, proposal.reference
+        render_proposal_pdf, invoice, require_partner(partner), scenario, None, proposal.reference
     )
     await service.events.record(proposal.id, "pdf_downloaded")
     return Response(
@@ -180,15 +180,17 @@ async def send_email(
         raise mail.email_off()
     proposal = await service.get(proposal_id)
     invoice, scenario, partner = parts(proposal)
+    # Checked first, so a refused email leaves nothing behind (no new link).
+    pdf_partner = require_partner(partner) if body.attach_pdf else None
     text = body.message.rstrip()
     if body.include_link:
         text += "\n\n" + mail.link_paragraph(
             link_url(await _ensure_link(service, proposal)), partner.language
         )
     attachment = None
-    if body.attach_pdf:
+    if pdf_partner is not None:
         rendered = await asyncio.to_thread(
-            render_proposal_pdf, invoice, partner, scenario, None, proposal.reference
+            render_proposal_pdf, invoice, pdf_partner, scenario, None, proposal.reference
         )
         attachment = (f"{rendered.reference}.pdf", rendered.content)
     message = mail.build_message(

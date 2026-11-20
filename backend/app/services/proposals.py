@@ -9,7 +9,7 @@ from app.core.exceptions import AppError
 from app.models.proposal import Proposal, ProposalEvent
 from app.repositories.correction import CorrectionRepository
 from app.repositories.proposal import ProposalEventRepository, ProposalRepository
-from app.schemas.api import PartnerInput
+from app.schemas.api import PartnerInput, SavedPartner
 from app.schemas.comparison import ComparisonResult, Scenario
 from app.schemas.invoice import InvoiceData
 from app.schemas.proposal import (
@@ -48,11 +48,22 @@ def not_found() -> AppError:
     )
 
 
-def parts(proposal: Proposal) -> tuple[InvoiceData, Scenario, PartnerInput]:
+def require_partner(partner: SavedPartner) -> PartnerInput:
+    """The partner details a PDF needs: the partner's own name and company must be filled in."""
+    if not partner.partner_name or not partner.partner_company:
+        raise AppError(
+            "Add your name and company on the proposal step first: the PDF shows who prepared it.",
+            status_code=422,
+            code="partner_details_missing",
+        )
+    return PartnerInput.model_validate(partner.model_dump())
+
+
+def parts(proposal: Proposal) -> tuple[InvoiceData, Scenario, SavedPartner]:
     return (
         InvoiceData.model_validate(proposal.invoice),
         Scenario.model_validate(proposal.scenario),
-        PartnerInput.model_validate(proposal.partner_details),
+        SavedPartner.model_validate(proposal.partner_details),
     )
 
 

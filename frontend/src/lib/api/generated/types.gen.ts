@@ -523,7 +523,7 @@ export type MessageResponse = {
  *
  * Partner details entered on the proposal step.
  */
-export type PartnerInputInput = {
+export type PartnerInput = {
     /**
      * Booking Url
      */
@@ -563,50 +563,6 @@ export type PartnerInputInput = {
 };
 
 /**
- * PartnerInput
- *
- * Partner details entered on the proposal step.
- */
-export type PartnerInputOutput = {
-    /**
-     * Booking Url
-     */
-    booking_url: string;
-    /**
-     * Language
-     */
-    language: 'en' | 'ar';
-    /**
-     * Partner Company
-     */
-    partner_company: string;
-    /**
-     * Partner Email
-     */
-    partner_email: string;
-    /**
-     * Partner Logo
-     */
-    partner_logo: string | null;
-    /**
-     * Partner Name
-     */
-    partner_name: string;
-    /**
-     * Partner Phone
-     */
-    partner_phone: string;
-    /**
-     * Prospect Name
-     */
-    prospect_name: string;
-    /**
-     * Validity Days
-     */
-    validity_days: number;
-};
-
-/**
  * ProposalCreate
  *
  * Saved at "Compare with BCOM rates": the reviewed invoice, the what-if and the partner details.
@@ -615,7 +571,7 @@ export type PartnerInputOutput = {
 export type ProposalCreate = {
     invoice: InvoiceDataInput;
     original_invoice?: InvoiceDataInput | null;
-    partner: PartnerInputInput;
+    partner: SavedPartnerInput;
     reader?: ReaderInput | null;
     scenario?: ScenarioInput;
     /**
@@ -686,7 +642,7 @@ export type ProposalDetail = {
      * Notes
      */
     notes: string;
-    partner: PartnerInputOutput;
+    partner: SavedPartnerOutput;
     /**
      * Prospect Name
      */
@@ -859,7 +815,7 @@ export type ProposalList = {
  */
 export type ProposalRequest = {
     invoice: InvoiceDataInput;
-    partner: PartnerInputInput;
+    partner: PartnerInput;
     scenario?: ScenarioInput;
 };
 
@@ -886,7 +842,7 @@ export type ProposalUpdate = {
      * Notes
      */
     notes?: string | null;
-    partner?: PartnerInputInput | null;
+    partner?: SavedPartnerInput | null;
     scenario?: ScenarioInput | null;
     /**
      * Status
@@ -1147,6 +1103,96 @@ export type ReadingReport = {
      * Readers
      */
     readers: Array<ReaderTotal>;
+};
+
+/**
+ * SavedPartner
+ *
+ * Partner details as a saved proposal keeps them. The partner's own name and company may still be empty
+ * (the draft is saved at Compare, before the proposal step); a PDF needs them (see `require_partner`).
+ */
+export type SavedPartnerInput = {
+    /**
+     * Booking Url
+     */
+    booking_url?: string;
+    /**
+     * Language
+     */
+    language?: 'en' | 'ar';
+    /**
+     * Partner Company
+     */
+    partner_company?: string;
+    /**
+     * Partner Email
+     */
+    partner_email?: string;
+    /**
+     * Partner Logo
+     */
+    partner_logo?: string | null;
+    /**
+     * Partner Name
+     */
+    partner_name?: string;
+    /**
+     * Partner Phone
+     */
+    partner_phone?: string;
+    /**
+     * Prospect Name
+     */
+    prospect_name: string;
+    /**
+     * Validity Days
+     */
+    validity_days: number;
+};
+
+/**
+ * SavedPartner
+ *
+ * Partner details as a saved proposal keeps them. The partner's own name and company may still be empty
+ * (the draft is saved at Compare, before the proposal step); a PDF needs them (see `require_partner`).
+ */
+export type SavedPartnerOutput = {
+    /**
+     * Booking Url
+     */
+    booking_url: string;
+    /**
+     * Language
+     */
+    language: 'en' | 'ar';
+    /**
+     * Partner Company
+     */
+    partner_company: string;
+    /**
+     * Partner Email
+     */
+    partner_email: string;
+    /**
+     * Partner Logo
+     */
+    partner_logo: string | null;
+    /**
+     * Partner Name
+     */
+    partner_name: string;
+    /**
+     * Partner Phone
+     */
+    partner_phone: string;
+    /**
+     * Prospect Name
+     */
+    prospect_name: string;
+    /**
+     * Validity Days
+     */
+    validity_days: number;
 };
 
 /**

@@ -217,3 +217,16 @@ def test_changes_are_saved_before_the_answer_is_sent() -> None:
 
     depends = DbSession.__metadata__[0]
     assert depends.scope == "function"
+
+
+def test_a_draft_can_be_saved_before_the_partner_types_their_name(client: TestClient) -> None:
+    """The draft is saved at Compare; the partner's name and company come later, on the proposal step."""
+    created = create(client, partner={"prospect_name": "Test Co", "validity_days": 30})
+    assert created["partner"]["partner_name"] == ""
+    pdf = client.get(f"{URL}/{created['id']}/pdf")
+    assert pdf.status_code == 422
+    assert pdf.json()["error"]["code"] == "partner_details_missing"
+
+    named = patch(client, created["id"], partner=PARTNER).json()
+    assert named["partner"]["partner_name"] == "Rahul Mehta"
+    assert client.get(f"{URL}/{created['id']}/pdf").status_code == 200

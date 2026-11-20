@@ -9,7 +9,7 @@ from app.core.rate_limit import rate_limited
 from app.models.proposal import Proposal
 from app.schemas.public import AcceptRequest, PublicProposal
 from app.services.proposal.render import render_proposal_pdf
-from app.services.proposals import ProposalService, parts
+from app.services.proposals import ProposalService, parts, require_partner
 from app.services.sharing import accept, not_found, public_view, record_view
 
 router = APIRouter(prefix="/public/proposals", tags=["customer link"])
@@ -49,7 +49,7 @@ async def pdf(service: Proposals, token: str = Token) -> Response:
     proposal = await _by_token(service, token)
     invoice, scenario, partner = parts(proposal)
     rendered = await asyncio.to_thread(
-        render_proposal_pdf, invoice, partner, scenario, None, proposal.reference
+        render_proposal_pdf, invoice, require_partner(partner), scenario, None, proposal.reference
     )
     return Response(
         content=rendered.content,
