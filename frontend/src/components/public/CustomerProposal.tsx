@@ -238,14 +238,14 @@ export function CustomerProposal({ token }: { token: string }) {
                 {proposal.prospect_name} {t.couldSave}
               </span>
               <span className="type-display tabular text-[52px] text-accent sm:text-[80px]">
-                <bdi>{formatMoney(proposal.monthly_saving, currency)}</bdi>
+                <bdi className="whitespace-nowrap">{formatMoney(proposal.monthly_saving, currency)}</bdi>
               </span>
               <span className="type-title text-[22px] sm:text-[28px]">{t.aMonth}</span>
             </h1>
             <p className="text-lg text-secondary">
-              <bdi>{formatMoney(proposal.yearly_saving, currency)}</bdi> {t.aYear} ·{" "}
+              <bdi className="whitespace-nowrap">{formatMoney(proposal.yearly_saving, currency)}</bdi> {t.aYear} ·{" "}
               <strong className="font-semibold text-accent">
-                <bdi>{formatPercent(proposal.saving_pct)}</bdi> {t.less}
+                <bdi className="whitespace-nowrap">{formatPercent(proposal.saving_pct)}</bdi> {t.less}
               </strong>
             </p>
           </div>
@@ -253,14 +253,14 @@ export function CustomerProposal({ token }: { token: string }) {
             <div className="flex flex-col gap-1 px-4 py-4 sm:px-6">
               <dt className="text-xs text-secondary">{t.today}</dt>
               <dd className="type-headline tabular text-lg font-semibold sm:text-[22px]">
-                <bdi>{formatMoney(proposal.monthly_current, currency)}</bdi>
+                <bdi className="whitespace-nowrap">{formatMoney(proposal.monthly_current, currency)}</bdi>
               </dd>
               <dd className="text-xs text-secondary">{t.perMonth}</dd>
             </div>
             <div className="flex flex-col gap-1 border-s border-separator px-4 py-4 sm:px-6">
               <dt className="text-xs text-secondary">{t.withBcom}</dt>
               <dd className="type-headline tabular text-lg font-semibold sm:text-[22px]">
-                <bdi>{formatMoney(proposal.monthly_proposed, currency)}</bdi>
+                <bdi className="whitespace-nowrap">{formatMoney(proposal.monthly_proposed, currency)}</bdi>
               </dd>
               <dd className="text-xs text-secondary">{t.perMonth}</dd>
             </div>
@@ -298,14 +298,14 @@ export function CustomerProposal({ token }: { token: string }) {
                 <span className="flex min-w-0 flex-col">
                   <span className="font-semibold">{region.label}</span>
                   <span className="text-[13px] text-secondary">
-                    {region.shipments} {t.shipments} · <bdi>{formatMoneyExact(region.current, currency)}</bdi>{" "}
-                    → <bdi>{formatMoneyExact(region.proposed, currency)}</bdi>
+                    {region.shipments} {t.shipments} · <bdi className="whitespace-nowrap">{formatMoneyExact(region.current, currency)}</bdi>{" "}
+                    → <bdi className="whitespace-nowrap">{formatMoneyExact(region.proposed, currency)}</bdi>
                   </span>
                 </span>
                 <span
                   className={`tabular shrink-0 font-semibold ${region.saving >= 0 ? "text-accent" : "text-bad"}`}
                 >
-                  <bdi>
+                  <bdi className="whitespace-nowrap">
                     {region.saving >= 0 ? "+" : "−"} {formatMoneyExact(Math.abs(region.saving), currency)}
                   </bdi>
                 </span>
@@ -434,7 +434,7 @@ export function CustomerProposal({ token }: { token: string }) {
         </div>
 
         <p className="text-center text-xs text-secondary">
-          {t.reference} <bdi>{proposal.reference}</bdi> · {t.footer}
+          {t.reference} <bdi className="whitespace-nowrap">{proposal.reference}</bdi> · {t.footer}
         </p>
       </main>
     </div>
