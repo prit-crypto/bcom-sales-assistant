@@ -1,23 +1,33 @@
 "use client";
 
+import { motion, useAnimate, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ActionBar } from "@/components/ui/ActionBar";
 import { Banner } from "@/components/ui/Banner";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { InvoiceViewer, type InvoiceSource } from "@/components/ui/InvoiceViewer";
 import { Segmented } from "@/components/ui/Segmented";
+import { Sheet } from "@/components/ui/Sheet";
 import { formatDate, formatMoneyExact } from "@/lib/format";
+import { useMinWidth } from "@/lib/hooks";
 import { getMissingFields } from "@/lib/validation";
 import type { InvoiceData, RequiredShipmentField, ServiceLevel, Shipment } from "@/types/invoice";
 
 interface ReviewStepProps {
   invoice: InvoiceData;
   fileName: string;
+  /** The uploaded invoice, shown beside the table on request */
+  source: InvoiceSource | null;
   /** The backend is comparing the invoice */
   comparing: boolean;
   /** Error from the last comparison attempt */
   error: string | null;
-  onChange: (invoice: InvoiceData) => void;
+  /** Whether there is an edit to undo */
+  canUndo: boolean;
+  onUndo: () => void;
+  /** `note` describes an edit Undo can reverse (shown in a toast); typing in header fields passes none */
+  onChange: (invoice: InvoiceData, note?: string) => void;
   onBack: () => void;
   onContinue: () => void;
 }
@@ -35,6 +45,29 @@ const FIELD_NAMES: Record<RequiredShipmentField, string> = {
 };
 
 const SERVICE_LABEL: Record<ServiceLevel, string> = { express: "Express", economy: "Economy" };
+
+/** Names used in the Undo toast, e.g. "Weight set to 12 kg". */
+const CELL_LABEL: Record<EditableField, string> = {
+  reference: "Waybill",
+  date: "Date",
+  origin_city: "From city",
+  origin_country: "From country",
+  destination_city: "To city",
+  destination_country: "To country",
+  service: "Service",
+  pieces: "Pieces",
+  weight_kg: "Weight",
+  charge: "Charge",
+};
+
+function describe(field: EditableField, value: string | number | null, currency: string): string {
+  if (value === null) return "empty";
+  if (field === "weight_kg") return `${value} kg`;
+  if (field === "charge" && typeof value === "number") return formatMoneyExact(value, currency);
+  if (field === "date" && typeof value === "string") return formatDate(value);
+  if (field === "service" && (value === "express" || value === "economy")) return SERVICE_LABEL[value];
+  return String(value);
+}
 
 function parseNumber(value: string): number | null {
   if (value.trim() === "") return null;
@@ -64,8 +97,23 @@ function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
 }
 
-export function ReviewStep({ invoice, fileName, comparing, error, onChange, onBack, onContinue }: ReviewStepProps) {
+export function ReviewStep({
+  invoice,
+  fileName,
+  source,
+  comparing,
+  error,
+  canUndo,
+  onUndo,
+  onChange,
+  onBack,
+  onContinue,
+}: ReviewStepProps) {
   const [filter, setFilter] = useState<Filter>("all");
+  const [showInvoice, setShowInvoice] = useState(false);
+  const wide = useMinWidth(1280);
+  const reduce = useReducedMotion();
+  const split = showInvoice && wide && source !== null;
   const currencyInvalid = invoice.currency !== null && !/^[A-Z]{3}$/.test(invoice.currency);
   const periodMissing = invoice.period_start === null || invoice.period_end === null;
   const [detailsOpen, setDetailsOpen] = useState(periodMissing || currencyInvalid);
@@ -108,27 +156,39 @@ export function ReviewStep({ invoice, fileName, comparing, error, onChange, onBa
     onChange({ ...invoice, [field]: textOrNull(cleaned) });
   }
 
-  function updateShipment(id: string, patch: Partial<Shipment>) {
-    onChange({
-      ...invoice,
-      shipments: invoice.shipments.map((shipment) => (shipment.id === id ? { ...shipment, ...patch } : shipment)),
-    });
+  const currency = invoice.currency && /^[A-Z]{3}$/.test(invoice.currency) ? invoice.currency : "AED";
+
+  function updateShipment(id: string, patch: Partial<Shipment>, note?: string) {
+    onChange(
+      {
+        ...invoice,
+        shipments: invoice.shipments.map((shipment) => (shipment.id === id ? { ...shipment, ...patch } : shipment)),
+      },
+      note,
+    );
+  }
+
+  function setIncluded(shipment: Shipment, included: boolean) {
+    const ref = shipment.reference ?? shipment.id;
+    updateShipment(shipment.id, { included }, included ? `${ref} included again` : `${ref} left out`);
   }
 
   function commit(shipment: Shipment, field: EditableField, kind: CellKind, raw: string) {
     let value = toValue(kind, raw);
     if (field === "pieces" && typeof value === "number") value = Math.max(1, Math.round(value));
-    if (value !== shipment[field]) updateShipment(shipment.id, { [field]: value } as Partial<Shipment>);
+    if (value === shipment[field]) return;
+    const note = `${CELL_LABEL[field]} set to ${describe(field, value, currency)} · ${shipment.reference ?? shipment.id}`;
+    updateShipment(shipment.id, { [field]: value } as Partial<Shipment>, note);
   }
-
-  const currency = invoice.currency && /^[A-Z]{3}$/.test(invoice.currency) ? invoice.currency : "AED";
   const status = currencyInvalid
     ? "Enter the currency as a 3-letter code"
     : `${readyCount} of ${invoice.shipments.length} ready${needsAttention.length ? ` · ${needsAttention.length} need attention` : ""}`;
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-5 px-4 pt-8 sm:gap-6 sm:px-6 sm:pt-12">
+      <main
+        className={`mx-auto flex w-full flex-1 flex-col gap-5 px-4 pt-8 sm:gap-6 sm:px-6 sm:pt-12 ${split ? "max-w-[1680px]" : "max-w-[1200px]"}`}
+      >
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-1.5">
             <h1 className="type-title text-[28px] font-bold sm:text-[34px]">Check the shipments</h1>
@@ -137,15 +197,40 @@ export function ReviewStep({ invoice, fileName, comparing, error, onChange, onBa
               Tap any value to correct it.
             </p>
           </div>
-          <Segmented
-            label="Show"
-            value={filter}
-            onChange={setFilter}
-            options={[
-              { value: "all", label: `All ${invoice.shipments.length}` },
-              { value: "attention", label: `Needs attention · ${needsAttention.length}` },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            {canUndo ? (
+              <button
+                type="button"
+                onClick={onUndo}
+                className="pressable inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                <Icon name="undo" className="size-4" />
+                Undo
+              </button>
+            ) : null}
+            {source ? (
+              <button
+                type="button"
+                aria-pressed={showInvoice}
+                onClick={() => setShowInvoice((value) => !value)}
+                className={`pressable inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                  showInvoice ? "bg-accent text-on-accent" : "bg-accent-tint text-accent"
+                }`}
+              >
+                <Icon name="file" className="size-4" />
+                {showInvoice ? "Hide invoice" : "Show invoice"}
+              </button>
+            ) : null}
+            <Segmented
+              label="Show"
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "all", label: `All ${invoice.shipments.length}` },
+                { value: "attention", label: `Needs attention · ${needsAttention.length}` },
+              ]}
+            />
+          </div>
         </div>
 
         {needsAttention.length > 0 ? (
@@ -187,26 +272,29 @@ export function ReviewStep({ invoice, fileName, comparing, error, onChange, onBa
           onChange={updateHeader}
         />
 
+        <div className={split ? "grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-start gap-5" : "contents"}>
+        <div className="flex min-w-0 flex-col gap-5">
         {/* Wider screens: a clean table, values become fields when tapped. */}
         <section aria-label="Shipments" className="hidden overflow-x-auto rounded-[18px] bg-surface shadow-card md:block">
-          <table className="w-full min-w-[920px] border-collapse text-sm">
+          {/* Beside the invoice, Date and Pcs step aside so weight and charge stay in view. */}
+          <table className={`w-full border-collapse text-sm ${split ? "min-w-[680px]" : "min-w-[920px]"}`}>
             <thead>
               <tr className="text-left text-xs font-medium text-secondary">
                 <th scope="col" className="w-10 py-3.5 pr-2 pl-5 font-medium">
                   <span className="sr-only">Include</span>
                 </th>
                 <th scope="col" className="px-2 py-3.5 font-medium">Waybill</th>
-                <th scope="col" className="px-2 py-3.5 font-medium">Date</th>
+                {split ? null : <th scope="col" className="px-2 py-3.5 font-medium">Date</th>}
                 <th scope="col" className="px-2 py-3.5 font-medium">From</th>
                 <th scope="col" className="px-2 py-3.5 font-medium">To</th>
                 <th scope="col" className="px-2 py-3.5 font-medium">Service</th>
-                <th scope="col" className="px-2 py-3.5 text-right font-medium">Pcs</th>
+                {split ? null : <th scope="col" className="px-2 py-3.5 text-right font-medium">Pcs</th>}
                 <th scope="col" className="px-2 py-3.5 text-right font-medium">Weight</th>
                 <th scope="col" className="py-3.5 pr-5 pl-2 text-right font-medium">Charge</th>
               </tr>
             </thead>
             <tbody>
-              {visible.map((shipment) => {
+              {visible.map((shipment, index) => {
                 const missing = missingById.get(shipment.id) ?? new Set();
                 const isMissing = (field: RequiredShipmentField) => shipment.included && missing.has(field);
                 const ref = shipment.reference ?? shipment.id;
@@ -222,8 +310,11 @@ export function ReviewStep({ invoice, fileName, comparing, error, onChange, onBa
                   />
                 );
                 return (
-                  <tr
+                  <motion.tr
                     key={shipment.id}
+                    initial={reduce ? false : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.35, delay: Math.min(index, 12) * 0.025 }}
                     className={`border-t border-separator ${missing.size && shipment.included ? "bg-attention-tint/50" : ""} ${shipment.included ? "" : "text-tertiary"}`}
                   >
                     <td className="py-1.5 pr-2 pl-5">
@@ -231,12 +322,12 @@ export function ReviewStep({ invoice, fileName, comparing, error, onChange, onBa
                         type="checkbox"
                         aria-label={`Include shipment ${ref}`}
                         checked={shipment.included}
-                        onChange={(event) => updateShipment(shipment.id, { included: event.target.checked })}
+                        onChange={(event) => setIncluded(shipment, event.target.checked)}
                         className="size-[18px] accent-accent"
                       />
                     </td>
                     <td className="tabular px-1 py-1.5 whitespace-nowrap">{cell("reference", "text", "Waybill", shipment.reference ?? "—")}</td>
-                    <td className="px-1 py-1.5 whitespace-nowrap">{cell("date", "date", "Date", formatDate(shipment.date))}</td>
+                    {split ? null : <td className="px-1 py-1.5 whitespace-nowrap">{cell("date", "date", "Date", formatDate(shipment.date))}</td>}
                     <td className="px-1 py-1.5">
                       <div className="flex items-center gap-0.5 whitespace-nowrap">
                         {cell("origin_city", "text", "Origin city", shipment.origin_city ?? "—")}
@@ -250,14 +341,16 @@ export function ReviewStep({ invoice, fileName, comparing, error, onChange, onBa
                       </div>
                     </td>
                     <td className="px-1 py-1.5">{cell("service", "service", "Service", shipment.service ? SERVICE_LABEL[shipment.service] : "—")}</td>
-                    <td className="tabular px-1 py-1.5">{cell("pieces", "number", "Pieces", shipment.pieces === null ? "—" : String(shipment.pieces), "right")}</td>
+                    {split ? null : (
+                      <td className="tabular px-1 py-1.5">{cell("pieces", "number", "Pieces", shipment.pieces === null ? "—" : String(shipment.pieces), "right")}</td>
+                    )}
                     <td className="tabular px-1 py-1.5 whitespace-nowrap">
                       {cell("weight_kg", "number", "Weight in kg", shipment.weight_kg === null ? "—" : `${shipment.weight_kg} kg`, "right")}
                     </td>
                     <td className="tabular py-1.5 pr-4 pl-1 font-medium whitespace-nowrap">
                       {cell("charge", "number", "Charge", shipment.charge === null ? "—" : formatMoneyExact(shipment.charge, currency), "right")}
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
             </tbody>
@@ -273,12 +366,20 @@ export function ReviewStep({ invoice, fileName, comparing, error, onChange, onBa
               shipment={shipment}
               currency={currency}
               missing={missingById.get(shipment.id) ?? new Set()}
-              onToggleIncluded={(included) => updateShipment(shipment.id, { included })}
+              onToggleIncluded={(included) => setIncluded(shipment, included)}
               onCommit={(field, kind, raw) => commit(shipment, field, kind, raw)}
             />
           ))}
           {visible.length === 0 ? <p className="py-8 text-center text-secondary">Nothing needs attention. All set.</p> : null}
         </section>
+        </div>
+
+        {split && source ? (
+          <aside className="sticky top-20">
+            <InvoiceViewer source={source} onClose={() => setShowInvoice(false)} className="h-[calc(100vh-200px)] min-h-[480px]" />
+          </aside>
+        ) : null}
+        </div>
 
         {error ? (
           <Banner tone="error" title="Could not compare the shipments">
@@ -296,6 +397,14 @@ export function ReviewStep({ invoice, fileName, comparing, error, onChange, onBa
           {comparing ? "Comparing…" : "Compare with BCOM rates"}
         </Button>
       </ActionBar>
+
+      {source ? (
+        <Sheet open={showInvoice && !wide} onClose={() => setShowInvoice(false)} title="Original invoice">
+          <div className="h-[75dvh] p-3">
+            <InvoiceViewer source={source} className="h-full" />
+          </div>
+        </Sheet>
+      ) : null}
     </>
   );
 }
@@ -316,6 +425,17 @@ function InvoiceDetails({
   periodMissing: boolean;
   onChange: (field: keyof InvoiceData, value: string) => void;
 }) {
+  // One small shake when the currency becomes invalid, to point at the field that needs fixing.
+  const [currencyField, animateCurrency] = useAnimate<HTMLLabelElement>();
+  const reduce = useReducedMotion();
+  const wasInvalid = useRef(currencyInvalid);
+  useEffect(() => {
+    if (currencyInvalid && !wasInvalid.current && !reduce && currencyField.current) {
+      void animateCurrency(currencyField.current, { x: [0, -6, 6, -4, 4, 0] }, { duration: 0.4 });
+    }
+    wasInvalid.current = currencyInvalid;
+  }, [currencyInvalid, reduce, animateCurrency, currencyField]);
+
   const period =
     invoice.period_start && invoice.period_end
       ? `${formatDate(invoice.period_start)} – ${formatDate(invoice.period_end)}`
@@ -373,7 +493,7 @@ function InvoiceDetails({
       {open ? (
         <div className="grid gap-x-4 gap-y-3 border-t border-separator px-5 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
           {fields.map(({ field, label, type, warn }) => (
-            <label key={field} className="flex flex-col gap-1">
+            <label key={field} ref={field === "currency" ? currencyField : undefined} className="flex flex-col gap-1">
               <span className="text-xs text-secondary">{label}</span>
               <input
                 type={type}
@@ -424,12 +544,21 @@ function EditableCell({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  /** A value was just added where one was missing: show a tick for a moment */
+  const [justFilled, setJustFilled] = useState(false);
   const input = useRef<HTMLInputElement & HTMLSelectElement>(null);
+  const reduce = useReducedMotion();
   const showField = editing || missing;
 
   useEffect(() => {
     if (editing) input.current?.focus();
   }, [editing]);
+
+  useEffect(() => {
+    if (!justFilled) return;
+    const timer = window.setTimeout(() => setJustFilled(false), 1600);
+    return () => window.clearTimeout(timer);
+  }, [justFilled]);
 
   function start() {
     setDraft(value === null ? "" : String(value));
@@ -437,7 +566,10 @@ function EditableCell({
   }
 
   function finish(save: boolean) {
-    if (save) onCommit(draft);
+    if (save) {
+      if (missing && draft.trim() !== "") setJustFilled(true);
+      onCommit(draft);
+    }
     setEditing(false);
   }
 
@@ -462,8 +594,32 @@ function EditableCell({
         type="button"
         onClick={start}
         aria-label={`${label}: ${display}. Edit`}
-        className={`rounded-lg px-2 py-1.5 hover:bg-fill-soft focus-visible:outline-2 focus-visible:outline-accent ${align === "right" ? "w-full text-right" : "text-left"}`}
+        className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 hover:bg-fill-soft focus-visible:outline-2 focus-visible:outline-accent ${
+          align === "right" ? "w-full justify-end" : "text-left"
+        }`}
       >
+        {justFilled ? (
+          <motion.svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="size-4 text-accent"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: [1, 1, 0] }}
+            transition={{ duration: 1.6, times: [0, 0.75, 1] }}
+          >
+            <motion.path
+              d="M5 12.5l4.5 4.5L19 7.5"
+              initial={reduce ? false : { pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            />
+          </motion.svg>
+        ) : null}
         {display}
       </button>
     );

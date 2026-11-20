@@ -43,7 +43,7 @@ const ACCEPT = "application/pdf,image/jpeg,image/png,image/webp";
 
 interface UploadStepProps {
   config: ConfigResponse | null;
-  onExtracted: (result: ExtractResponse, fileName: string) => void;
+  onExtracted: (result: ExtractResponse, file: File) => void;
 }
 
 export function UploadStep({ config, onExtracted }: UploadStepProps) {
@@ -52,6 +52,8 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
   const [busyLabel, setBusyLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  /** Shown for a moment after a successful read, before moving on */
+  const [done, setDone] = useState(false);
 
   const provider = config?.provider ?? null;
   /** A real AI reader is active – no-AI mode reads only the SwiftLine sample PDFs */
@@ -65,7 +67,12 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
       const form = new FormData();
       form.append("file", file);
       const result = await postForm<ExtractResponse>("/invoices/extract", form);
-      onExtracted(result, file.name);
+      if (!reduce) {
+        // A short tick confirms the read before the next step slides in.
+        setDone(true);
+        await new Promise((resolve) => window.setTimeout(resolve, 450));
+      }
+      onExtracted(result, file);
     } catch (uploadError) {
       setError(errorMessage(uploadError));
     } finally {
@@ -123,12 +130,18 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
         } ${busy ? "pointer-events-none" : ""}`}
       >
         <span aria-hidden="true" className="flex size-16 items-center justify-center rounded-[20px] bg-accent-tint text-accent">
-          <Icon name={busy ? "file" : "upload"} className="size-[30px]" />
+          {done ? (
+            <svg viewBox="0 0 24 24" className="size-[30px]" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+              <motion.path d="M5 12.5l4.5 4.5L19 7.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.35, ease: "easeOut" }} />
+            </svg>
+          ) : (
+            <Icon name={busy ? "file" : "upload"} className="size-[30px]" />
+          )}
         </span>
         <span className="type-headline text-2xl font-semibold" aria-live="polite">
-          {busy ? busyLabel : dragging ? "Drop to read it" : "Drop the invoice here"}
+          {done ? "Invoice read" : busy ? busyLabel : dragging ? "Drop to read it" : "Drop the invoice here"}
         </span>
-        {busy ? (
+        {busy && !done ? (
           <span className="relative h-1.5 w-56 overflow-hidden rounded-full bg-fill" role="progressbar" aria-label="Reading the invoice">
             <motion.span
               className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-accent"
@@ -173,16 +186,22 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
           <span className="text-[13px] text-secondary">Fictional companies and data</span>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          {MAIN_SAMPLES.map((sample) => {
+          {MAIN_SAMPLES.map((sample, index) => {
             const unavailable = sample.needsAI && !aiActive;
             return (
-              <button
+              <motion.div
                 key={sample.file}
+                className="flex"
+                initial={reduce ? false : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.4, delay: 0.1 + index * 0.05 }}
+              >
+              <button
                 type="button"
                 disabled={busy || unavailable}
                 onClick={() => void loadSample(sample.file)}
                 aria-label={`Use sample: ${sample.label}${unavailable ? " (needs AI reading)" : ""}`}
-                className="pressable flex items-center gap-4 rounded-[20px] bg-surface p-4 text-left shadow-card hover:shadow-raised focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:hover:shadow-card"
+                className="pressable flex flex-1 items-center gap-4 rounded-[20px] bg-surface p-4 text-left shadow-card hover:shadow-raised focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:hover:shadow-card"
               >
                 <Thumbnail kind={sample.thumb} />
                 <span className="flex min-w-0 flex-col gap-1">
@@ -197,6 +216,7 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
                   )}
                 </span>
               </button>
+              </motion.div>
             );
           })}
         </div>

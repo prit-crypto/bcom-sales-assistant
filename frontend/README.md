@@ -18,6 +18,9 @@ The backend must allow this origin in its `CORS_ORIGINS` (default `http://localh
 | `npm run dev` | Development server |
 | `npm run build` / `npm start` | Production build / server |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
+| `npm run e2e` | Browser tests of the whole journey (starts its own backend and frontend on ports 18765 / 13765) |
+| `npm run generate:api` | Regenerate API types from `openapi/openapi.json` (after `make openapi` in the backend) |
+| `npm run check:api` | Fails if the generated API types are out of date |
 | `npm run samples` | Regenerate the sample invoices in `public/samples` (needs local Chrome; set `CHROME_PATH` if needed) |
 
 ## Design
@@ -35,8 +38,23 @@ Approved on 19 Nov 2026 (mock-ups: https://claude.ai/artifact/XKyJeNfN3sxunUJWeE
 - **Motion** uses [Motion](https://motion.dev) springs with no bounce: steps slide forward from the right and back
   to the right; the phone sheet follows the finger and keeps the flick's speed. Buttons shrink slightly the moment
   they are pressed (`pressable`).
+- **Simple animations**: lists ease in, savings bars grow into place, segmented controls slide their pill,
+  figures count up once, a tick draws in when a missing value is filled, "Copy" turns into "Copied ✓", the PDF
+  preview cross-fades when it updates, a half-typed currency gives one small shake. Only `transform` and
+  `opacity` are animated, nothing runs longer than about 0.5 s, and "reduce motion" turns all of it off.
 - **Layout**: a translucent top bar (`AppBar`) and a floating bottom bar (`ActionBar`) on every step, so the next
   action is always in reach. Phones get shipment cards and a bottom sheet for the PDF preview.
+
+## Features worth knowing
+
+- **Work survives a refresh**: the journey is kept in this tab's `sessionStorage` (cleared when the tab closes), and
+  invoices up to 3 MB are kept for the viewer. A "Restored your last session · Discard" notice appears after a reload.
+- **Undo**: every cell edit and include/leave-out on the shipments step can be undone from the toast, the Undo
+  button or ⌘Z / Ctrl+Z (last 20 edits).
+- **Original invoice beside the table**: "Show invoice" splits the screen at 1280 px and wider; smaller screens open
+  it in a sheet.
+- **Types from the backend**: `src/types/*` re-export types generated from the backend's OpenAPI description, so a
+  renamed field fails `npm run typecheck` instead of breaking a screen.
 
 ## Layout
 
@@ -44,13 +62,17 @@ Approved on 19 Nov 2026 (mock-ups: https://claude.ai/artifact/XKyJeNfN3sxunUJWeE
 src/
   app/                 page, layout, design tokens (globals.css)
   components/demo/     one component per journey step + DemoFlow (state, step transitions)
-  components/ui/       AppBar, ActionBar, Button, Banner, Segmented, Disclosure, Sheet, StatusPill, Icon
+  components/ui/       AppBar, ActionBar, Button, Banner, Segmented, Disclosure, Sheet, Toast, InvoiceViewer, …
   lib/client/api.ts    calls to the backend, error handling, request cancelling
   lib/hooks.ts         count-up and screen-width hooks
+  lib/session.ts       keeps the journey across a refresh (sessionStorage)
+  lib/api/generated/   types generated from openapi/openapi.json (never edit by hand)
   lib/validation.ts    highlights missing cells while editing (the backend applies the same rule)
   lib/whatsapp.ts      wa.me click-to-chat link
   lib/format.ts        money / date display
-  types/               API types (snake_case, matching backend/app/schemas)
+  types/               thin re-exports of the generated API types
+e2e/                   Playwright browser tests (npm run e2e)
+openapi/openapi.json   the backend's API description, refreshed by `make openapi`
 public/samples/        fictional sample invoices offered on the upload screen
 scripts/               sample invoice generator
 ```

@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { ActionBar } from "@/components/ui/ActionBar";
 import { Banner } from "@/components/ui/Banner";
@@ -41,6 +42,8 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
   const [howOpen, setHowOpen] = useState(false);
   const [filter, setFilter] = useState<RowFilter>("all");
   const headline = useCountUp(Math.abs(summary.monthly_saving));
+  const reduce = useReducedMotion();
+  const conversion = summary.converted_from;
 
   const prospect = invoice.customer_name ?? "This prospect";
   const courier = invoice.carrier_name ?? "the current courier";
@@ -90,9 +93,16 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
           className="flex flex-wrap items-end justify-between gap-8 rounded-[28px] bg-surface p-6 shadow-raised sm:p-10"
         >
           <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-2">
-            <p className="text-[15px] font-medium text-secondary">
-              {sameCost ? `${prospect} would pay` : saves ? `${prospect} could save` : `With BCOM, ${prospect} would pay`}
-            </p>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <p className="text-[15px] font-medium text-secondary">
+                {sameCost ? `${prospect} would pay` : saves ? `${prospect} could save` : `With BCOM, ${prospect} would pay`}
+              </p>
+              {conversion ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-tint px-2.5 py-0.5 text-xs font-semibold text-accent">
+                  Converted from {conversion.currency}
+                </span>
+              ) : null}
+            </div>
             <h1 id="savings-title" className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1 font-bold">
               {sameCost ? (
                 <span className="type-title text-[40px] sm:text-[56px]">About the same as today</span>
@@ -115,10 +125,18 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
                 than {courier} for the same services
               </p>
             )}
+            {conversion ? (
+              <p className="text-sm text-secondary">
+                {conversion.currency}{" "}
+                {conversion.original_spend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on the
+                invoice, converted at {conversion.rate} AED per {conversion.currency}
+                {conversion.currency === "USD" ? " (the dirham's fixed peg)" : ""}.
+              </p>
+            ) : null}
           </div>
           <dl className="grid flex-[1_1_440px] grid-cols-3 overflow-hidden rounded-[18px] bg-canvas">
-            <Stat label="Today" value={formatMoney(summary.monthly_current)} detail="per month" />
-            <Stat label="With BCOM" value={formatMoney(summary.monthly_proposed)} detail="per month" divider />
+            <Stat label="Today" value={<CountMoney value={summary.monthly_current} />} detail="per month" />
+            <Stat label="With BCOM" value={<CountMoney value={summary.monthly_proposed} />} detail="per month" divider />
             <Stat
               label="Compared"
               value={`${summary.compared_shipments} of ${summary.total_shipments}`}
@@ -143,7 +161,13 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
         ) : null}
 
         <section aria-label="Coverage" className="flex flex-col gap-3 rounded-[20px] bg-surface px-6 py-5 shadow-card">
-          <div aria-hidden="true" className="flex h-2 gap-0.5 overflow-hidden rounded-full">
+          <motion.div
+            aria-hidden="true"
+            className="flex h-2 origin-left gap-0.5 overflow-hidden rounded-full"
+            initial={reduce ? false : { scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.6, delay: 0.15 }}
+          >
             {COVERAGE.map(({ status, bar }) =>
               summary.status_counts[status] > 0 ? (
                 <span
@@ -153,7 +177,7 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
                 />
               ) : null,
             )}
-          </div>
+          </motion.div>
           <div className="flex flex-wrap gap-2">
             {COVERAGE.map(({ status, label, bar }) =>
               summary.status_counts[status] > 0 ? (
@@ -188,12 +212,15 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
             />
           </div>
           <ul>
-            {groups.map((group) => {
+            {groups.map((group, index) => {
               const up = group.saving >= 0;
               const width = Math.max(2, Math.round((Math.abs(group.saving) / largest) * 100));
               return (
-                <li
+                <motion.li
                   key={group.key}
+                  initial={reduce ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.35, delay: index * 0.03 }}
                   className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-2 border-t border-separator px-6 py-4 md:grid-cols-[minmax(180px,1.2fr)_minmax(160px,2fr)_minmax(120px,auto)]"
                 >
                   <div className="flex min-w-0 flex-col gap-0.5">
@@ -204,7 +231,14 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
                     </span>
                   </div>
                   <div aria-hidden="true" className="col-span-2 h-2.5 overflow-hidden rounded-full bg-fill-soft md:col-span-1">
-                    <div className={`h-full rounded-full ${up ? "bg-accent" : "bg-bad-bar"}`} style={{ width: `${width}%` }} />
+                    {/* Grows from the left (a transform, so it stays smooth) each time the rows change. */}
+                    <motion.div
+                      className={`h-full origin-left rounded-full ${up ? "bg-accent" : "bg-bad-bar"}`}
+                      style={{ width: `${width}%` }}
+                      initial={reduce ? false : { scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.5, delay: 0.1 + index * 0.03 }}
+                    />
                   </div>
                   <span
                     className={`tabular col-start-2 row-start-1 text-right text-base font-semibold whitespace-nowrap md:col-start-auto md:row-auto ${up ? "text-accent" : "text-bad"}`}
@@ -212,7 +246,7 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
                     <span className="sr-only">{up ? "Saves" : "Costs more by"} </span>
                     {signedMoney(group.saving)}
                   </span>
-                </li>
+                </motion.li>
               );
             })}
           </ul>
@@ -313,7 +347,28 @@ export function SavingsStep({ invoice, comparison, onBack, onContinue }: Savings
   );
 }
 
-function Stat({ label, value, detail, divider = false }: { label: string; value: string; detail: string; divider?: boolean }) {
+/** Money that counts up with the headline the first time Savings opens. */
+function CountMoney({ value }: { value: number }) {
+  const shown = useCountUp(value);
+  return (
+    <>
+      <span className="sr-only">{formatMoney(value)}</span>
+      <span aria-hidden="true">{formatMoney(shown)}</span>
+    </>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  detail,
+  divider = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  detail: string;
+  divider?: boolean;
+}) {
   return (
     <div className={`flex min-w-0 flex-col gap-1 px-3 py-4 sm:px-5 ${divider ? "border-l border-separator" : ""}`}>
       <dt className="text-xs text-secondary">{label}</dt>

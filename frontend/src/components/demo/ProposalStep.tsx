@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ActionBar } from "@/components/ui/ActionBar";
 import { Banner } from "@/components/ui/Banner";
@@ -54,6 +55,7 @@ export function ProposalStep({
   onContinue,
 }: ProposalStepProps) {
   const wide = useMinWidth(1024);
+  const reduce = useReducedMotion();
   const [status, setStatus] = useState<Status>(proposal ? "ready" : "waiting");
   const [error, setError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -119,8 +121,16 @@ export function ProposalStep({
           : "Building the PDF…";
 
   const preview = proposal ? (
-    // Hide the browser's PDF toolbar so the preview reads as a page, fitted to the width.
-    <iframe title="Proposal preview" src={`${proposal.url}#toolbar=0&navpanes=0&view=FitH`} className="h-full w-full rounded bg-white" />
+    // Each new PDF fades in; the browser's PDF toolbar is hidden so the preview reads as a page.
+    <motion.div
+      key={proposal.url}
+      className="h-full w-full"
+      initial={reduce ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25 }}
+    >
+      <iframe title="Proposal preview" src={`${proposal.url}#toolbar=0&navpanes=0&view=FitH`} className="h-full w-full rounded bg-white" />
+    </motion.div>
   ) : (
     <div className="flex h-full items-center justify-center text-sm text-secondary">{missingRequired ? "Waiting for the names" : "Building…"}</div>
   );

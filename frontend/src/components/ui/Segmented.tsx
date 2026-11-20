@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, type KeyboardEvent } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { useId, useRef, type KeyboardEvent } from "react";
 
 export interface SegmentOption<T extends string> {
   value: T;
@@ -27,6 +28,8 @@ export function Segmented<T extends string>({
   stretch?: boolean;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const pillId = `segment-pill-${useId()}`;
+  const reduce = useReducedMotion();
 
   function onKeyDown(event: KeyboardEvent, index: number) {
     const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
@@ -60,11 +63,20 @@ export function Segmented<T extends string>({
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => onKeyDown(event, index)}
-            className={`pressable rounded-lg text-center whitespace-nowrap focus-visible:outline-2 focus-visible:outline-accent ${pad} ${
-              selected ? "bg-surface font-semibold text-ink shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-secondary hover:text-ink"
+            className={`pressable relative rounded-lg text-center whitespace-nowrap focus-visible:outline-2 focus-visible:outline-accent ${pad} ${
+              selected ? "font-semibold text-ink" : "font-medium text-secondary hover:text-ink"
             }`}
           >
-            {option.label}
+            {selected ? (
+              // The white pill slides to the chosen option instead of jumping.
+              <motion.span
+                layoutId={pillId}
+                aria-hidden="true"
+                className="absolute inset-0 rounded-lg bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
+                transition={reduce ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.3 }}
+              />
+            ) : null}
+            <span className="relative">{option.label}</span>
           </button>
         );
       })}

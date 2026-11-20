@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ActionBar } from "@/components/ui/ActionBar";
 import { Banner } from "@/components/ui/Banner";
@@ -28,6 +29,7 @@ export function WhatsAppStep({ invoice, partner, proposal, message, onMessage, o
   const [edited, setEdited] = useState(false);
   const textArea = useRef<HTMLTextAreaElement>(null);
   const started = useRef(false);
+  const reduce = useReducedMotion();
 
   async function write() {
     setBusy(true);
@@ -113,7 +115,12 @@ export function WhatsAppStep({ invoice, partner, proposal, message, onMessage, o
               </span>
             ) : null}
             {message ? (
-              <div className="flex w-full max-w-[520px] flex-col gap-1 rounded-[14px] rounded-br-[4px] bg-bubble px-3.5 pt-2.5 pb-1.5 text-bubble-ink shadow-[0_1px_1px_rgba(0,0,0,0.08)] focus-within:ring-2 focus-within:ring-accent/40 focus-within:ring-offset-2 focus-within:ring-offset-chat">
+              <motion.div
+                initial={reduce ? false : { opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+                style={{ transformOrigin: "bottom right" }}
+                className="flex w-full max-w-[520px] flex-col gap-1 rounded-[14px] rounded-br-[4px] bg-bubble px-3.5 pt-2.5 pb-1.5 text-bubble-ink shadow-[0_1px_1px_rgba(0,0,0,0.08)] focus-within:ring-2 focus-within:ring-accent/40 focus-within:ring-offset-2 focus-within:ring-offset-chat">
                 <label htmlFor="whatsapp-message" className="sr-only">
                   Message text
                 </label>
@@ -129,7 +136,7 @@ export function WhatsAppStep({ invoice, partner, proposal, message, onMessage, o
                   className="min-h-48 w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none [field-sizing:content]"
                 />
                 <span className="self-end text-[11px] opacity-70">Draft</span>
-              </div>
+              </motion.div>
             ) : (
               <div
                 role="status"
@@ -171,8 +178,19 @@ export function WhatsAppStep({ invoice, partner, proposal, message, onMessage, o
 
       <ActionBar backLabel="Proposal" onBack={onBack} status={copied ? "Copied to the clipboard" : "You send it yourself from WhatsApp"}>
         <Button variant="tinted" onClick={() => void copy()} disabled={!message}>
-          <Icon name={copied ? "check" : "copy"} className="size-4" />
-          {copied ? "Copied" : "Copy"}
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={copied ? "copied" : "copy"}
+              className="inline-flex items-center gap-2"
+              initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
+              transition={{ duration: 0.18 }}
+            >
+              <Icon name={copied ? "check" : "copy"} className="size-4" />
+              {copied ? "Copied" : "Copy"}
+            </motion.span>
+          </AnimatePresence>
         </Button>
         {message ? (
           <a
