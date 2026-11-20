@@ -46,6 +46,8 @@ def test_creates_a_draft_with_server_figures(client: TestClient) -> None:
     assert created["status"] == "draft"
     assert created["monthly_saving"] == 25
     assert created["reference"].startswith("BCOM-P-")
+    # The same invoice saved twice gets two different references.
+    assert create(client)["reference"] != created["reference"]
     assert created["comparison"]["summary"]["monthly_saving"] == 25
     assert [e["kind"] for e in created["events"]] == ["created"]
     assert created["follow_up_due"] is False
@@ -156,6 +158,8 @@ def test_files_and_events_are_recorded(client: TestClient) -> None:
     pdf = client.get(f"{URL}/{created['id']}/pdf")
     assert pdf.status_code == 200
     assert pdf.content.startswith(b"%PDF")
+    # The PDF carries the saved proposal's own reference.
+    assert f'filename="{created["reference"]}.pdf"' in pdf.headers["content-disposition"]
     excel = client.get(f"{URL}/{created['id']}/excel")
     assert excel.content[:2] == b"PK"
     assert (

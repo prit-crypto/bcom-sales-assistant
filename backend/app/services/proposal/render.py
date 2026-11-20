@@ -112,13 +112,17 @@ def make_reference(invoice: InvoiceData, today: date) -> str:
 
 
 def render_proposal_html(
-    invoice: InvoiceData, partner: PartnerInput, comparison: ComparisonResult, today: date
+    invoice: InvoiceData,
+    partner: PartnerInput,
+    comparison: ComparisonResult,
+    today: date,
+    reference: str | None = None,
 ) -> tuple[str, str]:
     language: Language = partner.language
     labels = LABELS[language]
     summary = comparison.summary
     valid_until = (today + timedelta(days=partner.validity_days)).isoformat()
-    reference = make_reference(invoice, today)
+    reference = reference or make_reference(invoice, today)
     reasons = Counter(
         reason_text(row, language) for row in comparison.rows if row.status != "compared"
     )
@@ -203,6 +207,7 @@ def render_proposal_pdf(
     partner: PartnerInput,
     scenario: Scenario | None = None,
     today: date | None = None,
+    reference: str | None = None,
 ) -> ProposalPdf:
     """Recalculates the comparison (never trusting numbers from the browser) and renders the PDF."""
     comparison = compare_invoice(invoice, scenario=scenario)
@@ -223,7 +228,7 @@ def render_proposal_pdf(
     from weasyprint import HTML
 
     html, reference = render_proposal_html(
-        invoice, partner, comparison, today or datetime.now(UTC).date()
+        invoice, partner, comparison, today or datetime.now(UTC).date(), reference
     )
     content = HTML(string=html, base_url=str(_ASSETS)).write_pdf()
     suffix = "-ar" if partner.language == "ar" else ""

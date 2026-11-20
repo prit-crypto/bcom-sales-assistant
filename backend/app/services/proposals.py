@@ -131,8 +131,11 @@ class ProposalService:
                 status_code=422,
                 code="nothing_to_propose",
             )
+        proposal_id = uuid.uuid4()
         proposal = Proposal(
-            reference=make_reference(body.invoice, today()),
+            id=proposal_id,
+            # Unique per saved proposal: the same invoice can be compared more than once.
+            reference=f"{make_reference(body.invoice, today())}-{proposal_id.hex[:4].upper()}",
             prospect_name=body.partner.prospect_name,
             status="draft",
             invoice=body.invoice.model_dump(mode="json"),

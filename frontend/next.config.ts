@@ -40,6 +40,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // The browser tests run their own dev server next to yours; a separate build folder keeps them apart.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  // A self-contained server for the Docker image (frontend/Dockerfile).
+  output: "standalone",
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

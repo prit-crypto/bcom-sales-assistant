@@ -74,7 +74,9 @@ async def proposal_pdf(proposal_id: uuid.UUID, service: Proposals) -> Response:
     """The proposal PDF, built again from the saved data."""
     proposal = await service.get(proposal_id)
     invoice, scenario, partner = parts(proposal)
-    pdf = await asyncio.to_thread(render_proposal_pdf, invoice, partner, scenario)
+    pdf = await asyncio.to_thread(
+        render_proposal_pdf, invoice, partner, scenario, None, proposal.reference
+    )
     await service.events.record(proposal.id, "pdf_downloaded")
     return Response(
         content=pdf.content,

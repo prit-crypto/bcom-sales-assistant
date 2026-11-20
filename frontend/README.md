@@ -46,7 +46,27 @@ Approved on 19 Nov 2026 (mock-ups: https://claude.ai/artifact/XKyJeNfN3sxunUJWeE
 - **Layout**: a translucent top bar (`AppBar`) and a floating bottom bar (`ActionBar`) on every step, so the next
   action is always in reach. Phones get shipment cards and a bottom sheet for the PDF preview.
 
+## Pages
+
+| Address | What it is |
+|---|---|
+| `/` | Proposals: "Follow up today", then every saved proposal with filter and search |
+| `/new` | The five-step journey for a new invoice |
+| `/proposals/<id>` | One proposal: status, follow-up date, notes, history, files, delete |
+| `/proposals/<id>/edit` | The journey again for a saved proposal (opens at Savings) |
+
+The browser tests (`npm run e2e`) need PostgreSQL running (`make db-up` in the backend); their backend empties and
+migrates its own `bcom_e2e` database on every run.
+
 ## Features worth knowing
+
+- **Saved as you go**: "Compare with BCOM rates" saves the work as a draft proposal; after that the shipments,
+  what-if, partner details and message autosave a moment after they stop changing ("Saving… / Saved" in the top bar).
+  A change made just before closing, reloading or leaving the page is still sent.
+- **Mark as sent** (WhatsApp step or proposal page) sets a follow-up date; on that day the proposal appears under
+  "Follow up today" on the list.
+- **Your details are remembered** on this device (name, company, logo, booking link, language, validity) for the next
+  proposal. There are no accounts yet.
 
 - **Work survives a refresh**: the journey is kept in this tab's `sessionStorage` (cleared when the tab closes), and
   invoices up to 3 MB are kept for the viewer. A "Restored your last session · Discard" notice appears after a reload.

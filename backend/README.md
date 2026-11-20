@@ -8,6 +8,8 @@ the proposal PDF and WhatsApp message. The frontend in [../frontend](../frontend
 ```bash
 make init                 # creates .venv and installs app + dev dependencies (uses uv)
 cp .env.example .env
+make db-up                # PostgreSQL 17 in Docker on port 5440 (bcom, plus bcom_test and bcom_e2e)
+make migrate              # create / update the tables (Alembic)
 make run                  # http://localhost:8000, interactive API docs at /docs
 ```
 
@@ -17,6 +19,8 @@ installs it.
 | Command | Purpose |
 |---|---|
 | `make run` | Development server with reload |
+| `make db-up` / `make migrate` | Start PostgreSQL (repository `docker-compose.yml`) / apply migrations |
+| `make revision m="…"` | New migration generated from the models in `app/models` |
 | `make test` | Unit and API tests (pytest) |
 | `make lint` / `make fmt` | Ruff check / format |
 | `make typecheck` | mypy (strict) |
@@ -36,6 +40,23 @@ installs it.
 | `POST /exports/comparison` | `{invoice, scenario?}` | `.xlsx` (Summary, Shipments, By region, By route) |
 | `POST /proposals` | `{invoice, partner, scenario?}` | `application/pdf` (English or Arabic) |
 | `POST /messages` | `{invoice, partner, scenario?}` | WhatsApp text (English or Arabic) |
+| `GET /health/ready` | – | `200` when the database answers, else `503` (used by Docker healthchecks) |
+
+The live PDF preview uses `POST /proposals/render` (`{invoice, partner, scenario?}` → `application/pdf`). Saved
+proposals (the pipeline):
+
+| Method & path | What it does |
+|---|---|
+| `GET /proposals?status=&q=` | List, newest change first, plus how many sent proposals are due for a follow-up |
+| `POST /proposals` | Save a draft from `{invoice, scenario, partner, source_file_name}` (the frontend does this at Compare) |
+| `GET / PATCH / DELETE /proposals/{id}` | Read; autosave any of invoice, scenario, partner, message, notes, follow_up_on, status, lost_reason; delete |
+| `GET /proposals/{id}/pdf`, `/excel` | Files built again from the saved data |
+| `POST /proposals/{id}/events` | History line for things done in the browser (PDF downloaded, message copied, WhatsApp opened) |
+
+Figures are recalculated on every change, never taken from the browser. Status changes are checked (draft → sent →
+won / lost; a decided proposal can be reopened; a proposal without a saving can't be sent). Marking as sent sets a
+follow-up date `FOLLOW_UP_DAYS` ahead (default 3, "today" in `TIMEZONE`, default Asia/Dubai). Repeated autosaves of
+the same kind within 10 minutes fold into one history line. No uploaded files are stored.
 
 `scenario` is the what-if from the Savings screen: `volume_factor` (0.8, 1, 1.2, 1.5 or 2; scales the monthly figures
 only) and `economy_for_non_urgent` (international Express parcels priced as BCOM Economy; the summary then also gives
@@ -45,6 +66,13 @@ the like-for-like saving and the delivery-time trade-offs). `partner` may carry 
 Every error has the same body: `{"error": {"code": "...", "message": "..."}}`, with a message safe to show to the
 partner. `/proposals` and `/messages` recalculate the comparison themselves and never trust numbers from the browser;
 they return `422 no_saving` when BCOM is not cheaper, and `422 nothing_to_propose` when no shipment could be compared.
+
+## Database
+
+PostgreSQL through async SQLAlchemy + asyncpg, with Alembic migrations in [alembic/](alembic/). Only the repositories
+in [app/repositories](app/repositories) touch the database; services use them. Tables: `proposals` and
+`proposal_events`. Tests use the `bcom_test` database (`TEST_DATABASE_URL` to override) with tables emptied between
+tests, and check that migrations go down and up again.
 
 ## Safeguards
 
@@ -57,6 +85,7 @@ they return `422 no_saving` when BCOM is not cheaper, and `422 nothing_to_propos
 - **Privacy**: with Gemini on the free tier (`GEMINI_PAID_KEY=false`, the default) `/config` returns a notice telling
   partners to use sample invoices only. `ALLOW_ONLY_SAMPLE_FILES=true` makes `/invoices/extract` accept only the
   bundled samples (hashes in `app/assets/sample_hashes.json`, rewritten by `scripts/write_sample_hashes.py`).
+- **Error reporting**: set `SENTRY_DSN` to send errors to Sentry (errors only, no request bodies or personal data).
 - **Security headers** on every API response: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
   `Referrer-Policy: no-referrer`. `make audit` checks the installed packages for known vulnerabilities (needs the
   network, so it is not part of `make check`).
@@ -104,9 +133,14 @@ live key yet.
 
 ```
 app/
-  main.py                 app factory: CORS, error handlers, /api/v1 router
-  api/v1/endpoints/       health, config, invoices, comparisons, proposals, messages
-  core/                   settings (pydantic-settings), AppError + error envelope
+  main.py                 app factory: CORS, error handlers, /api/v1 router, optional Sentry
+  api/deps.py             shared dependencies (database session, proposal service)
+  api/v1/endpoints/       health, config, invoices, comparisons, exports, proposals (render), saved_proposals, messages
+  core/                   settings (pydantic-settings), AppError + error envelope, middleware, rate limit
+  db/                     engine, per-request session, declarative base
+  models/                 database tables (proposals, proposal_events)
+  repositories/           the only code that queries the database
+  services/proposals.py   saved-proposal rules: figures, status changes, history
   schemas/                request/response models, raw reader output + JSON Schema for the AI
   clients/ai/             provider interface, factory, prompts, mock / Gemini / OpenAI
   services/invoice/       upload checks, normalisation, mock parser, PDF text
@@ -114,6 +148,7 @@ app/
   services/proposal/      proposal HTML template -> PDF, sample commercial terms
   services/whatsapp.py    message facts and template
   assets/                 logo used in the PDF
+alembic/                  database migrations
 tests/                    pytest; fixtures/ holds the two SwiftLine sample PDFs and their expected values
 ```
 

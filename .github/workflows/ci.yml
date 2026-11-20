@@ -1,0 +1,123 @@
+# Automatic checks on every push and pull request: backend, frontend, browser tests, dependency audits.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # WeasyPrint (proposal PDF) needs Pango/HarfBuzz; Noto has the Arabic fonts.
+  PDF_PACKAGES: libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-liberation fonts-noto-core
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: bcom
+          POSTGRES_PASSWORD: bcom
+          POSTGRES_DB: bcom_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U bcom" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://bcom:bcom@localhost:5432/bcom_test
+      DATABASE_URL: postgresql+asyncpg://bcom:bcom@localhost:5432/bcom_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends $PDF_PACKAGES
+      - run: make init
+      - run: make lint
+      - run: make typecheck
+      - run: make test
+      - name: Migrations go down and up, and match the models
+        run: |
+          .venv/bin/alembic upgrade head
+          .venv/bin/alembic downgrade base
+          .venv/bin/alembic upgrade head
+          .venv/bin/alembic check
+      - name: API description is up to date
+        run: make openapi && git diff --exit-code -- ../frontend/openapi/openapi.json
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run check:api
+      - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: bcom
+          POSTGRES_PASSWORD: bcom
+          POSTGRES_DB: bcom_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U bcom" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      E2E_DATABASE_URL: postgresql+asyncpg://bcom:bcom@localhost:5432/bcom_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends $PDF_PACKAGES
+      - run: make init
+        working-directory: backend
+      - run: npm ci
+        working-directory: frontend
+      # The runner image has Google Chrome, which the Playwright config uses.
+      - run: npm run e2e
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: frontend/test-results
+          retention-days: 7
+
+  audit:
+    runs-on: ubuntu-latest
+    # Reports known vulnerabilities without blocking merges (they can appear without any code change).
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: make init && make audit
+        working-directory: backend
+      - run: npm ci && npm run audit
+        working-directory: frontend
