@@ -35,6 +35,20 @@ EXTRACTION_USER_PROMPT = (
     "Extract the invoice header and all shipment lines from the attached courier invoice."
 )
 
+
+def build_extraction_user_prompt(hints: tuple[str, ...] = ()) -> str:
+    """The request for one read, with lessons from partners' earlier corrections when there are any."""
+    if not hints:
+        return EXTRACTION_USER_PROMPT
+    lessons = "\n".join(f"- {hint}" for hint in hints)
+    return (
+        f"{EXTRACTION_USER_PROMPT}\n\n"
+        "Partners reviewing earlier readings often had to correct these. Read those values with extra care "
+        "(they are lessons, not facts about this invoice):\n"
+        f"{lessons}"
+    )
+
+
 SALES_MESSAGE_SYSTEM_PROMPT = """You write short WhatsApp messages for BCOM Global franchise partners to send to a prospect after reviewing the prospect's courier invoice.
 
 Rules:

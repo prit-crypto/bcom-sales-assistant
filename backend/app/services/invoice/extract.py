@@ -80,7 +80,7 @@ async def read_invoice(upload: InvoiceFile, on_stage: StageCallback = _ignore) -
         )
         return ReadResult(provider=provider.info, invoice=invoice, cache_hit=None)
 
-    key = extraction_cache.key(upload.data, provider.info.id, provider.info.model)
+    key = extraction_cache.key(upload.data, provider.info.id, provider.info.model, upload.hints)
     cached = extraction_cache.get(key, settings.extract_cache_ttl_seconds)
     if cached is not None:
         await on_stage(
@@ -119,6 +119,7 @@ async def read_invoice(upload: InvoiceFile, on_stage: StageCallback = _ignore) -
         shipments=len(invoice.shipments),
         warnings=len(invoice.warnings),
         uncertain=sum(len(s.uncertain_fields) for s in invoice.shipments),
+        hints=len(upload.hints),
         duration_ms=round(elapsed * 1000),
     )
     return ReadResult(provider=provider.info, invoice=invoice, cache_hit=False)

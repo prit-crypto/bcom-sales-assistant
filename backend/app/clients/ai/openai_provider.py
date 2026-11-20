@@ -15,8 +15,8 @@ from app.clients.ai.base import SalesMessageFacts
 from app.clients.ai.parse_output import parse_raw_invoice_json
 from app.clients.ai.prompts import (
     EXTRACTION_SYSTEM_PROMPT,
-    EXTRACTION_USER_PROMPT,
     SALES_MESSAGE_SYSTEM_PROMPT,
+    build_extraction_user_prompt,
     build_sales_message_prompt,
 )
 from app.core.exceptions import AppError
@@ -83,7 +83,7 @@ class OpenAIProvider:
                     "role": "user",
                     "content": [
                         _file_input(file),
-                        {"type": "input_text", "text": EXTRACTION_USER_PROMPT},
+                        {"type": "input_text", "text": build_extraction_user_prompt(file.hints)},
                     ],
                 }
             ]

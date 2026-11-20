@@ -353,6 +353,61 @@
         "title": "ConfigResponse",
         "type": "object"
       },
+      "CorrectionGroup": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "courier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Courier"
+          },
+          "examples": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Examples",
+            "type": "array"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "courier",
+          "field",
+          "count",
+          "examples"
+        ],
+        "title": "CorrectionGroup",
+        "type": "object"
+      },
       "CurrencyConversion": {
         "description": "How an invoice in another currency was turned into AED.",
         "properties": {
@@ -937,13 +992,33 @@
         "type": "object"
       },
       "ProposalCreate": {
-        "description": "Saved at \"Compare with BCOM rates\": the reviewed invoice, the what-if and the partner details.",
+        "description": "Saved at \"Compare with BCOM rates\": the reviewed invoice, the what-if and the partner details.\n`original_invoice` (as first read) and `reader` let the app learn from the partner's corrections.",
         "properties": {
           "invoice": {
             "$ref": "#/components/schemas/InvoiceData-Input"
           },
+          "original_invoice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvoiceData-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "partner": {
             "$ref": "#/components/schemas/PartnerInput-Input"
+          },
+          "reader": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReaderInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "scenario": {
             "$ref": "#/components/schemas/Scenario-Input"
@@ -959,6 +1034,15 @@
               }
             ],
             "title": "Source File Name"
+          },
+          "source_files": {
+            "items": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Source Files",
+            "type": "array"
           }
         },
         "required": [
@@ -1100,6 +1184,13 @@
             ],
             "title": "Source File Name"
           },
+          "source_files": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Files",
+            "type": "array"
+          },
           "status": {
             "enum": [
               "draft",
@@ -1148,6 +1239,7 @@
           "notes",
           "lost_reason",
           "source_file_name",
+          "source_files",
           "comparison",
           "events"
         ],
@@ -1503,6 +1595,79 @@
         "title": "ProviderInfo",
         "type": "object"
       },
+      "ReaderInput": {
+        "description": "Who read the invoice: an AI provider and model, \"mock\", or \"spreadsheet\".",
+        "properties": {
+          "model": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "provider": {
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider"
+        ],
+        "title": "ReaderInput",
+        "type": "object"
+      },
+      "ReaderTotal": {
+        "properties": {
+          "corrections": {
+            "title": "Corrections",
+            "type": "integer"
+          },
+          "corrections_per_100_shipments": {
+            "title": "Corrections Per 100 Shipments",
+            "type": "number"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "readings": {
+            "title": "Readings",
+            "type": "integer"
+          },
+          "shipments": {
+            "title": "Shipments",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "readings",
+          "shipments",
+          "corrections",
+          "corrections_per_100_shipments"
+        ],
+        "title": "ReaderTotal",
+        "type": "object"
+      },
       "ReadinessResponse": {
         "properties": {
           "database": {
@@ -1527,6 +1692,38 @@
           "database"
         ],
         "title": "ReadinessResponse",
+        "type": "object"
+      },
+      "ReadingReport": {
+        "properties": {
+          "hints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Hints",
+            "type": "array"
+          },
+          "most_corrected": {
+            "items": {
+              "$ref": "#/components/schemas/CorrectionGroup"
+            },
+            "title": "Most Corrected",
+            "type": "array"
+          },
+          "readers": {
+            "items": {
+              "$ref": "#/components/schemas/ReaderTotal"
+            },
+            "title": "Readers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "readers",
+          "most_corrected",
+          "hints"
+        ],
+        "title": "ReadingReport",
         "type": "object"
       },
       "Scenario-Input": {
@@ -2362,6 +2559,28 @@
         "summary": "Ready",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/insights/reading": {
+      "get": {
+        "description": "How often partners corrected each reader's work, the most corrected fields by courier, and the\nhints the AI now gets on new reads. Built from saved proposals.",
+        "operationId": "reading_api_v1_insights_reading_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reading",
+        "tags": [
+          "insights"
         ]
       }
     },

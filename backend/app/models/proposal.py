@@ -37,6 +37,13 @@ class Proposal(Base):
     partner_details: Mapped[dict[str, Any]] = mapped_column(JSONB)
     message: Mapped[str | None] = mapped_column(Text, default=None)
     source_file_name: Mapped[str | None] = mapped_column(String(255), default=None)
+    # Every invoice file in the proposal (several months can be combined)
+    source_files: Mapped[list[str] | None] = mapped_column(JSONB(none_as_null=True), default=None)
+    # The invoice as first read, before the partner's corrections, and who read it
+    original_invoice: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), default=None
+    )
+    reader: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True), default=None)
 
     # Recalculated by the server whenever the invoice or what-if change; kept here for the list.
     currency: Mapped[str] = mapped_column(String(3), default="AED")

@@ -22,13 +22,27 @@ def _strip(value: object) -> object:
 Notes = Annotated[str, BeforeValidator(_strip), Field(max_length=4000)]
 
 
+class ReaderInput(ApiModel):
+    """Who read the invoice: an AI provider and model, "mock", or "spreadsheet"."""
+
+    provider: Annotated[str, Field(min_length=1, max_length=20)]
+    model: Annotated[str, Field(max_length=80)] | None = None
+
+
+FileName = Annotated[str, Field(max_length=255)]
+
+
 class ProposalCreate(ApiModel):
-    """Saved at "Compare with BCOM rates": the reviewed invoice, the what-if and the partner details."""
+    """Saved at "Compare with BCOM rates": the reviewed invoice, the what-if and the partner details.
+    `original_invoice` (as first read) and `reader` let the app learn from the partner's corrections."""
 
     invoice: InvoiceData
     scenario: Scenario = Field(default_factory=Scenario)
     partner: PartnerInput
-    source_file_name: Annotated[str, Field(max_length=255)] | None = None
+    source_file_name: FileName | None = None
+    source_files: list[FileName] = Field(default_factory=list, max_length=3)
+    original_invoice: InvoiceData | None = None
+    reader: ReaderInput | None = None
 
 
 class ProposalUpdate(ApiModel):
@@ -86,6 +100,8 @@ class ProposalDetail(ProposalItem):
     notes: str
     lost_reason: str | None
     source_file_name: str | None
+    # Every invoice file in the proposal (several months can be combined)
+    source_files: list[str]
     comparison: ComparisonResult
     events: list[ProposalEventOut]
 

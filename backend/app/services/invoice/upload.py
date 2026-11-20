@@ -26,6 +26,8 @@ class InvoiceFile:
     data: bytes
     mime_type: AcceptedMimeType
     file_name: str
+    # Lessons from partners' earlier corrections, added to the AI's instructions (empty for none)
+    hints: tuple[str, ...] = ()
 
 
 def _looks_like_csv(data: bytes, file_name: str) -> bool:

@@ -13,8 +13,8 @@ from app.clients.ai.base import SalesMessageFacts
 from app.clients.ai.parse_output import parse_raw_invoice_json
 from app.clients.ai.prompts import (
     EXTRACTION_SYSTEM_PROMPT,
-    EXTRACTION_USER_PROMPT,
     SALES_MESSAGE_SYSTEM_PROMPT,
+    build_extraction_user_prompt,
     build_sales_message_prompt,
 )
 from app.core.config import GeminiThinkingLevel
@@ -160,7 +160,7 @@ class GeminiProvider:
         text, model = await self._generate(
             [
                 types.Part.from_bytes(data=file.data, mime_type=file.mime_type),
-                EXTRACTION_USER_PROMPT,
+                build_extraction_user_prompt(file.hints),
             ],
             types.GenerateContentConfig(
                 system_instruction=EXTRACTION_SYSTEM_PROMPT,

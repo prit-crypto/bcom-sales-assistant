@@ -205,6 +205,36 @@ export type ConfigResponse = {
 };
 
 /**
+ * CorrectionGroup
+ */
+export type CorrectionGroup = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Courier
+     */
+    courier: string | null;
+    /**
+     * Examples
+     */
+    examples: Array<string>;
+    /**
+     * Field
+     */
+    field: string;
+    /**
+     * Model
+     */
+    model: string | null;
+    /**
+     * Provider
+     */
+    provider: string;
+};
+
+/**
  * CurrencyConversion
  *
  * How an invoice in another currency was turned into AED.
@@ -508,15 +538,22 @@ export type PartnerInputOutput = {
  * ProposalCreate
  *
  * Saved at "Compare with BCOM rates": the reviewed invoice, the what-if and the partner details.
+ * `original_invoice` (as first read) and `reader` let the app learn from the partner's corrections.
  */
 export type ProposalCreate = {
     invoice: InvoiceDataInput;
+    original_invoice?: InvoiceDataInput | null;
     partner: PartnerInputInput;
+    reader?: ReaderInput | null;
     scenario?: ScenarioInput;
     /**
      * Source File Name
      */
     source_file_name?: string | null;
+    /**
+     * Source Files
+     */
+    source_files?: Array<string>;
 };
 
 /**
@@ -595,6 +632,10 @@ export type ProposalDetail = {
      * Source File Name
      */
     source_file_name: string | null;
+    /**
+     * Source Files
+     */
+    source_files: Array<string>;
     /**
      * Status
      */
@@ -794,6 +835,52 @@ export type ProviderInfo = {
 };
 
 /**
+ * ReaderInput
+ *
+ * Who read the invoice: an AI provider and model, "mock", or "spreadsheet".
+ */
+export type ReaderInput = {
+    /**
+     * Model
+     */
+    model?: string | null;
+    /**
+     * Provider
+     */
+    provider: string;
+};
+
+/**
+ * ReaderTotal
+ */
+export type ReaderTotal = {
+    /**
+     * Corrections
+     */
+    corrections: number;
+    /**
+     * Corrections Per 100 Shipments
+     */
+    corrections_per_100_shipments: number;
+    /**
+     * Model
+     */
+    model: string | null;
+    /**
+     * Provider
+     */
+    provider: string;
+    /**
+     * Readings
+     */
+    readings: number;
+    /**
+     * Shipments
+     */
+    shipments: number;
+};
+
+/**
  * ReadinessResponse
  */
 export type ReadinessResponse = {
@@ -805,6 +892,24 @@ export type ReadinessResponse = {
      * Status
      */
     status: 'ok' | 'unavailable';
+};
+
+/**
+ * ReadingReport
+ */
+export type ReadingReport = {
+    /**
+     * Hints
+     */
+    hints: Array<string>;
+    /**
+     * Most Corrected
+     */
+    most_corrected: Array<CorrectionGroup>;
+    /**
+     * Readers
+     */
+    readers: Array<ReaderTotal>;
 };
 
 /**
@@ -1199,6 +1304,22 @@ export type ReadyApiV1HealthReadyGetResponses = {
 };
 
 export type ReadyApiV1HealthReadyGetResponse = ReadyApiV1HealthReadyGetResponses[keyof ReadyApiV1HealthReadyGetResponses];
+
+export type ReadingApiV1InsightsReadingGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/insights/reading';
+};
+
+export type ReadingApiV1InsightsReadingGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReadingReport;
+};
+
+export type ReadingApiV1InsightsReadingGetResponse = ReadingApiV1InsightsReadingGetResponses[keyof ReadingApiV1InsightsReadingGetResponses];
 
 export type CheckApiV1InvoicesCheckPostData = {
     body: CheckRequest;

@@ -36,9 +36,12 @@ openapi:  ## refresh frontend/openapi/openapi.json after changing the API
 eval:  ## reading accuracy of the active AI provider on all sample invoices (needs an API key)
 	$(VENV)/python scripts/eval_extraction.py
 
+corrections-report:  ## what partners corrected in each reader's work, and the hints the AI now gets
+	$(VENV)/python scripts/corrections_report.py
+
 audit:  ## known vulnerabilities in the installed dependencies (needs the network)
 	$(VENV)/pip-audit --skip-editable
 
 check: lint typecheck test
 
-.PHONY: init run db-up migrate revision lint fmt typecheck test openapi eval audit check
+.PHONY: init run db-up migrate revision lint fmt typecheck test openapi eval corrections-report audit check

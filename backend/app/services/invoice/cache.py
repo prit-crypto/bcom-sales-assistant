@@ -18,8 +18,10 @@ class ExtractionCache:
         self._lock = threading.Lock()
 
     @staticmethod
-    def key(data: bytes, provider_id: str, model: str | None) -> str:
-        return f"{provider_id}:{model or '-'}:{hashlib.sha256(data).hexdigest()}"
+    def key(data: bytes, provider_id: str, model: str | None, hints: tuple[str, ...] = ()) -> str:
+        # New hints can change the reading, so they are part of the key.
+        hinted = hashlib.sha256("\n".join(hints).encode()).hexdigest()[:12] if hints else "-"
+        return f"{provider_id}:{model or '-'}:{hinted}:{hashlib.sha256(data).hexdigest()}"
 
     def get(self, key: str, ttl_seconds: int) -> InvoiceData | None:
         with self._lock:

@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.models.proposal import Proposal, ProposalEvent
+from app.repositories.correction import CorrectionRepository
 from app.repositories.proposal import ProposalEventRepository, ProposalRepository
 from app.schemas.api import PartnerInput
 from app.schemas.comparison import ComparisonResult, Scenario
@@ -19,6 +20,7 @@ from app.schemas.proposal import (
     ProposalStatus,
     ProposalUpdate,
 )
+from app.services.corrections import record_corrections
 from app.services.pricing.comparison import compare_invoice
 from app.services.proposal.render import make_reference
 
@@ -103,6 +105,8 @@ def to_detail(proposal: Proposal, events: list[ProposalEvent]) -> ProposalDetail
             "notes": proposal.notes,
             "lost_reason": proposal.lost_reason,
             "source_file_name": proposal.source_file_name,
+            "source_files": proposal.source_files
+            or ([proposal.source_file_name] if proposal.source_file_name else []),
             "comparison": compare_invoice(invoice, scenario=scenario),
             "events": [ProposalEventOut(kind=e.kind, detail=e.detail, at=e.at) for e in events],
         }
@@ -110,9 +114,27 @@ def to_detail(proposal: Proposal, events: list[ProposalEvent]) -> ProposalDetail
 
 
 class ProposalService:
-    def __init__(self, proposals: ProposalRepository, events: ProposalEventRepository) -> None:
+    def __init__(
+        self,
+        proposals: ProposalRepository,
+        events: ProposalEventRepository,
+        corrections: CorrectionRepository,
+    ) -> None:
         self.proposals = proposals
         self.events = events
+        self.corrections = corrections
+
+    async def _learn(self, proposal: Proposal) -> None:
+        """Keeps the record of what the partner corrected in the first reading up to date."""
+        if proposal.original_invoice is None or proposal.reader is None:
+            return
+        await record_corrections(
+            self.corrections,
+            proposal.id,
+            InvoiceData.model_validate(proposal.original_invoice),
+            InvoiceData.model_validate(proposal.invoice),
+            proposal.reader,
+        )
 
     async def get(self, proposal_id: uuid.UUID) -> Proposal:
         proposal = await self.proposals.get(proposal_id)
@@ -142,10 +164,16 @@ class ProposalService:
             scenario=body.scenario.model_dump(mode="json"),
             partner_details=body.partner.model_dump(mode="json"),
             source_file_name=body.source_file_name,
+            source_files=body.source_files or None,
+            original_invoice=body.original_invoice.model_dump(mode="json")
+            if body.original_invoice
+            else None,
+            reader=body.reader.model_dump(mode="json") if body.reader else None,
             notes="",
         )
         _apply_figures(proposal, comparison)
         await self.proposals.add(proposal)
+        await self._learn(proposal)
         await self.events.record(proposal.id, "created", {"file": body.source_file_name})
         return proposal
 
@@ -154,6 +182,7 @@ class ProposalService:
         if "invoice" in changed and body.invoice is not None:
             proposal.invoice = body.invoice.model_dump(mode="json")
             await self._note(proposal, "shipments_edited")
+            await self._learn(proposal)
         if "scenario" in changed and body.scenario is not None:
             proposal.scenario = body.scenario.model_dump(mode="json")
             await self._note(proposal, "scenario_changed", body.scenario.model_dump(mode="json"))

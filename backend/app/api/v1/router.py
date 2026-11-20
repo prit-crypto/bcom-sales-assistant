@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     config,
     exports,
     health,
+    insights,
     invoices,
     messages,
     proposals,
@@ -22,3 +23,4 @@ api_router.include_router(proposals.router)
 api_router.include_router(saved_proposals.router)
 api_router.include_router(messages.router)
 api_router.include_router(exports.router)
+api_router.include_router(insights.router)

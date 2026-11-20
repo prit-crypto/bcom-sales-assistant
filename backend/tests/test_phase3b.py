@@ -163,3 +163,141 @@ def test_read_times_average_recent_reads() -> None:
     for _ in range(25):
         times.record(key, 10)
     assert times.typical(key) == 10
+
+
+# --- Learning from corrections -------------------------------------------------------------------
+
+PARTNER = {
+    "partner_name": "Rahul Mehta",
+    "partner_company": "Sharjah Logistics Partners",
+    "prospect_name": "Test Co",
+    "validity_days": 30,
+}
+
+
+def read_and_fix(
+    weight: float = 12, courier: str = "SwiftLine Express"
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    original = make_invoice(
+        [make_shipment(id="s1", weight_kg=120), make_shipment(id="s2", charge=80)],
+        carrier_name=courier,
+    )
+    fixed = original.model_copy(deep=True)
+    fixed.shipments[0].weight_kg = weight
+    return original.model_dump(mode="json"), fixed.model_dump(mode="json")
+
+
+def save(
+    client: TestClient, original: dict[str, Any], fixed: dict[str, Any], provider: str = "gemini"
+) -> str:
+    response = client.post(
+        "/api/v1/proposals",
+        json={
+            "invoice": fixed,
+            "partner": PARTNER,
+            "original_invoice": original,
+            "reader": {"provider": provider, "model": "gemini-x"},
+            "source_files": ["oct.pdf", "nov.pdf"],
+        },
+    )
+    assert response.status_code == 201, response.text
+    assert response.json()["source_files"] == ["oct.pdf", "nov.pdf"]
+    return str(response.json()["id"])
+
+
+def test_corrections_are_recorded_and_follow_later_edits(client: TestClient) -> None:
+    original, fixed = read_and_fix()
+    proposal_id = save(client, original, fixed)
+    report = client.get("/api/v1/insights/reading").json()
+    assert report["readers"] == [
+        {
+            "provider": "gemini",
+            "model": "gemini-x",
+            "readings": 1,
+            "shipments": 2,
+            "corrections": 1,
+            "corrections_per_100_shipments": 50.0,
+        }
+    ]
+    group = report["most_corrected"][0]
+    assert (group["courier"], group["field"], group["examples"]) == (
+        "SwiftLine Express",
+        "weight_kg",
+        ["120 → 12"],
+    )
+
+    # Undoing the fix in an autosave removes the correction.
+    client.patch(f"/api/v1/proposals/{proposal_id}", json={"invoice": original})
+    assert client.get("/api/v1/insights/reading").json()["most_corrected"] == []
+
+
+def test_hints_need_three_ai_corrections_of_the_same_kind(client: TestClient) -> None:
+    for _ in range(2):
+        save(client, *read_and_fix())
+    save(client, *read_and_fix(), provider="spreadsheet")  # no AI: never a lesson
+    assert client.get("/api/v1/insights/reading").json()["hints"] == []
+
+    save(client, *read_and_fix())
+    hints = client.get("/api/v1/insights/reading").json()["hints"]
+    assert hints == [
+        "Partners often corrected the weight on SwiftLine Express invoices (3 times), e.g. 120 → 12."
+    ]
+
+
+def test_hints_reach_the_ai_prompt_and_the_cache_key(client: TestClient, monkeypatch: Any) -> None:
+    from app.api.v1.endpoints import invoices as endpoint
+    from app.clients.ai.mock import MockProvider
+    from app.clients.ai.prompts import EXTRACTION_USER_PROMPT, build_extraction_user_prompt
+    from app.schemas.api import ProviderInfo
+    from app.schemas.raw_invoice import RawInvoice
+    from app.services.invoice import extract as flow
+    from app.services.invoice.cache import ExtractionCache
+
+    for _ in range(3):
+        save(client, *read_and_fix())
+
+    seen: list[tuple[str, ...]] = []
+
+    class FakeGemini:
+        info = ProviderInfo(id="gemini", label="Gemini", model="gemini-x", reads_images=True)
+
+        async def extract_invoice(self, file: Any) -> RawInvoice:
+            seen.append(file.hints)
+            return await MockProvider().extract_invoice(file)
+
+    monkeypatch.setattr(endpoint, "get_ai_provider", FakeGemini)
+    monkeypatch.setattr(flow, "get_ai_provider", FakeGemini)
+    response = client.post(
+        "/api/v1/invoices/extract",
+        files={"file": ("x.pdf", sample_pdf("sample-1-al-noor-mobile"), "application/pdf")},
+    )
+    assert response.status_code == 200, response.text
+    assert len(seen) == 1 and "weight" in seen[0][0]
+
+    prompt = build_extraction_user_prompt(seen[0])
+    assert prompt.startswith(EXTRACTION_USER_PROMPT) and seen[0][0] in prompt
+    assert build_extraction_user_prompt(()) == EXTRACTION_USER_PROMPT
+    assert ExtractionCache.key(b"x", "gemini", "m") != ExtractionCache.key(
+        b"x", "gemini", "m", seen[0]
+    )
+
+    monkeypatch.setenv("READING_HINTS", "false")
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+    client.post(
+        "/api/v1/invoices/extract",
+        files={"file": ("y.pdf", sample_pdf("sample-2-gulf-spice"), "application/pdf")},
+    )
+    assert seen[-1] == ()
+
+
+def test_proposals_without_a_reader_record_nothing(client: TestClient) -> None:
+    original, fixed = read_and_fix()
+    response = client.post("/api/v1/proposals", json={"invoice": fixed, "partner": PARTNER})
+    assert response.json()["source_files"] == []
+    assert client.get("/api/v1/insights/reading").json() == {
+        "readers": [],
+        "most_corrected": [],
+        "hints": [],
+    }

@@ -64,7 +64,9 @@ def _truncate() -> None:
     async def run() -> None:
         async with get_engine().begin() as connection:
             await connection.execute(
-                text("TRUNCATE proposals, proposal_events RESTART IDENTITY CASCADE")
+                text(
+                    "TRUNCATE proposals, proposal_events, reading_corrections RESTART IDENTITY CASCADE"
+                )
             )
 
     asyncio.run(run())

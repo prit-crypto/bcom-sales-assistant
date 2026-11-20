@@ -62,6 +62,8 @@ class Settings(BaseSettings):
     timezone: str = "Asia/Dubai"
     # Days after "Mark as sent" before the proposal shows under "Follow up today".
     follow_up_days: int = Field(default=3, ge=1, le=60)
+    # Pass lessons from partners' corrections to the AI on new reads.
+    reading_hints: bool = True
     # Error reporting to Sentry; empty turns it off.
     sentry_dsn: str = Field(default="", repr=False)
 
