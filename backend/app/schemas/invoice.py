@@ -4,7 +4,9 @@ partner has reviewed it. The same models validate requests, so limits live here.
 import re
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, BeforeValidator, Field
+from pydantic import AfterValidator, BeforeValidator, Field
+
+from app.schemas.base import ApiModel
 
 ServiceLevel = Literal["express", "economy"]
 SERVICE_LEVELS: tuple[ServiceLevel, ...] = ("express", "economy")
@@ -53,7 +55,7 @@ CountryCode = Annotated[
 ]
 
 
-class Shipment(BaseModel):
+class Shipment(ApiModel):
     """One shipment line from a prospect's courier invoice."""
 
     id: str = Field(min_length=1, max_length=40)
@@ -71,7 +73,7 @@ class Shipment(BaseModel):
     included: bool = True
 
 
-class InvoiceData(BaseModel):
+class InvoiceData(ApiModel):
     """Everything read from one invoice."""
 
     carrier_name: Text120 = None

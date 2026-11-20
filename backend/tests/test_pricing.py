@@ -78,8 +78,8 @@ def test_adds_up_savings_only_for_compared_shipments() -> None:
     assert result.rows[0].service_label == "BCOM Express"
 
 
-def test_does_not_compare_invoices_in_another_currency() -> None:
-    result = compare_invoice(make_invoice([make_shipment()], currency="USD"))
+def test_does_not_compare_invoices_in_a_currency_without_a_rate() -> None:
+    result = compare_invoice(make_invoice([make_shipment()], currency="EUR"))
     assert result.summary.compared_shipments == 0
     assert result.rows[0].status == "not_eligible"
     assert result.summary.has_saving is False

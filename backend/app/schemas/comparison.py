@@ -2,15 +2,14 @@
 
 from typing import Literal
 
-from pydantic import BaseModel
-
+from app.schemas.base import ApiModel
 from app.schemas.invoice import InvoiceData, RequiredShipmentField, ServiceLevel
 
 ShipmentStatus = Literal["compared", "missing_data", "not_eligible", "excluded"]
 ZoneId = Literal["Z1", "Z2", "Z3", "Z4", "Z5", "Z6"]
 
 
-class ShipmentComparison(BaseModel):
+class ShipmentComparison(ApiModel):
     shipment_id: str
     status: ShipmentStatus
     # Why the shipment was not compared (None when compared).
@@ -27,7 +26,7 @@ class ShipmentComparison(BaseModel):
     transit_time: str | None = None
 
 
-class GroupTotal(BaseModel):
+class GroupTotal(ApiModel):
     key: str
     label: str
     shipments: int = 0
@@ -36,14 +35,24 @@ class GroupTotal(BaseModel):
     saving: float = 0
 
 
-class StatusCounts(BaseModel):
+class StatusCounts(ApiModel):
     compared: int = 0
     missing_data: int = 0
     not_eligible: int = 0
     excluded: int = 0
 
 
-class ComparisonSummary(BaseModel):
+class CurrencyConversion(ApiModel):
+    """How an invoice in another currency was turned into AED."""
+
+    currency: str
+    # AED per 1 unit of `currency`.
+    rate: float
+    # Total of the invoice lines in the original currency.
+    original_spend: float
+
+
+class ComparisonSummary(ApiModel):
     currency: str
     total_shipments: int
     compared_shipments: int
@@ -76,12 +85,14 @@ class ComparisonSummary(BaseModel):
     by_service: list[GroupTotal]
     top_lanes: list[GroupTotal]
     assumptions: list[str]
+    # Set when the invoice was in another currency and converted to AED for the comparison.
+    converted_from: CurrencyConversion | None = None
 
 
-class ComparisonResult(BaseModel):
+class ComparisonResult(ApiModel):
     rows: list[ShipmentComparison]
     summary: ComparisonSummary
 
 
-class ComparisonRequest(BaseModel):
+class ComparisonRequest(ApiModel):
     invoice: InvoiceData

@@ -38,6 +38,17 @@ class Settings(BaseSettings):
     # Largest invoice file accepted, in MB.
     max_upload_mb: float = Field(default=10, gt=0, le=30)
 
+    # Rates used to convert other invoice currencies to AED before comparing (AED per 1 unit).
+    # USD is the UAE dirham's fixed peg. Add others as JSON, e.g. FX_RATES_TO_AED={"USD":3.6725,"EUR":4.0}
+    fx_rates_to_aed: dict[str, float] = Field(default_factory=lambda: {"USD": 3.6725})
+
+    # Requests per minute per client for the endpoints that call the AI provider; 0 turns it off.
+    rate_limit_per_minute: int = Field(default=20, ge=0, le=10_000)
+
+    # Re-uploading the same file returns the earlier reading instead of calling the AI again.
+    extract_cache_size: int = Field(default=64, ge=0, le=10_000)
+    extract_cache_ttl_seconds: int = Field(default=3600, ge=0)
+
     @field_validator(
         "ai_provider",
         "gemini_model",
@@ -56,6 +67,20 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @field_validator("fx_rates_to_aed")
+    @classmethod
+    def _check_rates(cls, rates: dict[str, float]) -> dict[str, float]:
+        cleaned = {code.strip().upper(): rate for code, rate in rates.items()}
+        for code, rate in cleaned.items():
+            if len(code) != 3 or not code.isalpha() or rate <= 0:
+                raise ValueError(f"invalid exchange rate entry: {code}={rate}")
+        return cleaned
+
+    @property
+    def log_json(self) -> bool:
+        """JSON logs everywhere except local development, where readable lines are nicer."""
+        return self.app_env != "development"
 
     @property
     def gemini_fallback(self) -> str | None:

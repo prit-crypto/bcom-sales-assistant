@@ -21,6 +21,8 @@ installs it.
 | `make lint` / `make fmt` | Ruff check / format |
 | `make typecheck` | mypy (strict) |
 | `make check` | lint + typecheck + test |
+| `make openapi` | Refresh `frontend/openapi/openapi.json` after changing the API (a test fails if you forget) |
+| `make eval` | Reading accuracy of the active AI provider on all 8 sample invoices; writes `eval-report.md` |
 
 ## API (`/api/v1`)
 
@@ -37,6 +39,23 @@ Every error has the same body: `{"error": {"code": "...", "message": "..."}}`, w
 partner. `/proposals` and `/messages` recalculate the comparison themselves and never trust numbers from the browser;
 they return `422 no_saving` when BCOM is not cheaper, and `422 nothing_to_propose` when no shipment could be compared.
 
+## Safeguards
+
+- **Other currencies** are converted to AED before comparing when a rate is set in `FX_RATES_TO_AED` (default
+  `{"USD": 3.6725}`, the dirham's fixed peg). The summary's `converted_from` and an assumption line say so; a
+  currency without a rate is still refused as "not comparable".
+- **Request size**: requests declaring more than `MAX_UPLOAD_MB` (+1 MB for form overhead) get `413` before any of
+  the body is read; the upload reader also counts bytes as a second guard.
+- **Rate limit**: `/invoices/extract` and `/messages` (the endpoints that call the AI) allow
+  `RATE_LIMIT_PER_MINUTE` requests per client per minute (default 20, `0` turns it off), then `429 rate_limited`.
+  In memory, so per process; move it to Redis when running several instances.
+- **Extraction cache**: the same file read by the same provider and model is returned from memory
+  (`X-Cache: hit`) for `EXTRACT_CACHE_TTL_SECONDS`, up to `EXTRACT_CACHE_SIZE` invoices. Only cleaned invoice data
+  is kept, never the file.
+- **Logs** are structured (structlog): readable lines in development, JSON elsewhere (`APP_ENV`). Every line carries
+  the request id (the caller's `X-Request-ID`, or a new one echoed back). Reads log provider, model, cache hit,
+  shipment count and time; customer names and amounts are never logged.
+
 ## Invoice reader (`AI_PROVIDER`)
 
 | `AI_PROVIDER` | What it does | Needs | Cost |
@@ -52,8 +71,8 @@ message rather than a cut-off request. Every provider's output is validated agai
 
 The Gemini results recorded on 18 Nov 2026 (all 8 samples read 100% correctly by `gemini-3.5-flash-lite`) were
 measured with the previous TypeScript version, whose output schema used camelCase field names. The schema now uses
-snake_case; re-check one sample when you first run Gemini or OpenAI here. OpenAI has not been run against a live key
-yet.
+snake_case; run `make eval` with a key to re-check all eight samples in one go. OpenAI has not been run against a
+live key yet.
 
 ## Layout
 

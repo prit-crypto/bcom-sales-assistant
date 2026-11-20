@@ -5,6 +5,9 @@
 # frontend (Next.js)
 node_modules/
 .next/
+.next-e2e/
+test-results/
+playwright-report/
 out/
 next-env.d.ts
 *.tsbuildinfo
@@ -22,3 +25,6 @@ __pycache__/
 # misc
 .DS_Store
 coverage/
+
+# reports
+backend/eval-report.md

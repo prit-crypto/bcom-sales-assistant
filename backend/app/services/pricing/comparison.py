@@ -1,10 +1,13 @@
 """Compares every shipment on an invoice with the BCOM rate card and summarises the result."""
 
+from collections.abc import Mapping
 from datetime import date
 
+from app.core.config import get_settings
 from app.schemas.comparison import (
     ComparisonResult,
     ComparisonSummary,
+    CurrencyConversion,
     GroupTotal,
     ShipmentComparison,
     StatusCounts,
@@ -139,10 +142,44 @@ def _period_assumption(period_days: int | None, monthly_factor: float) -> str:
     return f"The invoice covers {period_days} days; figures are scaled to a 30-day month."
 
 
-def compare_invoice(invoice: InvoiceData) -> ComparisonResult:
+def _conversion_assumption(conversion: CurrencyConversion) -> str:
+    peg = " (the UAE dirham's fixed peg)" if conversion.currency == "USD" else ""
+    return (
+        f"Amounts on the invoice are in {conversion.currency} and were converted at "
+        f"{conversion.rate:g} {RATE_CARD_CURRENCY} per {conversion.currency}{peg} before comparing."
+    )
+
+
+def compare_invoice(
+    invoice: InvoiceData, fx_rates: Mapping[str, float] | None = None
+) -> ComparisonResult:
+    """Compares the invoice with the rate card. Amounts in another currency are converted to AED first
+    when a rate for it is configured (`fx_rates`, defaulting to the FX_RATES_TO_AED setting)."""
+    rates = get_settings().fx_rates_to_aed if fx_rates is None else fx_rates
     currency = (invoice.currency or RATE_CARD_CURRENCY).upper()
-    currency_ok = currency == RATE_CARD_CURRENCY
-    rows = [_compare_shipment(shipment, currency_ok) for shipment in invoice.shipments]
+    rate = None if currency == RATE_CARD_CURRENCY else rates.get(currency)
+    currency_ok = currency == RATE_CARD_CURRENCY or rate is not None
+
+    conversion: CurrencyConversion | None = None
+    shipments = invoice.shipments
+    if rate is not None:
+        conversion = CurrencyConversion(
+            currency=currency,
+            rate=rate,
+            original_spend=round_money(sum(shipment.charge or 0 for shipment in shipments)),
+        )
+        shipments = [
+            shipment.model_copy(
+                update={
+                    "charge": None
+                    if shipment.charge is None
+                    else round_money(shipment.charge * rate)
+                }
+            )
+            for shipment in shipments
+        ]
+
+    rows = [_compare_shipment(shipment, currency_ok) for shipment in shipments]
 
     counts = StatusCounts()
     zones: dict[str, GroupTotal] = {}
@@ -152,7 +189,7 @@ def compare_invoice(invoice: InvoiceData) -> ComparisonResult:
     proposed_spend = 0.0
     higher_priced = 0
 
-    for row, shipment in zip(rows, invoice.shipments, strict=True):
+    for row, shipment in zip(rows, shipments, strict=True):
         setattr(counts, row.status, getattr(counts, row.status) + 1)
         if row.status != "compared":
             continue
@@ -166,7 +203,7 @@ def compare_invoice(invoice: InvoiceData) -> ComparisonResult:
         lane = _lane_label(shipment)
         _add_to_group(lanes, lane.lower(), lane, row)
 
-    invoice_spend = round_money(sum(shipment.charge or 0 for shipment in invoice.shipments))
+    invoice_spend = round_money(sum(shipment.charge or 0 for shipment in shipments))
     current_spend = round_money(current_spend)
     proposed_spend = round_money(proposed_spend)
     saving = round_money(current_spend - proposed_spend)
@@ -187,9 +224,11 @@ def compare_invoice(invoice: InvoiceData) -> ComparisonResult:
         assumptions.append(
             f"The invoice currency was not found, so the amounts are assumed to be in {RATE_CARD_CURRENCY}."
         )
+    elif conversion is not None:
+        assumptions.append(_conversion_assumption(conversion))
     elif not currency_ok:
         assumptions.append(
-            f"The invoice currency is {currency}, so no shipments could be compared with the {RATE_CARD_CURRENCY} rate card."
+            f"The invoice currency is {currency} and no exchange rate is set for it, so no shipments could be compared with the {RATE_CARD_CURRENCY} rate card."
         )
 
     summary = ComparisonSummary(
@@ -216,5 +255,6 @@ def compare_invoice(invoice: InvoiceData) -> ComparisonResult:
         by_service=list(services.values()),
         top_lanes=sorted(lanes.values(), key=lambda group: group.current, reverse=True)[:TOP_LANES],
         assumptions=assumptions,
+        converted_from=conversion,
     )
     return ComparisonResult(rows=rows, summary=summary)

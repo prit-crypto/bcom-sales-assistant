@@ -14,18 +14,24 @@ os.environ["OPENAI_API_KEY"] = ""
 
 from app.clients.ai.factory import get_ai_provider  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
+from app.core.rate_limit import limiter  # noqa: E402
 from app.schemas.invoice import InvoiceData, Shipment  # noqa: E402
+from app.services.invoice.cache import extraction_cache  # noqa: E402
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
 @pytest.fixture(autouse=True)
 def _fresh_settings() -> Iterator[None]:
-    get_settings.cache_clear()
-    get_ai_provider.cache_clear()
+    def reset() -> None:
+        get_settings.cache_clear()
+        get_ai_provider.cache_clear()
+        limiter.reset()
+        extraction_cache.clear()
+
+    reset()
     yield
-    get_settings.cache_clear()
-    get_ai_provider.cache_clear()
+    reset()
 
 
 @pytest.fixture

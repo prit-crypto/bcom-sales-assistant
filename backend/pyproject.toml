@@ -14,6 +14,7 @@ dependencies = [
     "openai>=1.60",              # OpenAI invoice reader
     "jinja2>=3.1",               # proposal HTML template
     "weasyprint>=63",            # proposal HTML -> PDF (needs pango system libs)
+    "structlog>=24.4",           # structured logs with request ids (team standard)
 ]
 
 [project.optional-dependencies]

@@ -63,12 +63,12 @@ def test_builds_a_message_only_from_calculated_facts() -> None:
     assert "AED 25 every month" in render_template_message(facts)
 
 
-def test_warns_straight_away_when_the_invoice_is_not_in_aed() -> None:
+def test_warns_when_a_currency_has_no_rate() -> None:
     invoice = normalize_invoice(
-        raw_invoice(currency="usd", shipments=[], carrier_name="Oryx Express Inc.")
+        raw_invoice(currency="chf", shipments=[], carrier_name="Oryx Express Inc.")
     )
-    assert invoice.currency == "USD"
-    assert "This invoice is in USD" in " ".join(invoice.warnings)
+    assert invoice.currency == "CHF"
+    assert "no exchange rate is set for CHF" in " ".join(invoice.warnings)
 
 
 def test_warns_when_the_currency_or_period_is_missing() -> None:

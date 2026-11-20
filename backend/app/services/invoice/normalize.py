@@ -2,6 +2,7 @@
 
 import re
 
+from app.core.config import get_settings
 from app.schemas.invoice import InvoiceData, ServiceLevel, Shipment
 from app.schemas.raw_invoice import LooseNumber, RawInvoice, RawShipment
 from app.services.invoice.validation import get_missing_fields
@@ -135,9 +136,16 @@ def normalize_invoice(raw: RawInvoice) -> InvoiceData:
             f"{RATE_CARD_CURRENCY}. Enter the currency if it is different."
         )
     elif currency and currency != RATE_CARD_CURRENCY:
-        warnings.append(
-            f"This invoice is in {currency}. The BCOM rate card is in {RATE_CARD_CURRENCY}, so its shipments cannot be compared yet."
-        )
+        rate = get_settings().fx_rates_to_aed.get(currency)
+        if rate is not None:
+            warnings.append(
+                f"This invoice is in {currency}. Its amounts will be converted at {rate:g} "
+                f"{RATE_CARD_CURRENCY} per {currency} to compare them with the BCOM rate card."
+            )
+        else:
+            warnings.append(
+                f"This invoice is in {currency}. The BCOM rate card is in {RATE_CARD_CURRENCY} and no exchange rate is set for {currency}, so its shipments cannot be compared yet."
+            )
 
     return InvoiceData(
         carrier_name=_clean_text(raw.carrier_name),
