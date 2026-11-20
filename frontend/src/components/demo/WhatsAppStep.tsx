@@ -10,7 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { errorMessage, postJson } from "@/lib/client/api";
 import { partnerForRequest } from "@/lib/partner";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
-import type { MessageResponse, PartnerDetailsInput, Scenario } from "@/types/api";
+import type { MessageResponse, PartnerDetailsInput, Scenario, ShareLink } from "@/types/api";
 import type { InvoiceData } from "@/types/invoice";
 import { formatDueDate } from "@/lib/format";
 import type { SavedInfo } from "./DemoFlow";
@@ -44,6 +44,27 @@ export function WhatsAppStep({
 }: WhatsAppStepProps) {
   const [marking, setMarking] = useState(false);
   const [markError, setMarkError] = useState<string | null>(null);
+  const [linking, setLinking] = useState(false);
+
+  /** Adds the customer's link (made if needed) to the end of the message, in the message's language. */
+  async function addLink() {
+    if (!saved || !message) return;
+    setLinking(true);
+    setMarkError(null);
+    try {
+      const link = await postJson<ShareLink>(`/proposals/${saved.id}/share`, {});
+      const url = `${window.location.origin}${link.path}`;
+      if (!message.message.includes(url)) {
+        const lead = partner.language === "ar" ? "يمكنكم الاطلاع على العرض وقبوله عبر الإنترنت:" : "View and accept the proposal online:";
+        onMessage({ ...message, message: `${message.message.trimEnd()}\n\n${lead} ${url}` });
+        setEdited(true);
+      }
+    } catch (failure) {
+      setMarkError(errorMessage(failure));
+    } finally {
+      setLinking(false);
+    }
+  }
 
   async function markSent() {
     if (!onMarkSent) return;
@@ -216,6 +237,20 @@ export function WhatsAppStep({
             </div>
           ) : null}
         </div>
+
+        {saved && message ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="tinted" onClick={() => void addLink()} disabled={linking}>
+              {linking ? "Adding…" : "Add the proposal link"}
+            </Button>
+            <Link
+              href={`/proposals/${saved.id}`}
+              className="pressable rounded-full px-3 py-2 text-sm font-semibold text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              Send by email instead
+            </Link>
+          </div>
+        ) : null}
 
         {saved ? (
           <section

@@ -209,3 +209,11 @@ def test_migrations_go_down_and_up_again(clean_db: None) -> None:
 
 def test_today_uses_the_uae_time_zone() -> None:
     assert isinstance(today(), date)
+
+
+def test_changes_are_saved_before_the_answer_is_sent() -> None:
+    """Regression: the commit ran after the response, so an immediate re-read could see half a change."""
+    from app.api.deps import DbSession
+
+    depends = DbSession.__metadata__[0]
+    assert depends.scope == "function"

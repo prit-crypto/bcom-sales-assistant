@@ -65,7 +65,10 @@ Details: [backend/README.md](backend/README.md) · [frontend/README.md](frontend
    shipments not included, commercial conditions, assumptions.
 5. **WhatsApp** – write the message, edit a word, click *Open in WhatsApp*. Nothing is sent automatically.
    Click *Mark as sent*: the proposal now waits for a follow-up.
-6. **Proposals** – click the logo: the proposal is in the list. Open it to see its history, change the follow-up date,
+6. **Customer link** – on the proposal's page, create the customer link and open it: this is what the customer
+   sees. Accept it, then look at the proposal again: it is won. "Send by email" sends it with the PDF (with
+   `docker compose up -d mailpit`, emails land in the inbox at http://localhost:8025).
+7. **Proposals** – click the logo: the proposal is in the list. Open it to see its history, change the follow-up date,
    add a note, mark it won or lost, or download the PDF again.
 
 Phase 3b extras: drop two invoices from different months at once (or "Add another month") for an average over
@@ -97,7 +100,8 @@ row on the upload screen shows the same flow on four different invoice designs (
 - No login yet (by decision): everyone who can open the app sees and can change **the same list of proposals**, and
   the partner's own details are remembered per device. Keep it on a private network until logins are added. The
   per-minute limit on the AI endpoints only slows misuse; anyone with the URL can still use up the AI quota.
-- Follow-up reminders show in the app only; nothing is emailed yet.
+- Follow-up reminders show in the app only; reminder emails to partners are not built yet.
+- Sending on WhatsApp Business and live BCOM rates (Metafour) need outside approvals and are not built.
 - Saved proposals keep the reviewed invoice data (customer names and amounts), never the uploaded file. Delete a
   proposal to remove its data.
 - No database or volumetric weight from parcel dimensions.

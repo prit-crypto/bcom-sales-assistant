@@ -54,8 +54,10 @@ Approved on 19 Nov 2026 (mock-ups: https://claude.ai/artifact/XKyJeNfN3sxunUJWeE
 | `/new` | The five-step journey for a new invoice |
 | `/proposals/<id>` | One proposal: status, follow-up date, notes, history, files, delete |
 | `/proposals/<id>/edit` | The journey again for a saved proposal (opens at Savings) |
+| `/p/<token>` | **The customer's page** from their link: savings, regions, services, PDF, contact and Accept, in English or Arabic. No partner screens are reachable from it, and search engines are told not to index it |
 
-The browser tests (`npm run e2e`) need PostgreSQL running (`make db-up` in the backend); their backend empties and
+The browser tests (`npm run e2e`) need PostgreSQL and Mailpit running (`docker compose up -d db mailpit` in the
+repository root); their backend empties and
 migrates its own `bcom_e2e` database on every run.
 
 ## Features worth knowing
@@ -69,6 +71,10 @@ migrates its own `bcom_e2e` database on every run.
 - **Saved as you go**: "Compare with BCOM rates" saves the work as a draft proposal; after that the shipments,
   what-if, partner details and message autosave a moment after they stop changing ("Saving… / Saved" in the top bar).
   A change made just before closing, reloading or leaving the page is still sent.
+- **Customer link and email** (proposal page): "Create customer link" gives a private page where the customer
+  sees the savings and can accept (the proposal then shows as won, with their name and note). "Send by email" starts
+  with a message in the customer's language, attaches the PDF and can add the link. The WhatsApp step can add the
+  link to the message too.
 - **Mark as sent** (WhatsApp step or proposal page) sets a follow-up date; on that day the proposal appears under
   "Follow up today" on the list.
 - **Your details are remembered** on this device (name, company, logo, booking link, language, validity) for the next

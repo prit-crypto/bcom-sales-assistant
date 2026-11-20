@@ -109,3 +109,28 @@ test("reading progress and a two-month review pass axe", async ({ page }) => {
   await expect(page.getByRole("main")).toContainText("68 shipments read from 2 invoices");
   await scan(page, "two-month review");
 });
+
+for (const mode of [
+  { name: "English, light, desktop", language: "en", colorScheme: "light", viewport: { width: 1300, height: 900 } },
+  { name: "Arabic, dark, phone", language: "ar", colorScheme: "dark", viewport: { width: 390, height: 844 } },
+] as const) {
+  test(`the customer's page passes axe (${mode.name})`, async ({ page, context }) => {
+    await openApp(page);
+    await loadSample(page, "Clean PDF");
+    await compare(page);
+    await expect(page).toHaveURL(/\/edit$/);
+    const id = page.url().match(/proposals\/([0-9a-f-]{36})/)![1]!;
+    const api = "http://localhost:18765/api/v1";
+    if (mode.language === "ar") {
+      const detail = await (await page.request.get(`${api}/proposals/${id}`)).json();
+      await page.request.patch(`${api}/proposals/${id}`, { data: { partner: { ...detail.partner, language: "ar" } } });
+    }
+    const link = await (await page.request.post(`${api}/proposals/${id}/share`)).json();
+    const customer = await context.newPage();
+    await customer.setViewportSize(mode.viewport);
+    await customer.emulateMedia({ colorScheme: mode.colorScheme, reducedMotion: "reduce" });
+    await customer.goto(link.path);
+    await expect(customer.locator("#saving-title")).toBeVisible();
+    await scan(customer, "customer page");
+  });
+}

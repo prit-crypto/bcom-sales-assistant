@@ -10,7 +10,9 @@ import { Icon } from "@/components/ui/Icon";
 import { errorMessage, getFile, getJson, patchJson, saveBlob, sendNoContent } from "@/lib/client/api";
 import { formatDate, formatDueDate, formatMoney, formatPercent, formatWhen } from "@/lib/format";
 import type { ProposalDetail, ProposalStatus } from "@/types/api";
+import { EmailCard } from "./EmailCard";
 import { ProposalStatusPill } from "./ProposalStatusPill";
+import { ShareCard } from "./ShareCard";
 
 type Event = ProposalDetail["events"][number];
 
@@ -60,6 +62,18 @@ function describeEvent(event: Event): string {
       return "Message copied";
     case "whatsapp_opened":
       return "Opened in WhatsApp";
+    case "link_created":
+      return "Customer link created";
+    case "link_turned_off":
+      return "Customer link turned off";
+    case "customer_opened":
+      return "Customer opened the link";
+    case "accepted_online":
+      return detail.note
+        ? `Accepted online by ${String(detail.name)}: "${String(detail.note)}"`
+        : `Accepted online by ${String(detail.name)}`;
+    case "emailed":
+      return `Emailed to ${String(detail.to)}${Number(detail.cc) > 0 ? ` (+${Number(detail.cc)} in copy)` : ""}`;
     default:
       return event.kind;
   }
@@ -367,6 +381,9 @@ export function ProposalPage({ id }: { id: string }) {
                 <p className="text-[13px] text-secondary">The WhatsApp message is written on the last step of the journey.</p>
               )}
             </section>
+
+            <ShareCard proposal={proposal} onChange={setProposal} />
+            <EmailCard proposal={proposal} onSent={setProposal} />
 
             <section aria-labelledby="notes-title" className="flex flex-col gap-2 rounded-[22px] bg-surface p-5 shadow-card sm:p-6">
               <div className="flex items-center justify-between">

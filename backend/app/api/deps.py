@@ -10,7 +10,9 @@ from app.repositories.correction import CorrectionRepository
 from app.repositories.proposal import ProposalEventRepository, ProposalRepository
 from app.services.proposals import ProposalService
 
-DbSession = Annotated[AsyncSession, Depends(get_db)]
+# scope="function": the transaction commits before the response is sent. Otherwise the browser could read
+# right after a change and see only part of it (e.g. the history line but not the new value).
+DbSession = Annotated[AsyncSession, Depends(get_db, scope="function")]
 
 
 def proposal_service(db: DbSession) -> ProposalService:

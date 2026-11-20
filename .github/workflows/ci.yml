@@ -82,6 +82,10 @@ jobs:
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U bcom" --health-interval 5s --health-timeout 3s --health-retries 10
+      # Catches the emails the browser tests send; they read them back from its API.
+      mailpit:
+        image: axllent/mailpit:v1.33.0
+        ports: ["8025:8025", "1025:1025"]
     env:
       E2E_DATABASE_URL: postgresql+asyncpg://bcom:bcom@localhost:5432/bcom_e2e
     steps:

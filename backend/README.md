@@ -43,6 +43,7 @@ installs it.
 | `POST /exports/comparison` | `{invoice, scenario?}` | `.xlsx` (Summary, Shipments, By region, By route) |
 | `POST /proposals` | `{invoice, partner, scenario?}` | `application/pdf` (English or Arabic) |
 | `POST /messages` | `{invoice, partner, scenario?}` | WhatsApp text (English or Arabic) |
+| `GET /public/proposals/{token}` (+ `/pdf`, `/accept`) | – / `{name, note}` | the customer's link: what the customer sees (no shipment data), the PDF, and Accept (marks it Won). By token only; rate-limited |
 | `GET /insights/reading` | – | for the team: corrections per reader, the most corrected fields by courier, the hints the AI gets |
 | `GET /health/ready` | – | `200` when the database answers, else `503` (used by Docker healthchecks) |
 
@@ -56,6 +57,9 @@ proposals (the pipeline):
 | `GET / PATCH / DELETE /proposals/{id}` | Read; autosave any of invoice, scenario, partner, message, notes, follow_up_on, status, lost_reason; delete |
 | `GET /proposals/{id}/pdf`, `/excel` | Files built again from the saved data |
 | `POST /proposals/{id}/events` | History line for things done in the browser (PDF downloaded, message copied, WhatsApp opened) |
+| `POST / DELETE /proposals/{id}/share` | Make (or return) / turn off the customer's link (`/p/<token>`, unguessable; a turned-off link stops working) |
+| `GET /proposals/{id}/email-draft` | Subject and message to start the email with, in the customer's language |
+| `POST /proposals/{id}/email` | Email it: `{to, cc, subject, message, attach_pdf, include_link}`; a draft becomes sent |
 
 Figures are recalculated on every change, never taken from the browser. Status changes are checked (draft → sent →
 won / lost; a decided proposal can be reopened; a proposal without a saving can't be sent). Marking as sent sets a
@@ -93,6 +97,14 @@ tests, and check that migrations go down and up again.
   partner changed is recorded (`reading_corrections`, recomputed on each autosave). The 8 most frequent kinds of AI
   correction (3+ of a kind in 90 days, by field and courier) are added to the reading instructions as short
   lessons, are part of the cache key, and can be switched off with `READING_HINTS=false`.
+- **Customer link**: valid until the sent (or saved) date plus the proposal's validity days; lost, expired or
+  no-saving proposals can't be accepted. Wrong, old and turned-off links all give the same 404. The first opening
+  and the acceptance (name and note) go into the history; later visits are counted.
+- **Email**: any SMTP server (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SECURITY`,
+  `EMAIL_FROM`, `EMAIL_FROM_NAME`, `PUBLIC_APP_URL` for the link). Empty `SMTP_HOST` switches email off and `/config`
+  says so. Plain text + HTML, PDF attached, replies go to the partner. A failing mail server gives a plain message,
+  never its own error. For local testing `docker compose up -d mailpit` catches every email
+  (`SMTP_HOST=localhost SMTP_PORT=1025 SMTP_SECURITY=none`; inbox at http://localhost:8025).
 - **Error reporting**: set `SENTRY_DSN` to send errors to Sentry (errors only, no request bodies or personal data).
 - **Security headers** on every API response: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
   `Referrer-Policy: no-referrer`. `make audit` checks the installed packages for known vulnerabilities (needs the

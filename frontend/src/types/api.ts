@@ -15,6 +15,7 @@ export type {
   ComparisonSummary,
   ConfigResponse,
   CurrencyConversion,
+  EmailDraft,
   ExtractResponse,
   GroupTotal,
   InvoiceCheck,
@@ -23,6 +24,8 @@ export type {
   ProposalItem,
   ProposalList,
   ProviderInfo,
+  PublicProposal,
+  ShareLink,
   ShipmentComparison,
   TransitTradeoff,
 } from "@/lib/api/generated";
