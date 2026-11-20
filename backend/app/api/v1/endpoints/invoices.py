@@ -1,34 +1,29 @@
-import hashlib
+import asyncio
 import json
-import time
-from functools import lru_cache
-from pathlib import Path
+from collections.abc import AsyncIterator
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, Response, UploadFile
+from fastapi.responses import StreamingResponse
 
-from app.clients.ai.factory import get_ai_provider
 from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.core.logging import get_logger
 from app.core.rate_limit import rate_limited
-from app.schemas.api import ExtractResponse
+from app.schemas.api import CombineRequest, ExtractResponse
 from app.schemas.comparison import CheckRequest, CheckResponse
-from app.services.invoice.cache import extraction_cache
+from app.schemas.invoice import InvoiceData
 from app.services.invoice.checks import check_invoice
-from app.services.invoice.normalize import normalize_invoice
-from app.services.invoice.spreadsheet import parse_spreadsheet
-from app.services.invoice.upload import SPREADSHEETS, read_invoice_upload
+from app.services.invoice.combine import combine_invoices
+from app.services.invoice.extract import read_invoice
+from app.services.invoice.upload import read_invoice_upload
 
 log = get_logger("bcom.invoices")
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
-SAMPLE_HASHES = Path(__file__).resolve().parents[3] / "assets" / "sample_hashes.json"
-
-
-@lru_cache
-def sample_hashes() -> frozenset[str]:
-    return frozenset(json.loads(SAMPLE_HASHES.read_text()).values())
+# While the AI works, a comment line this often keeps proxies from closing the stream.
+HEARTBEAT_SECONDS = 5.0
 
 
 @router.post("/extract", dependencies=[Depends(rate_limited("extract"))])
@@ -40,62 +35,93 @@ async def extract_invoice(
     PDFs and photos go to the active AI provider; CSV and Excel statements are read directly, without AI.
     The same file read again by the same provider and model comes from the cache (header `X-Cache: hit`).
     """
-    settings = get_settings()
-    upload = await read_invoice_upload(file, settings.max_upload_mb)
-    if (
-        settings.allow_only_sample_files
-        and hashlib.sha256(upload.data).hexdigest() not in sample_hashes()
-    ):
-        raise AppError(
-            "This demo server only accepts the sample invoices, to keep real customer data off the free AI tier.",
-            status_code=403,
-            code="samples_only",
-        )
-    provider = get_ai_provider()
+    upload = await read_invoice_upload(file, get_settings().max_upload_mb)
+    result = await read_invoice(upload)
+    if result.cache_hit is not None:
+        response.headers["X-Cache"] = "hit" if result.cache_hit else "miss"
+    return ExtractResponse(provider=result.provider, invoice=result.invoice)
 
-    if upload.mime_type in SPREADSHEETS:
-        started = time.perf_counter()
-        invoice = normalize_invoice(parse_spreadsheet(upload))
-        log.info(
-            "invoice_read",
-            provider="spreadsheet",
-            file_type=upload.mime_type,
-            shipments=len(invoice.shipments),
-            duration_ms=round((time.perf_counter() - started) * 1000),
-        )
-        return ExtractResponse(provider=provider.info, invoice=invoice)
 
-    key = extraction_cache.key(upload.data, provider.info.id, provider.info.model)
-    cached = extraction_cache.get(key, settings.extract_cache_ttl_seconds)
-    if cached is not None:
-        response.headers["X-Cache"] = "hit"
-        log.info(
-            "invoice_read", provider=provider.info.id, cache="hit", shipments=len(cached.shipments)
-        )
-        return ExtractResponse(provider=provider.info, invoice=cached)
+def _event(name: str, data: dict[str, Any]) -> str:
+    return f"event: {name}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
-    started = time.perf_counter()
-    raw = await provider.extract_invoice(upload)
-    invoice = normalize_invoice(raw)
-    extraction_cache.put(key, invoice, settings.extract_cache_size)
-    response.headers["X-Cache"] = "miss"
-    # Counts and timings only: no customer names or amounts in the logs.
-    log.info(
-        "invoice_read",
-        provider=provider.info.id,
-        model=provider.info.model,
-        cache="miss",
-        file_type=upload.mime_type,
-        file_kb=round(len(upload.data) / 1024),
-        shipments=len(invoice.shipments),
-        warnings=len(invoice.warnings),
-        uncertain=sum(len(s.uncertain_fields) for s in invoice.shipments),
-        duration_ms=round((time.perf_counter() - started) * 1000),
+
+@router.post(
+    "/extract/stream",
+    dependencies=[Depends(rate_limited("extract"))],
+    response_class=StreamingResponse,
+    responses={
+        200: {
+            "content": {"text/event-stream": {}},
+            "description": (
+                "Server-sent events: `stage` ({stage, ...}) for received, checked, reading, cleaning and "
+                "checking; then `done` (the same body as /extract) or `error` ({code, message})."
+            ),
+        }
+    },
+)
+async def extract_invoice_stream(file: UploadFile | None = File(default=None)) -> StreamingResponse:
+    """The same read as `/extract`, reporting each stage as it happens (live progress on the upload screen)."""
+    # Reading the upload happens before the stream starts, so a bad file is an ordinary error response.
+    upload = await read_invoice_upload(file, get_settings().max_upload_mb)
+    queue: asyncio.Queue[str | None] = asyncio.Queue()
+
+    async def on_stage(stage: str, detail: dict[str, Any]) -> None:
+        await queue.put(_event("stage", {"stage": stage, **detail}))
+
+    async def run() -> None:
+        try:
+            result = await read_invoice(upload, on_stage)
+            body = ExtractResponse(provider=result.provider, invoice=result.invoice)
+            await queue.put(_event("done", body.model_dump(mode="json")))
+        except AppError as error:
+            await queue.put(_event("error", {"code": error.code, "message": error.message}))
+        except Exception:
+            log.exception("stream_read_failed")
+            await queue.put(
+                _event(
+                    "error",
+                    {
+                        "code": "internal_error",
+                        "message": "Something went wrong. Please try again.",
+                    },
+                )
+            )
+        finally:
+            await queue.put(None)
+
+    async def events() -> AsyncIterator[str]:
+        yield _event("stage", {"stage": "received", "file_name": upload.file_name})
+        task = asyncio.create_task(run())
+        try:
+            while True:
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=HEARTBEAT_SECONDS)
+                except TimeoutError:
+                    yield ": still reading\n\n"
+                    continue
+                if item is None:
+                    break
+                yield item
+        finally:
+            if not task.done():
+                task.cancel()
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
     )
-    return ExtractResponse(provider=provider.info, invoice=invoice)
 
 
 @router.post("/check")
 async def check(body: CheckRequest) -> CheckResponse:
     """Sanity checks on the reviewed invoice (totals, duplicates, outliers). No AI, instant."""
     return CheckResponse(checks=check_invoice(body.invoice))
+
+
+@router.post("/combine")
+async def combine(body: CombineRequest) -> InvoiceData:
+    """Combines 2–3 invoices from consecutive months into one, for a steadier monthly average.
+    Refused when periods overlap or are missing, or the currencies differ."""
+    return combine_invoices(body.invoices)

@@ -24,6 +24,7 @@ from app.core.rate_limit import limiter  # noqa: E402
 from app.db.session import get_engine, get_sessionmaker  # noqa: E402
 from app.schemas.invoice import InvoiceData, Shipment  # noqa: E402
 from app.services.invoice.cache import extraction_cache  # noqa: E402
+from app.services.invoice.timing import read_times  # noqa: E402
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -35,6 +36,7 @@ def _fresh_settings() -> Iterator[None]:
         get_ai_provider.cache_clear()
         limiter.reset()
         extraction_cache.clear()
+        read_times.clear()
         get_engine.cache_clear()
         get_sessionmaker.cache_clear()
 

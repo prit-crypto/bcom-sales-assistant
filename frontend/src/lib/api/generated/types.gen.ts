@@ -15,6 +15,16 @@ export type BodyExtractInvoiceApiV1InvoicesExtractPost = {
 };
 
 /**
+ * Body_extract_invoice_stream_api_v1_invoices_extract_stream_post
+ */
+export type BodyExtractInvoiceStreamApiV1InvoicesExtractStreamPost = {
+    /**
+     * File
+     */
+    file?: Blob | File | null;
+};
+
+/**
  * CheckRequest
  */
 export type CheckRequest = {
@@ -29,6 +39,18 @@ export type CheckResponse = {
      * Checks
      */
     checks: Array<InvoiceCheck>;
+};
+
+/**
+ * CombineRequest
+ *
+ * 2–3 invoices from consecutive months, each as read and reviewed.
+ */
+export type CombineRequest = {
+    /**
+     * Invoices
+     */
+    invoices: Array<InvoiceDataInput>;
 };
 
 /**
@@ -1203,6 +1225,31 @@ export type CheckApiV1InvoicesCheckPostResponses = {
 
 export type CheckApiV1InvoicesCheckPostResponse = CheckApiV1InvoicesCheckPostResponses[keyof CheckApiV1InvoicesCheckPostResponses];
 
+export type CombineApiV1InvoicesCombinePostData = {
+    body: CombineRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/invoices/combine';
+};
+
+export type CombineApiV1InvoicesCombinePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CombineApiV1InvoicesCombinePostError = CombineApiV1InvoicesCombinePostErrors[keyof CombineApiV1InvoicesCombinePostErrors];
+
+export type CombineApiV1InvoicesCombinePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: InvoiceDataOutput;
+};
+
+export type CombineApiV1InvoicesCombinePostResponse = CombineApiV1InvoicesCombinePostResponses[keyof CombineApiV1InvoicesCombinePostResponses];
+
 export type ExtractInvoiceApiV1InvoicesExtractPostData = {
     body?: BodyExtractInvoiceApiV1InvoicesExtractPost;
     path?: never;
@@ -1227,6 +1274,29 @@ export type ExtractInvoiceApiV1InvoicesExtractPostResponses = {
 };
 
 export type ExtractInvoiceApiV1InvoicesExtractPostResponse = ExtractInvoiceApiV1InvoicesExtractPostResponses[keyof ExtractInvoiceApiV1InvoicesExtractPostResponses];
+
+export type ExtractInvoiceStreamApiV1InvoicesExtractStreamPostData = {
+    body?: BodyExtractInvoiceStreamApiV1InvoicesExtractStreamPost;
+    path?: never;
+    query?: never;
+    url: '/api/v1/invoices/extract/stream';
+};
+
+export type ExtractInvoiceStreamApiV1InvoicesExtractStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExtractInvoiceStreamApiV1InvoicesExtractStreamPostError = ExtractInvoiceStreamApiV1InvoicesExtractStreamPostErrors[keyof ExtractInvoiceStreamApiV1InvoicesExtractStreamPostErrors];
+
+export type ExtractInvoiceStreamApiV1InvoicesExtractStreamPostResponses = {
+    /**
+     * Server-sent events: `stage` ({stage, ...}) for received, checked, reading, cleaning and checking; then `done` (the same body as /extract) or `error` ({code, message}).
+     */
+    200: unknown;
+};
 
 export type CreateMessageApiV1MessagesPostData = {
     body: ProposalRequest;

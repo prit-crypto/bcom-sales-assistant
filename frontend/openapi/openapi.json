@@ -19,6 +19,24 @@
         "title": "Body_extract_invoice_api_v1_invoices_extract_post",
         "type": "object"
       },
+      "Body_extract_invoice_stream_api_v1_invoices_extract_stream_post": {
+        "properties": {
+          "file": {
+            "anyOf": [
+              {
+                "contentMediaType": "application/octet-stream",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File"
+          }
+        },
+        "title": "Body_extract_invoice_stream_api_v1_invoices_extract_stream_post",
+        "type": "object"
+      },
       "CheckRequest": {
         "properties": {
           "invoice": {
@@ -45,6 +63,25 @@
           "checks"
         ],
         "title": "CheckResponse",
+        "type": "object"
+      },
+      "CombineRequest": {
+        "description": "2–3 invoices from consecutive months, each as read and reviewed.",
+        "properties": {
+          "invoices": {
+            "items": {
+              "$ref": "#/components/schemas/InvoiceData-Input"
+            },
+            "maxItems": 3,
+            "minItems": 2,
+            "title": "Invoices",
+            "type": "array"
+          }
+        },
+        "required": [
+          "invoices"
+        ],
+        "title": "CombineRequest",
         "type": "object"
       },
       "ComparisonRequest": {
@@ -2370,6 +2407,48 @@
         ]
       }
     },
+    "/api/v1/invoices/combine": {
+      "post": {
+        "description": "Combines 2–3 invoices from consecutive months into one, for a steadier monthly average.\nRefused when periods overlap or are missing, or the currencies differ.",
+        "operationId": "combine_api_v1_invoices_combine_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CombineRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceData-Output"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Combine",
+        "tags": [
+          "invoices"
+        ]
+      }
+    },
     "/api/v1/invoices/extract": {
       "post": {
         "description": "Reads an uploaded courier invoice and returns clean, editable data.\n\nPDFs and photos go to the active AI provider; CSV and Excel statements are read directly, without AI.\nThe same file read again by the same provider and model comes from the cache (header `X-Cache: hit`).",
@@ -2406,6 +2485,43 @@
           }
         },
         "summary": "Extract Invoice",
+        "tags": [
+          "invoices"
+        ]
+      }
+    },
+    "/api/v1/invoices/extract/stream": {
+      "post": {
+        "description": "The same read as `/extract`, reporting each stage as it happens (live progress on the upload screen).",
+        "operationId": "extract_invoice_stream_api_v1_invoices_extract_stream_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_extract_invoice_stream_api_v1_invoices_extract_stream_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {}
+            },
+            "description": "Server-sent events: `stage` ({stage, ...}) for received, checked, reading, cleaning and checking; then `done` (the same body as /extract) or `error` ({code, message})."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Extract Invoice Stream",
         "tags": [
           "invoices"
         ]

@@ -78,6 +78,12 @@ class ExtractResponse(ApiModel):
     invoice: InvoiceData
 
 
+class CombineRequest(ApiModel):
+    """2–3 invoices from consecutive months, each as read and reviewed."""
+
+    invoices: list[InvoiceData] = Field(min_length=2, max_length=3)
+
+
 class PartnerInput(ApiModel):
     """Partner details entered on the proposal step."""
 
