@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     invoices,
     messages,
     proposals,
+    public,
     saved_proposals,
 )
 
@@ -24,3 +25,4 @@ api_router.include_router(saved_proposals.router)
 api_router.include_router(messages.router)
 api_router.include_router(exports.router)
 api_router.include_router(insights.router)
+api_router.include_router(public.router)

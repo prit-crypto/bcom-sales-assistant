@@ -1,6 +1,27 @@
 {
   "components": {
     "schemas": {
+      "AcceptRequest": {
+        "properties": {
+          "name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "AcceptRequest",
+        "type": "object"
+      },
       "Body_extract_invoice_api_v1_invoices_extract_post": {
         "properties": {
           "file": {
@@ -301,6 +322,11 @@
       },
       "ConfigResponse": {
         "properties": {
+          "email_enabled": {
+            "default": false,
+            "title": "Email Enabled",
+            "type": "boolean"
+          },
           "max_upload_mb": {
             "title": "Max Upload Mb",
             "type": "number"
@@ -348,7 +374,8 @@
           "problem",
           "max_upload_mb",
           "privacy_notice",
-          "samples_only"
+          "samples_only",
+          "email_enabled"
         ],
         "title": "ConfigResponse",
         "type": "object"
@@ -430,6 +457,82 @@
           "original_spend"
         ],
         "title": "CurrencyConversion",
+        "type": "object"
+      },
+      "EmailDraft": {
+        "description": "What the email form starts with; the partner can change everything.",
+        "properties": {
+          "email_enabled": {
+            "title": "Email Enabled",
+            "type": "boolean"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "message",
+          "email_enabled"
+        ],
+        "title": "EmailDraft",
+        "type": "object"
+      },
+      "EmailRequest": {
+        "properties": {
+          "attach_pdf": {
+            "default": true,
+            "title": "Attach Pdf",
+            "type": "boolean"
+          },
+          "cc": {
+            "items": {
+              "maxLength": 254,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Cc",
+            "type": "array"
+          },
+          "include_link": {
+            "default": true,
+            "title": "Include Link",
+            "type": "boolean"
+          },
+          "message": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "subject": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Subject",
+            "type": "string"
+          },
+          "to": {
+            "maxLength": 254,
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "message"
+        ],
+        "title": "EmailRequest",
         "type": "object"
       },
       "ExtractResponse": {
@@ -1173,6 +1276,17 @@
             ],
             "title": "Sent At"
           },
+          "share_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Path"
+          },
           "source_file_name": {
             "anyOf": [
               {
@@ -1210,6 +1324,22 @@
             "title": "Updated At",
             "type": "string"
           },
+          "view_count": {
+            "title": "View Count",
+            "type": "integer"
+          },
+          "viewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viewed At"
+          },
           "yearly_saving": {
             "title": "Yearly Saving",
             "type": "number"
@@ -1240,6 +1370,9 @@
           "lost_reason",
           "source_file_name",
           "source_files",
+          "share_path",
+          "viewed_at",
+          "view_count",
           "comparison",
           "events"
         ],
@@ -1595,6 +1728,247 @@
         "title": "ProviderInfo",
         "type": "object"
       },
+      "PublicGroup": {
+        "properties": {
+          "current": {
+            "title": "Current",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "proposed": {
+            "title": "Proposed",
+            "type": "number"
+          },
+          "saving": {
+            "title": "Saving",
+            "type": "number"
+          },
+          "shipments": {
+            "title": "Shipments",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "shipments",
+          "current",
+          "proposed",
+          "saving"
+        ],
+        "title": "PublicGroup",
+        "type": "object"
+      },
+      "PublicPartner": {
+        "properties": {
+          "booking_url": {
+            "title": "Booking Url",
+            "type": "string"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "logo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "company",
+          "phone",
+          "email",
+          "booking_url",
+          "logo"
+        ],
+        "title": "PublicPartner",
+        "type": "object"
+      },
+      "PublicProposal": {
+        "properties": {
+          "accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "accepted_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted By"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "conditions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "language": {
+            "enum": [
+              "en",
+              "ar"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "monthly_current": {
+            "title": "Monthly Current",
+            "type": "number"
+          },
+          "monthly_proposed": {
+            "title": "Monthly Proposed",
+            "type": "number"
+          },
+          "monthly_saving": {
+            "title": "Monthly Saving",
+            "type": "number"
+          },
+          "partner": {
+            "$ref": "#/components/schemas/PublicPartner"
+          },
+          "prospect_name": {
+            "title": "Prospect Name",
+            "type": "string"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/PublicGroup"
+            },
+            "title": "Regions",
+            "type": "array"
+          },
+          "saving_pct": {
+            "title": "Saving Pct",
+            "type": "number"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/PublicService"
+            },
+            "title": "Services",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "accepted",
+              "expired",
+              "closed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "valid_until": {
+            "format": "date",
+            "title": "Valid Until",
+            "type": "string"
+          },
+          "yearly_saving": {
+            "title": "Yearly Saving",
+            "type": "number"
+          }
+        },
+        "required": [
+          "reference",
+          "prospect_name",
+          "language",
+          "currency",
+          "monthly_saving",
+          "yearly_saving",
+          "saving_pct",
+          "monthly_current",
+          "monthly_proposed",
+          "regions",
+          "services",
+          "assumptions",
+          "conditions",
+          "valid_until",
+          "status",
+          "accepted_by",
+          "accepted_at",
+          "partner"
+        ],
+        "title": "PublicProposal",
+        "type": "object"
+      },
+      "PublicService": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "saving": {
+            "title": "Saving",
+            "type": "number"
+          },
+          "shipments": {
+            "title": "Shipments",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "shipments",
+          "saving"
+        ],
+        "title": "PublicService",
+        "type": "object"
+      },
       "ReaderInput": {
         "description": "Who read the invoice: an AI provider and model, \"mock\", or \"spreadsheet\".",
         "properties": {
@@ -1762,6 +2136,24 @@
           "economy_for_non_urgent"
         ],
         "title": "Scenario",
+        "type": "object"
+      },
+      "ShareLink": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "path"
+        ],
+        "title": "ShareLink",
         "type": "object"
       },
       "Shipment-Input": {
@@ -3071,6 +3463,104 @@
         ]
       }
     },
+    "/api/v1/proposals/{proposal_id}/email": {
+      "post": {
+        "description": "Emails the proposal (PDF attached, customer link added when asked). A draft becomes sent.",
+        "operationId": "send_email_api_v1_proposals__proposal_id__email_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Send Email",
+        "tags": [
+          "saved proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{proposal_id}/email-draft": {
+      "get": {
+        "description": "The subject and message the email form starts with, in the customer's language.",
+        "operationId": "email_draft_api_v1_proposals__proposal_id__email_draft_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Email Draft",
+        "tags": [
+          "saved proposals"
+        ]
+      }
+    },
     "/api/v1/proposals/{proposal_id}/events": {
       "post": {
         "description": "Adds a line to the history: PDF or Excel downloaded, message copied, WhatsApp opened.",
@@ -3195,6 +3685,228 @@
         "summary": "Proposal Pdf",
         "tags": [
           "saved proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{proposal_id}/share": {
+      "delete": {
+        "description": "Turns the customer's link off: the old address stops working. A new link can be made later.",
+        "operationId": "turn_off_link_api_v1_proposals__proposal_id__share_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Turn Off Link",
+        "tags": [
+          "saved proposals"
+        ]
+      },
+      "post": {
+        "description": "The customer's link, made the first time (later calls return the same link).",
+        "operationId": "create_link_api_v1_proposals__proposal_id__share_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareLink"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Link",
+        "tags": [
+          "saved proposals"
+        ]
+      }
+    },
+    "/api/v1/public/proposals/{token}": {
+      "get": {
+        "description": "The proposal as the customer sees it. The first opening is noted in the partner's history.",
+        "operationId": "view_api_v1_public_proposals__token__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 20,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProposal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "View",
+        "tags": [
+          "customer link"
+        ]
+      }
+    },
+    "/api/v1/public/proposals/{token}/accept": {
+      "post": {
+        "description": "The customer accepts: the proposal becomes Won and the partner sees who accepted, with their note.",
+        "operationId": "accept_proposal_api_v1_public_proposals__token__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 20,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProposal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Proposal",
+        "tags": [
+          "customer link"
+        ]
+      }
+    },
+    "/api/v1/public/proposals/{token}/pdf": {
+      "get": {
+        "operationId": "pdf_api_v1_public_proposals__token__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 20,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "The proposal PDF"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pdf",
+        "tags": [
+          "customer link"
         ]
       }
     }

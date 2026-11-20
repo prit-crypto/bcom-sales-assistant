@@ -107,6 +107,9 @@ def to_detail(proposal: Proposal, events: list[ProposalEvent]) -> ProposalDetail
             "source_file_name": proposal.source_file_name,
             "source_files": proposal.source_files
             or ([proposal.source_file_name] if proposal.source_file_name else []),
+            "share_path": f"/p/{proposal.share_token}" if proposal.share_token else None,
+            "viewed_at": proposal.viewed_at,
+            "view_count": proposal.view_count,
             "comparison": compare_invoice(invoice, scenario=scenario),
             "events": [ProposalEventOut(kind=e.kind, detail=e.detail, at=e.at) for e in events],
         }

@@ -70,7 +70,7 @@ def _transit_range(service: ServiceLevel, language: Language) -> str:
     return f"{domestic} in the UAE, {min(days)}–{max(days)} days international"
 
 
-def _service_rows(groups: list[GroupTotal], language: Language) -> list[dict[str, object]]:
+def service_rows(groups: list[GroupTotal], language: Language) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for group in groups:
         service: ServiceLevel = "express" if group.key == "express" else "economy"
@@ -84,7 +84,7 @@ def _service_rows(groups: list[GroupTotal], language: Language) -> list[dict[str
     return rows
 
 
-def _relabel(groups: list[GroupTotal], language: Language, lanes: bool) -> list[GroupTotal]:
+def relabel(groups: list[GroupTotal], language: Language, lanes: bool) -> list[GroupTotal]:
     return [
         group.model_copy(
             update={
@@ -184,9 +184,9 @@ def render_proposal_html(
         headline_after=headline_after,
         economy_line=economy_line,
         sub=sub,
-        service_rows=_service_rows(summary.by_service, language),
-        zones=_relabel(summary.by_zone, language, lanes=False),
-        lanes=_relabel(summary.top_lanes, language, lanes=True),
+        service_rows=service_rows(summary.by_service, language),
+        zones=relabel(summary.by_zone, language, lanes=False),
+        lanes=relabel(summary.top_lanes, language, lanes=True),
         tradeoffs=[
             {
                 "zone": zone_text(t.zone_label, language),

@@ -53,6 +53,11 @@ class Proposal(Base):
     compared_shipments: Mapped[int] = mapped_column(Integer, default=0)
     total_shipments: Mapped[int] = mapped_column(Integer, default=0)
 
+    # The customer's link (/p/<token>): random, unguessable, turned off by clearing it
+    share_token: Mapped[str | None] = mapped_column(String(64), unique=True, default=None)
+    viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    view_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
     follow_up_on: Mapped[date | None] = mapped_column(Date, default=None)
     lost_reason: Mapped[str | None] = mapped_column(String(200), default=None)
     notes: Mapped[str] = mapped_column(Text, default="")

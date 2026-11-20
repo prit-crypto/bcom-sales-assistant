@@ -5,6 +5,20 @@ export type ClientOptions = {
 };
 
 /**
+ * AcceptRequest
+ */
+export type AcceptRequest = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Note
+     */
+    note?: string;
+};
+
+/**
  * Body_extract_invoice_api_v1_invoices_extract_post
  */
 export type BodyExtractInvoiceApiV1InvoicesExtractPost = {
@@ -186,6 +200,10 @@ export type ComparisonSummary = {
  */
 export type ConfigResponse = {
     /**
+     * Email Enabled
+     */
+    email_enabled: boolean;
+    /**
      * Max Upload Mb
      */
     max_upload_mb: number;
@@ -252,6 +270,60 @@ export type CurrencyConversion = {
      * Rate
      */
     rate: number;
+};
+
+/**
+ * EmailDraft
+ *
+ * What the email form starts with; the partner can change everything.
+ */
+export type EmailDraft = {
+    /**
+     * Email Enabled
+     */
+    email_enabled: boolean;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Subject
+     */
+    subject: string;
+    /**
+     * To
+     */
+    to: string;
+};
+
+/**
+ * EmailRequest
+ */
+export type EmailRequest = {
+    /**
+     * Attach Pdf
+     */
+    attach_pdf?: boolean;
+    /**
+     * Cc
+     */
+    cc?: Array<string>;
+    /**
+     * Include Link
+     */
+    include_link?: boolean;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Subject
+     */
+    subject: string;
+    /**
+     * To
+     */
+    to: string;
 };
 
 /**
@@ -629,6 +701,10 @@ export type ProposalDetail = {
      */
     sent_at: string | null;
     /**
+     * Share Path
+     */
+    share_path: string | null;
+    /**
      * Source File Name
      */
     source_file_name: string | null;
@@ -648,6 +724,14 @@ export type ProposalDetail = {
      * Updated At
      */
     updated_at: string;
+    /**
+     * View Count
+     */
+    view_count: number;
+    /**
+     * Viewed At
+     */
+    viewed_at: string | null;
     /**
      * Yearly Saving
      */
@@ -835,6 +919,159 @@ export type ProviderInfo = {
 };
 
 /**
+ * PublicGroup
+ */
+export type PublicGroup = {
+    /**
+     * Current
+     */
+    current: number;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Proposed
+     */
+    proposed: number;
+    /**
+     * Saving
+     */
+    saving: number;
+    /**
+     * Shipments
+     */
+    shipments: number;
+};
+
+/**
+ * PublicPartner
+ */
+export type PublicPartner = {
+    /**
+     * Booking Url
+     */
+    booking_url: string;
+    /**
+     * Company
+     */
+    company: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Logo
+     */
+    logo: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Phone
+     */
+    phone: string;
+};
+
+/**
+ * PublicProposal
+ */
+export type PublicProposal = {
+    /**
+     * Accepted At
+     */
+    accepted_at: string | null;
+    /**
+     * Accepted By
+     */
+    accepted_by: string | null;
+    /**
+     * Assumptions
+     */
+    assumptions: Array<string>;
+    /**
+     * Conditions
+     */
+    conditions: Array<string>;
+    /**
+     * Currency
+     */
+    currency: string;
+    /**
+     * Language
+     */
+    language: 'en' | 'ar';
+    /**
+     * Monthly Current
+     */
+    monthly_current: number;
+    /**
+     * Monthly Proposed
+     */
+    monthly_proposed: number;
+    /**
+     * Monthly Saving
+     */
+    monthly_saving: number;
+    partner: PublicPartner;
+    /**
+     * Prospect Name
+     */
+    prospect_name: string;
+    /**
+     * Reference
+     */
+    reference: string;
+    /**
+     * Regions
+     */
+    regions: Array<PublicGroup>;
+    /**
+     * Saving Pct
+     */
+    saving_pct: number;
+    /**
+     * Services
+     */
+    services: Array<PublicService>;
+    /**
+     * Status
+     */
+    status: 'open' | 'accepted' | 'expired' | 'closed';
+    /**
+     * Valid Until
+     */
+    valid_until: string;
+    /**
+     * Yearly Saving
+     */
+    yearly_saving: number;
+};
+
+/**
+ * PublicService
+ */
+export type PublicService = {
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Saving
+     */
+    saving: number;
+    /**
+     * Shipments
+     */
+    shipments: number;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * ReaderInput
  *
  * Who read the invoice: an AI provider and model, "mock", or "spreadsheet".
@@ -942,6 +1179,20 @@ export type ScenarioOutput = {
      * Volume Factor
      */
     volume_factor: number;
+};
+
+/**
+ * ShareLink
+ */
+export type ShareLink = {
+    /**
+     * Path
+     */
+    path: string;
+    /**
+     * Token
+     */
+    token: string;
 };
 
 /**
@@ -1620,6 +1871,66 @@ export type UpdateProposalApiV1ProposalsProposalIdPatchResponses = {
 
 export type UpdateProposalApiV1ProposalsProposalIdPatchResponse = UpdateProposalApiV1ProposalsProposalIdPatchResponses[keyof UpdateProposalApiV1ProposalsProposalIdPatchResponses];
 
+export type SendEmailApiV1ProposalsProposalIdEmailPostData = {
+    body: EmailRequest;
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/api/v1/proposals/{proposal_id}/email';
+};
+
+export type SendEmailApiV1ProposalsProposalIdEmailPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendEmailApiV1ProposalsProposalIdEmailPostError = SendEmailApiV1ProposalsProposalIdEmailPostErrors[keyof SendEmailApiV1ProposalsProposalIdEmailPostErrors];
+
+export type SendEmailApiV1ProposalsProposalIdEmailPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProposalDetail;
+};
+
+export type SendEmailApiV1ProposalsProposalIdEmailPostResponse = SendEmailApiV1ProposalsProposalIdEmailPostResponses[keyof SendEmailApiV1ProposalsProposalIdEmailPostResponses];
+
+export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetData = {
+    body?: never;
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/api/v1/proposals/{proposal_id}/email-draft';
+};
+
+export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetError = EmailDraftApiV1ProposalsProposalIdEmailDraftGetErrors[keyof EmailDraftApiV1ProposalsProposalIdEmailDraftGetErrors];
+
+export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: EmailDraft;
+};
+
+export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetResponse = EmailDraftApiV1ProposalsProposalIdEmailDraftGetResponses[keyof EmailDraftApiV1ProposalsProposalIdEmailDraftGetResponses];
+
 export type RecordEventApiV1ProposalsProposalIdEventsPostData = {
     body: ProposalEventCreate;
     path: {
@@ -1707,3 +2018,153 @@ export type ProposalPdfApiV1ProposalsProposalIdPdfGetResponses = {
 };
 
 export type ProposalPdfApiV1ProposalsProposalIdPdfGetResponse = ProposalPdfApiV1ProposalsProposalIdPdfGetResponses[keyof ProposalPdfApiV1ProposalsProposalIdPdfGetResponses];
+
+export type TurnOffLinkApiV1ProposalsProposalIdShareDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/api/v1/proposals/{proposal_id}/share';
+};
+
+export type TurnOffLinkApiV1ProposalsProposalIdShareDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TurnOffLinkApiV1ProposalsProposalIdShareDeleteError = TurnOffLinkApiV1ProposalsProposalIdShareDeleteErrors[keyof TurnOffLinkApiV1ProposalsProposalIdShareDeleteErrors];
+
+export type TurnOffLinkApiV1ProposalsProposalIdShareDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type TurnOffLinkApiV1ProposalsProposalIdShareDeleteResponse = TurnOffLinkApiV1ProposalsProposalIdShareDeleteResponses[keyof TurnOffLinkApiV1ProposalsProposalIdShareDeleteResponses];
+
+export type CreateLinkApiV1ProposalsProposalIdSharePostData = {
+    body?: never;
+    path: {
+        /**
+         * Proposal Id
+         */
+        proposal_id: string;
+    };
+    query?: never;
+    url: '/api/v1/proposals/{proposal_id}/share';
+};
+
+export type CreateLinkApiV1ProposalsProposalIdSharePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateLinkApiV1ProposalsProposalIdSharePostError = CreateLinkApiV1ProposalsProposalIdSharePostErrors[keyof CreateLinkApiV1ProposalsProposalIdSharePostErrors];
+
+export type CreateLinkApiV1ProposalsProposalIdSharePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ShareLink;
+};
+
+export type CreateLinkApiV1ProposalsProposalIdSharePostResponse = CreateLinkApiV1ProposalsProposalIdSharePostResponses[keyof CreateLinkApiV1ProposalsProposalIdSharePostResponses];
+
+export type ViewApiV1PublicProposalsTokenGetData = {
+    body?: never;
+    path: {
+        /**
+         * Token
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/api/v1/public/proposals/{token}';
+};
+
+export type ViewApiV1PublicProposalsTokenGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ViewApiV1PublicProposalsTokenGetError = ViewApiV1PublicProposalsTokenGetErrors[keyof ViewApiV1PublicProposalsTokenGetErrors];
+
+export type ViewApiV1PublicProposalsTokenGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: PublicProposal;
+};
+
+export type ViewApiV1PublicProposalsTokenGetResponse = ViewApiV1PublicProposalsTokenGetResponses[keyof ViewApiV1PublicProposalsTokenGetResponses];
+
+export type AcceptProposalApiV1PublicProposalsTokenAcceptPostData = {
+    body: AcceptRequest;
+    path: {
+        /**
+         * Token
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/api/v1/public/proposals/{token}/accept';
+};
+
+export type AcceptProposalApiV1PublicProposalsTokenAcceptPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AcceptProposalApiV1PublicProposalsTokenAcceptPostError = AcceptProposalApiV1PublicProposalsTokenAcceptPostErrors[keyof AcceptProposalApiV1PublicProposalsTokenAcceptPostErrors];
+
+export type AcceptProposalApiV1PublicProposalsTokenAcceptPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: PublicProposal;
+};
+
+export type AcceptProposalApiV1PublicProposalsTokenAcceptPostResponse = AcceptProposalApiV1PublicProposalsTokenAcceptPostResponses[keyof AcceptProposalApiV1PublicProposalsTokenAcceptPostResponses];
+
+export type PdfApiV1PublicProposalsTokenPdfGetData = {
+    body?: never;
+    path: {
+        /**
+         * Token
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/api/v1/public/proposals/{token}/pdf';
+};
+
+export type PdfApiV1PublicProposalsTokenPdfGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PdfApiV1PublicProposalsTokenPdfGetError = PdfApiV1PublicProposalsTokenPdfGetErrors[keyof PdfApiV1PublicProposalsTokenPdfGetErrors];
+
+export type PdfApiV1PublicProposalsTokenPdfGetResponses = {
+    /**
+     * The proposal PDF
+     */
+    200: Blob | File;
+};
+
+export type PdfApiV1PublicProposalsTokenPdfGetResponse = PdfApiV1PublicProposalsTokenPdfGetResponses[keyof PdfApiV1PublicProposalsTokenPdfGetResponses];

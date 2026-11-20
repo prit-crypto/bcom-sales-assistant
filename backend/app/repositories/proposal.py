@@ -29,6 +29,10 @@ class ProposalRepository(BaseRepository[Proposal]):
             )
         return (await self.db.execute(statement)).scalars().all()
 
+    async def by_token(self, token: str) -> Proposal | None:
+        statement = select(Proposal).where(Proposal.share_token == token)
+        return (await self.db.execute(statement)).scalar_one_or_none()
+
     async def due_for_follow_up(self, today: date) -> int:
         statement = select(func.count()).where(
             Proposal.status == "sent", Proposal.follow_up_on <= today

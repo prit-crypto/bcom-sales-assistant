@@ -71,6 +71,8 @@ class ConfigResponse(ApiModel):
     privacy_notice: str | None = None
     # Only the bundled sample invoices can be uploaded on this server.
     samples_only: bool = False
+    # Proposals can be emailed (SMTP is set up)
+    email_enabled: bool = False
 
 
 class ExtractResponse(ApiModel):
