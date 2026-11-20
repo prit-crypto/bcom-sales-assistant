@@ -10,7 +10,7 @@ export const STATUS_LABEL: Record<ProposalStatus, string> = {
 const STYLE: Record<ProposalStatus, string> = {
   draft: "bg-fill text-secondary",
   sent: "bg-accent-tint text-accent",
-  won: "bg-accent text-on-accent",
+  won: "bg-gold text-on-gold",
   lost: "bg-bad-tint text-bad",
 };
 

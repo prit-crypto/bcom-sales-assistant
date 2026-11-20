@@ -74,7 +74,7 @@ def _as_html(text: str, rtl: bool) -> str:
         escaped = html.escape(block).replace("\n", "<br>")
         linked = _URL.sub(
             lambda m: (
-                f'<a href="{m.group(1)}" style="color:#19764d;font-weight:600">{m.group(1)}</a>'
+                f'<a href="{m.group(1)}" style="color:#8a6416;font-weight:600">{m.group(1)}</a>'
             ),
             escaped,
         )

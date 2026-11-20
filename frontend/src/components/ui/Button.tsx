@@ -4,7 +4,7 @@ type Variant = "primary" | "tinted" | "plain" | "whatsapp";
 type Size = "regular" | "large";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-accent text-on-accent hover:bg-accent-hover disabled:bg-fill disabled:text-tertiary",
+  primary: "bg-gold text-on-gold hover:brightness-95 disabled:bg-fill disabled:text-tertiary",
   tinted: "bg-accent-tint text-accent hover:brightness-95 disabled:bg-fill disabled:text-tertiary",
   plain: "text-accent hover:bg-accent-tint disabled:text-tertiary",
   whatsapp: "bg-whatsapp text-white hover:brightness-110 disabled:bg-fill disabled:text-tertiary",

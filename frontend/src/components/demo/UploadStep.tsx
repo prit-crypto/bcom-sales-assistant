@@ -256,7 +256,7 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
                 PDF, photo, CSV or Excel · up to {config?.max_upload_mb ?? 10} MB · up to {MAX_INVOICES}{" "}
                 months at once
               </span>
-              <span className="inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-[15px] font-semibold text-on-accent">
+              <span className="inline-flex min-h-11 items-center rounded-full bg-gold px-5 text-[15px] font-semibold text-on-gold">
                 Choose a file
               </span>
             </>

@@ -26,15 +26,16 @@ The backend must allow this origin in its `CORS_ORIGINS` (default `http://localh
 
 ## Design
 
-Graphite and gold, approved on 20 Nov 2026 (mock-ups: https://claude.ai/artifact/UDRJr4dwhiPAtF1Z6YFizt), in the
-spirit of Apple's product pages. No blue: the company's other product uses navy.
+Black (graphite) and gold, approved on 20 Nov 2026 (mock-ups: https://claude.ai/artifact/UDRJr4dwhiPAtF1Z6YFizt), in the
+spirit of Apple's product pages. No blue (the company's other product uses navy) and no green.
 
 - **Colours** are CSS variables in `src/app/globals.css`, mapped to Tailwind with `@theme inline`: graphite hero
   bands (`bg-hero`, `#141416`) with their own text colours (`text-hero-ink`, `text-hero-secondary`,
-  `text-hero-save`), gold for special moments (`gold`, `#D4AF6A`: follow-ups, "a month", the customer's Accept),
-  green for savings and actions (`accent`, `#19764D`), Apple grey canvas `#F5F5F7`; red only for "costs more",
+  `text-hero-save`), bright gold for the main buttons and highlights (`gold`, `#D4AF6A`), deep gold for savings, links and small
+  marks on white (`accent`, `#8A6416`, 5.4:1 on white), Apple grey canvas `#F5F5F7`; red only for "costs more",
   gold for "needs attention" too (one warm colour across the app). Use the semantic classes, never raw hex values.
-  The proposal PDF, the email and the Excel export use the same graphite, gold and green.
+  The proposal PDF, the email and the Excel export use the same graphite and gold. Green appears only on
+  WhatsApp's own button and message bubble.
 - **Hero bands** (`HeroBand`, `PageHeader` in `src/components/ui/Hero.tsx`): the home, upload, savings, proposal
   and customer pages open on a graphite band with cards floating over its lower edge; the working steps get a
   compact graphite header. The savings region view draws the routes from Dubai (`RouteMap`).
