@@ -399,3 +399,21 @@ def test_message_mentions_both_what_if_options() -> None:
     ).summary
     message = render_template_message(build_sales_message_facts(summary, PartnerInput(**PARTNER)))
     assert "AED 1,854" in message and "AED 3,916" in message and "Economy" in message
+
+
+def test_arabic_font_list_reaches_the_css_unescaped() -> None:
+    """Regression: the quoted Arabic font names were HTML-escaped inside <style>, so the font was ignored."""
+    from datetime import date
+
+    from app.schemas.api import PartnerInput
+    from app.services.pricing.comparison import compare_invoice
+    from app.services.proposal.render import render_proposal_html
+    from tests.conftest import make_invoice, make_shipment
+
+    invoice = make_invoice([make_shipment(id="a", charge=120)])
+    partner = PartnerInput(
+        partner_name="A", partner_company="B", prospect_name="C", validity_days=30, language="ar"
+    )
+    html, _ = render_proposal_html(invoice, partner, compare_invoice(invoice), date(2026, 11, 20))
+    assert "font: 9pt/1.4 'Noto Naskh Arabic'" in html
+    assert "&#39;" not in html[html.index("<style>") : html.index("</style>")]

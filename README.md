@@ -68,6 +68,9 @@ Details: [backend/README.md](backend/README.md) · [frontend/README.md](frontend
 6. **Proposals** – click the logo: the proposal is in the list. Open it to see its history, change the follow-up date,
    add a note, mark it won or lost, or download the PDF again.
 
+Phase 3b extras: drop two invoices from different months at once (or "Add another month") for an average over
+both; watch the reading stages on the upload card.
+
 Extras worth showing: on Savings, switch on *Send non-urgent parcels by Economy* (sample 1 goes from about AED 1,854
 to AED 3,916 a month) and try *+20%* volume; *Download Excel*; on the proposal, pick *العربية* to get the Arabic PDF
 and message, add a logo and a booking link; on the shipments step, change a charge to see the totals check.

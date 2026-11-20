@@ -5,8 +5,12 @@ import { useId, useState } from "react";
 import { Banner } from "@/components/ui/Banner";
 import { HowItWorks } from "@/components/ui/HowItWorks";
 import { Icon } from "@/components/ui/Icon";
-import { errorMessage, postForm } from "@/lib/client/api";
+import { errorMessage, postJson } from "@/lib/client/api";
+import { readInvoiceWithProgress, type StageEvent } from "@/lib/client/stream";
 import type { ConfigResponse, ExtractResponse } from "@/types/api";
+import type { InvoiceData } from "@/types/invoice";
+import { MAX_INVOICES } from "@/lib/invoiceParts";
+import { ReadingProgress } from "./ReadingProgress";
 
 type Thumb = "clean" | "gaps" | "photo";
 
@@ -58,15 +62,24 @@ const ACCEPT = [
 
 const TEMPLATE_URL = "/templates/bcom-shipments-template.csv";
 
+
+interface Reading {
+  fileName: string;
+  index: number;
+  total: number;
+  stage: StageEvent | null;
+}
+
 interface UploadStepProps {
   config: ConfigResponse | null;
-  onExtracted: (result: ExtractResponse, file: File) => void;
+  /** One reading, or several months combined into one; `files` in the order they were added */
+  onExtracted: (result: ExtractResponse, files: File[]) => void;
 }
 
 export function UploadStep({ config, onExtracted }: UploadStepProps) {
   const inputId = useId();
   const reduce = useReducedMotion();
-  const [busyLabel, setBusyLabel] = useState<string | null>(null);
+  const [reading, setReading] = useState<Reading | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   /** Shown for a moment after a successful read, before moving on */
@@ -75,39 +88,53 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
   const provider = config?.provider ?? null;
   /** A real AI reader is active – no-AI mode reads only the SwiftLine sample PDFs */
   const aiActive = provider !== null && provider.id !== "mock";
-  const busy = busyLabel !== null;
+  const busy = reading !== null;
 
-  async function upload(file: File) {
+  /** Reads each file with live progress; several months are then combined into one invoice. */
+  async function upload(files: File[]) {
     setError(null);
-    setBusyLabel(`Reading ${file.name}…`);
+    if (files.length > MAX_INVOICES) {
+      setError(`Choose up to ${MAX_INVOICES} invoices at once (one per month).`);
+      return;
+    }
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const result = await postForm<ExtractResponse>("/invoices/extract", form);
+      const results: ExtractResponse[] = [];
+      for (const [index, file] of files.entries()) {
+        setReading({ fileName: file.name, index: index + 1, total: files.length, stage: null });
+        results.push(
+          await readInvoiceWithProgress(file, (stage) => setReading((current) => (current ? { ...current, stage } : current))),
+        );
+      }
+      const first = results[0]!;
+      const result =
+        results.length > 1
+          ? { ...first, invoice: await postJson<InvoiceData>("/invoices/combine", { invoices: results.map((r) => r.invoice) }) }
+          : first;
       if (!reduce) {
         // A short tick confirms the read before the next step slides in.
         setDone(true);
         await new Promise((resolve) => window.setTimeout(resolve, 450));
       }
-      onExtracted(result, file);
+      onExtracted(result, files);
     } catch (uploadError) {
       setError(errorMessage(uploadError));
     } finally {
-      setBusyLabel(null);
+      setReading(null);
+      setDone(false);
     }
   }
 
   async function loadSample(fileName: string) {
     setError(null);
-    setBusyLabel(`Reading ${fileName}…`);
+    setReading({ fileName, index: 1, total: 1, stage: null });
     try {
       const response = await fetch(`/samples/${fileName}`);
       if (!response.ok) throw new Error("The sample file is missing. Run `npm run samples`.");
       const blob = await response.blob();
-      await upload(new File([blob], fileName, { type: blob.type }));
+      await upload([new File([blob], fileName, { type: blob.type })]);
     } catch (sampleError) {
       setError(errorMessage(sampleError));
-      setBusyLabel(null);
+      setReading(null);
     }
   }
 
@@ -151,8 +178,8 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
         onDrop={(event) => {
           event.preventDefault();
           setDragging(false);
-          const file = event.dataTransfer.files[0];
-          if (file && !busy) void upload(file);
+          const files = [...event.dataTransfer.files];
+          if (files.length > 0 && !busy) void upload(files);
         }}
         className={`relative flex cursor-pointer flex-col items-center justify-center gap-4 overflow-hidden rounded-[28px] border-2 border-dashed px-6 py-14 text-center shadow-raised transition-[background-color,border-color,transform] duration-200 focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-accent sm:py-16 ${
           dragging ? "scale-[1.01] border-accent bg-accent-tint" : "border-tertiary/45 bg-surface hover:border-tertiary"
@@ -168,20 +195,20 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
           )}
         </span>
         <span className="type-headline text-2xl font-semibold" aria-live="polite">
-          {done ? "Invoice read" : busy ? busyLabel : dragging ? "Drop to read it" : "Drop the invoice here"}
+          {done ? "Invoice read" : busy ? "Reading…" : dragging ? "Drop to read it" : "Drop the invoice here"}
         </span>
-        {busy && !done ? (
-          <span className="relative h-1.5 w-56 overflow-hidden rounded-full bg-fill" role="progressbar" aria-label="Reading the invoice">
-            <motion.span
-              className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-accent"
-              initial={{ x: "-100%" }}
-              animate={reduce ? { x: "100%", opacity: [0.4, 1, 0.4] } : { x: "300%" }}
-              transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </span>
-        ) : (
+        {busy && !done && reading ? (
+          <ReadingProgress
+            key={`${reading.index}-${reading.fileName}`}
+            fileName={reading.fileName}
+            stage={reading.stage}
+            part={{ index: reading.index, total: reading.total }}
+          />
+        ) : busy ? null : (
           <>
-            <span className="text-[15px] text-secondary">PDF, photo, CSV or Excel · up to {config?.max_upload_mb ?? 10} MB</span>
+            <span className="text-[15px] text-secondary">
+              PDF, photo, CSV or Excel · up to {config?.max_upload_mb ?? 10} MB · up to {MAX_INVOICES} months at once
+            </span>
             <span className="inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-[15px] font-semibold text-on-accent">
               Choose a file
             </span>
@@ -191,12 +218,13 @@ export function UploadStep({ config, onExtracted }: UploadStepProps) {
           id={inputId}
           type="file"
           accept={ACCEPT}
+          multiple
           className="sr-only"
           disabled={busy}
           onChange={(event) => {
-            const file = event.target.files?.[0];
+            const files = [...(event.target.files ?? [])];
             event.target.value = "";
-            if (file) void upload(file);
+            if (files.length > 0) void upload(files);
           }}
         />
       </label>

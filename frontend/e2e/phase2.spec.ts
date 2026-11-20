@@ -48,6 +48,10 @@ test.describe("checks on the shipments", () => {
   });
 
   test("a value the reader wasn't sure of is marked until it is checked", async ({ page }) => {
+    // Read the plain way (no stream), so the reading can be changed on its way back.
+    await page.route("**/api/v1/invoices/extract/stream", (route) =>
+      route.fulfill({ status: 200, json: {}, headers: { "Access-Control-Allow-Origin": "*" } }),
+    );
     await page.route("**/api/v1/invoices/extract", async (route) => {
       const response = await route.fetch();
       const body = await response.json();

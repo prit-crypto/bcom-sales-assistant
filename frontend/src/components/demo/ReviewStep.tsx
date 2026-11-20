@@ -13,6 +13,8 @@ import { postJson } from "@/lib/client/api";
 import { formatDate, formatMoneyExact } from "@/lib/format";
 import { useMinWidth } from "@/lib/hooks";
 import { getMissingFields } from "@/lib/validation";
+import { MAX_INVOICES, invoiceParts, partOf } from "@/lib/invoiceParts";
+import type { StageEvent } from "@/lib/client/stream";
 import type { CheckResponse, InvoiceCheck } from "@/types/api";
 import type { EditableField, InvoiceData, RequiredShipmentField, ServiceLevel, Shipment } from "@/types/invoice";
 
@@ -20,7 +22,9 @@ interface ReviewStepProps {
   invoice: InvoiceData;
   fileName: string;
   /** The uploaded invoice, shown beside the table on request */
-  source: InvoiceSource | null;
+  sources: InvoiceSource[];
+  /** Reads one more month and combines it; resolves with an error message, or null when it worked */
+  onAddMonth?: (file: File, onStage: (stage: StageEvent) => void) => Promise<string | null>;
   /** The backend is comparing the invoice */
   comparing: boolean;
   /** Error from the last comparison attempt */
@@ -112,7 +116,8 @@ function plural(count: number, word: string): string {
 export function ReviewStep({
   invoice,
   fileName,
-  source,
+  sources,
+  onAddMonth,
   comparing,
   error,
   canUndo,
@@ -125,7 +130,23 @@ export function ReviewStep({
   const [showInvoice, setShowInvoice] = useState(false);
   const wide = useMinWidth(1280);
   const reduce = useReducedMotion();
+  const [viewing, setViewing] = useState(0);
+  const source = sources[Math.min(viewing, sources.length - 1)] ?? null;
   const split = showInvoice && wide && source !== null;
+  const parts = invoiceParts(invoice);
+  const [adding, setAdding] = useState<{ fileName: string; label: string } | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
+
+  async function addMonth(file: File) {
+    if (!onAddMonth) return;
+    setAddError(null);
+    setAdding({ fileName: file.name, label: "Uploading" });
+    const failure = await onAddMonth(file, (stage) =>
+      setAdding({ fileName: file.name, label: stage.label ?? READING_STAGE_LABEL[stage.stage] }),
+    );
+    setAdding(null);
+    setAddError(failure);
+  }
   const currencyInvalid = invoice.currency !== null && !/^[A-Z]{3}$/.test(invoice.currency);
   const periodMissing = invoice.period_start === null || invoice.period_end === null;
   const [detailsOpen, setDetailsOpen] = useState(periodMissing || currencyInvalid);
@@ -243,9 +264,35 @@ export function ReviewStep({
           <div className="flex min-w-0 flex-col gap-1.5">
             <h1 className="type-title text-[28px] font-bold sm:text-[34px]">Check the shipments</h1>
             <p className="text-base text-secondary">
-              {plural(invoice.shipments.length, "shipment")} read from <span className="font-medium text-ink">{fileName}</span>.
-              Tap any value to correct it.
+              {plural(invoice.shipments.length, "shipment")} read from{" "}
+              <span className="font-medium text-ink">{parts > 1 ? `${parts} invoices` : fileName}</span>
+              {parts > 1 && invoice.period_start && invoice.period_end
+                ? ` (${formatDate(invoice.period_start)} – ${formatDate(invoice.period_end)})`
+                : ""}
+              . Tap any value to correct it.
             </p>
+            {onAddMonth && parts < MAX_INVOICES ? (
+              adding ? (
+                <p role="status" className="text-sm text-secondary">
+                  Adding {adding.fileName} · {adding.label}…
+                </p>
+              ) : (
+                <label className="pressable inline-flex min-h-9 cursor-pointer items-center gap-1.5 self-start rounded-full px-1 text-sm font-semibold text-accent hover:underline focus-within:outline-2 focus-within:outline-accent">
+                  <Icon name="plus" className="size-4" />
+                  Add another month
+                  <input
+                    type="file"
+                    accept={ACCEPT_INVOICES}
+                    className="sr-only"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (file) void addMonth(file);
+                    }}
+                  />
+                </label>
+              )
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {canUndo ? (
@@ -283,6 +330,12 @@ export function ReviewStep({
             />
           </div>
         </div>
+
+        {addError ? (
+          <Banner tone="error" title="Could not add that month">
+            {addError}
+          </Banner>
+        ) : null}
 
         {needsAttention.length > 0 ? (
           <Banner
@@ -410,6 +463,7 @@ export function ReviewStep({
                     <td className="tabular px-1 py-1.5 whitespace-nowrap">
                       <div className="flex items-center gap-1">
                         {cell("reference", "text", "Waybill", shipment.reference ?? "—")}
+                        {parts > 1 ? <PartTag id={shipment.id} /> : null}
                         {checkReasons.has(shipment.id) ? <CheckTag reasons={checkReasons.get(shipment.id)!} /> : null}
                       </div>
                     </td>
@@ -462,7 +516,8 @@ export function ReviewStep({
         </div>
 
         {split && source ? (
-          <aside className="sticky top-20">
+          <aside className="sticky top-20 flex flex-col gap-2">
+            <ViewerSwitcher sources={sources} viewing={viewing} onChange={setViewing} />
             <InvoiceViewer source={source} onClose={() => setShowInvoice(false)} className="h-[calc(100vh-200px)] min-h-[480px]" />
           </aside>
         ) : null}
@@ -487,8 +542,9 @@ export function ReviewStep({
 
       {source ? (
         <Sheet open={showInvoice && !wide} onClose={() => setShowInvoice(false)} title="Original invoice">
-          <div className="h-[75dvh] p-3">
-            <InvoiceViewer source={source} className="h-full" />
+          <div className="flex h-[75dvh] flex-col gap-2 p-3">
+            <ViewerSwitcher sources={sources} viewing={viewing} onChange={setViewing} />
+            <InvoiceViewer source={source} className="min-h-0 flex-1" />
           </div>
         </Sheet>
       ) : null}
@@ -781,7 +837,9 @@ function ShipmentCard({
   const [open, setOpen] = useState(false);
   const flagged = shipment.included && missing.size > 0;
   const ref = shipment.reference ?? shipment.id;
+  const part = partOf(shipment.id);
   const meta = [
+    part ? `Invoice ${part}` : null,
     formatDate(shipment.date),
     shipment.service ? SERVICE_LABEL[shipment.service] : null,
     shipment.pieces ? `${shipment.pieces} pc` : null,
@@ -916,6 +974,49 @@ function CardField({
         />
       )}
     </label>
+  );
+}
+
+const ACCEPT_INVOICES = ".pdf,.jpg,.jpeg,.png,.webp,.csv,.xlsx";
+
+const READING_STAGE_LABEL: Record<StageEvent["stage"], string> = {
+  received: "Uploaded",
+  checked: "File checked",
+  reading: "Reading",
+  cleaning: "Tidying the data",
+  checking: "Running the checks",
+};
+
+/** Which invoice a row came from, when several months are combined. */
+function PartTag({ id }: { id: string }) {
+  const part = partOf(id);
+  return part ? (
+    <span className="inline-flex shrink-0 items-center rounded-full bg-fill px-2 py-0.5 text-[11px] font-semibold text-secondary">
+      Inv {part}
+      <span className="sr-only">, from invoice {part}</span>
+    </span>
+  ) : null;
+}
+
+/** Choose which uploaded invoice the viewer shows, when there are several. */
+function ViewerSwitcher({
+  sources,
+  viewing,
+  onChange,
+}: {
+  sources: InvoiceSource[];
+  viewing: number;
+  onChange: (index: number) => void;
+}) {
+  if (sources.length < 2) return null;
+  return (
+    <Segmented
+      label="Invoice shown"
+      size="small"
+      value={String(Math.min(viewing, sources.length - 1))}
+      onChange={(value) => onChange(Number(value))}
+      options={sources.map((item, index) => ({ value: String(index), label: `Invoice ${index + 1}` }))}
+    />
   );
 }
 

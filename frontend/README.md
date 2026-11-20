@@ -60,6 +60,12 @@ migrates its own `bcom_e2e` database on every run.
 
 ## Features worth knowing
 
+- **Several months in one proposal**: choose or drop up to 3 invoices at once, or use "Add another month" on the
+  shipments step (Undo takes it out). Rows show which invoice they came from, the viewer switches between them, and
+  the monthly figures average over the whole period.
+- **Live reading progress**: while an invoice is read, the upload card lists the stages (uploaded, checked, reading,
+  tidying, checks) with the time so far and how long reads usually take. If the stream can't be used, it falls back
+  to the plain read.
 - **Saved as you go**: "Compare with BCOM rates" saves the work as a draft proposal; after that the shipments,
   what-if, partner details and message autosave a moment after they stop changing ("Saving… / Saved" in the top bar).
   A change made just before closing, reloading or leaving the page is still sent.

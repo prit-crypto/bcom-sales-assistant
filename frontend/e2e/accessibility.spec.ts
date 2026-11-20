@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { compare, loadSample, openApp } from "./helpers";
+import { compare, loadSample, openApp, sample } from "./helpers";
 
 /**
  * Automatic accessibility checks (axe) on every step, in light and dark, on desktop and phone.
@@ -81,3 +81,31 @@ for (const colorScheme of ["light", "dark"] as const) {
     await scan(page, "proposal page");
   });
 }
+
+test("reading progress and a two-month review pass axe", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route("**/invoices/extract/stream", async (route) => {
+    await held;
+    await route.continue();
+  });
+  // The second sample is moved to November on its way to /combine (both samples are October invoices).
+  await page.route("**/invoices/combine", async (route) => {
+    const body = route.request().postDataJSON() as { invoices: { customer_name: string; period_start: string; period_end: string }[] };
+    body.invoices.forEach((invoice) => {
+      if (invoice.customer_name?.startsWith("Gulf Spice")) Object.assign(invoice, { period_start: "2026-11-01", period_end: "2026-11-30" });
+    });
+    await route.fulfill({ response: await route.fetch({ postData: JSON.stringify(body) }) });
+  });
+  await openApp(page);
+  await page
+    .locator("input[type=file]")
+    .first()
+    .setInputFiles([sample("sample-1-al-noor-mobile.pdf"), sample("sample-2-gulf-spice.pdf")]);
+  await expect(page.getByText("Invoice 1 of 2", { exact: false })).toBeVisible();
+  await scan(page, "reading progress");
+  release();
+  await expect(page.getByRole("main")).toContainText("68 shipments read from 2 invoices");
+  await scan(page, "two-month review");
+});

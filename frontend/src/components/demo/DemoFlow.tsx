@@ -8,6 +8,7 @@ import { Banner } from "@/components/ui/Banner";
 import type { InvoiceSource } from "@/components/ui/InvoiceViewer";
 import { Toast, type ToastData } from "@/components/ui/Toast";
 import { errorMessage, getJson, patchJson, postJson, sendNoContent } from "@/lib/client/api";
+import { readInvoiceWithProgress, type StageEvent } from "@/lib/client/stream";
 import { partnerForRequest } from "@/lib/partner";
 import { EXAMPLE_PARTNER, loadPartnerDefaults, savePartnerDefaults } from "@/lib/partnerDefaults";
 import { partnerSavable, useProposalSync } from "@/lib/useProposalSync";
@@ -50,7 +51,18 @@ interface Extracted {
   invoice: InvoiceData;
   /** Who read the invoice; unknown for a proposal opened from the list */
   provider: ProviderInfo | null;
+  /** For display: the file name, or "a.pdf + 1 more" */
   fileName: string;
+  /** Every file in the proposal, in the order added (several months can be combined) */
+  fileNames?: string[];
+  /** The invoice as first read, before any correction (to learn from what the partner fixes) */
+  original?: InvoiceData;
+  /** Who read it, for that learning: an AI provider and model, "mock", or "spreadsheet" */
+  reader?: { provider: string; model: string | null };
+}
+
+function displayName(names: string[]): string {
+  return names.length > 1 ? `${names[0]} + ${names.length - 1} more` : (names[0] ?? "");
 }
 
 /** The saved proposal behind this journey (after "Compare"), as the server last reported it. */
@@ -120,8 +132,9 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
   const [openError, setOpenError] = useState<string | null>(null);
   const [proposal, setProposal] = useState<ProposalFile | null>(null);
   const [message, setMessage] = useState<MessageResponse | null>(null);
-  /** The uploaded invoice, for the viewer beside the shipments */
-  const [source, setSource] = useState<InvoiceSource | null>(null);
+  /** The uploaded invoices (PDFs and photos), for the viewer beside the shipments */
+  const [sources, setSources] = useState<InvoiceSource[]>([]);
+  const source = sources[0] ?? null;
   /** Earlier versions of the invoice, newest last, for Undo (a ref: Undo must read the latest list) */
   const history = useRef<InvoiceData[]>([]);
   const [undoCount, setUndoCount] = useState(0);
@@ -146,10 +159,8 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
     };
   }, [proposal]);
   useEffect(() => {
-    return () => {
-      if (source) URL.revokeObjectURL(source.url);
-    };
-  }, [source]);
+    return () => sources.forEach((item) => URL.revokeObjectURL(item.url));
+  }, [sources]);
 
   const loadComparison = useCallback(async (invoice: InvoiceData, what: Scenario) => {
     setComparing(true);
@@ -186,7 +197,7 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
         if (session?.proposalId === proposalId && session.source) {
           const kept = session.source;
           void loadSourceFile().then((file) => {
-            if (file && !cancelled) setSource({ url: URL.createObjectURL(file), ...kept });
+            if (file && !cancelled) setSources([{ url: URL.createObjectURL(file), ...kept }]);
           });
         }
       })
@@ -219,7 +230,7 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
       setStep(session.step);
       setRestoredNotice(true);
       const file = session.source ? await loadSourceFile() : null;
-      if (file && session.source) setSource({ url: URL.createObjectURL(file), ...session.source });
+      if (file && session.source) setSources([{ url: URL.createObjectURL(file), ...session.source }]);
       if (stepIndex(session.step) > stepIndex("review")) {
         setRestoring(true);
         const ok = (await loadComparison(session.extracted.invoice, savedScenario)) !== null;
@@ -312,19 +323,27 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
     }, SCENARIO_DELAY_MS);
   }
 
-  function handleExtracted(result: ExtractResponse, file: File) {
+  function handleExtracted(result: ExtractResponse, files: File[]) {
     // A new invoice starts a new proposal.
     setSaved(null);
     showAddress("/new");
-    setExtracted({ invoice: result.invoice, provider: result.provider, fileName: file.name });
-    if (isSpreadsheet(file)) {
-      // A statement has no pages to show beside the table.
-      setSource(null);
-      clearSourceFile();
-    } else {
-      setSource({ url: URL.createObjectURL(file), name: file.name, kind: sourceKind(file.type) });
-      saveSourceFile(file);
-    }
+    const names = files.map((file) => file.name);
+    const first = files[0]!;
+    setExtracted({
+      invoice: result.invoice,
+      provider: result.provider,
+      fileName: displayName(names),
+      fileNames: names,
+      original: result.invoice,
+      reader: isSpreadsheet(first)
+        ? { provider: "spreadsheet", model: null }
+        : { provider: result.provider.id, model: result.provider.model },
+    });
+    // Statements have no pages to show beside the table; the first invoice is kept for a refresh.
+    const viewable = files.filter((file) => !isSpreadsheet(file));
+    setSources(viewable.map((file) => ({ url: URL.createObjectURL(file), name: file.name, kind: sourceKind(file.type) })));
+    if (viewable[0]) saveSourceFile(viewable[0]);
+    else clearSourceFile();
     setScenario(LIKE_FOR_LIKE);
     setPartner((current) => ({ ...current, prospect_name: result.invoice.customer_name ?? "" }));
     history.current = [];
@@ -389,7 +408,10 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
         invoice: current.invoice,
         scenario,
         partner: partnerForRequest(details),
-        source_file_name: current.fileName,
+        source_file_name: current.fileNames?.[0] ?? current.fileName,
+        source_files: current.fileNames ?? [current.fileName],
+        original_invoice: current.original ?? null,
+        reader: current.reader ?? null,
       });
       setSaved(savedInfo(detail));
       showAddress(`/proposals/${detail.id}/edit`);
@@ -399,6 +421,32 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
       // Saving is a convenience: the journey carries on, and the partner is told.
       toastCount.current += 1;
       setToast({ id: toastCount.current, message: `Not saved: ${errorMessage(error)}` });
+    }
+  }
+
+  /**
+   * "Add another month" on the shipments step: reads one more invoice and combines it (Undo takes it out
+   * again). The first reading is combined the same way, so corrections stay comparable. Returns an error.
+   */
+  async function addMonth(file: File, onStage: (stage: StageEvent) => void): Promise<string | null> {
+    if (!extracted) return null;
+    try {
+      const read = await readInvoiceWithProgress(file, onStage);
+      const [combined, original] = await Promise.all([
+        postJson<InvoiceData>("/invoices/combine", { invoices: [extracted.invoice, read.invoice] }),
+        postJson<InvoiceData>("/invoices/combine", { invoices: [extracted.original ?? extracted.invoice, read.invoice] }),
+      ]);
+      handleInvoiceChange(combined, `Added ${file.name}`);
+      const names = [...(extracted.fileNames ?? [extracted.fileName]), file.name];
+      setExtracted((current) =>
+        current ? { ...current, invoice: combined, original, fileNames: names, fileName: displayName(names) } : current,
+      );
+      if (!isSpreadsheet(file)) {
+        setSources((current) => [...current, { url: URL.createObjectURL(file), name: file.name, kind: sourceKind(file.type) }]);
+      }
+      return null;
+    } catch (error) {
+      return errorMessage(error);
     }
   }
 
@@ -428,7 +476,7 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
     setSaved(null);
     showAddress("/new");
     setExtracted(null);
-    setSource(null);
+    setSources([]);
     history.current = [];
     setUndoCount(0);
     setToast(null);
@@ -492,7 +540,8 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
         <ReviewStep
           invoice={extracted.invoice}
           fileName={extracted.fileName}
-          source={source}
+          sources={sources}
+          onAddMonth={addMonth}
           comparing={comparing}
           error={compareError}
           canUndo={undoCount > 0}

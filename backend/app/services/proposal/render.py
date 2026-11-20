@@ -161,7 +161,8 @@ def render_proposal_html(
     html = _env.get_template("proposal.html").render(
         lang=language,
         dir="rtl" if language == "ar" else "ltr",
-        font=ARABIC_FONT if language == "ar" else LATIN_FONT,
+        # Markup: a fixed font list from this file, which must reach the CSS unescaped (quotes intact).
+        font=Markup(ARABIC_FONT if language == "ar" else LATIN_FONT),
         L=labels,
         invoice=invoice,
         partner=partner,

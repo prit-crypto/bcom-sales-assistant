@@ -21,6 +21,7 @@ installs it.
 | `make run` | Development server with reload |
 | `make db-up` / `make migrate` | Start PostgreSQL (repository `docker-compose.yml`) / apply migrations |
 | `make revision m="…"` | New migration generated from the models in `app/models` |
+| `make corrections-report` | What partners corrected in each reader's work, and the hints the AI now gets (Markdown) |
 | `make test` | Unit and API tests (pytest) |
 | `make lint` / `make fmt` | Ruff check / format |
 | `make typecheck` | mypy (strict) |
@@ -35,11 +36,14 @@ installs it.
 | `GET /health` | – | `{"status": "ok"}` |
 | `GET /config` | – | active provider (no secrets), upload limit, `privacy_notice`, `samples_only` |
 | `POST /invoices/extract` | multipart `file` (PDF/JPG/PNG/WEBP, or a CSV/XLSX statement, ≤ `MAX_UPLOAD_MB`) | clean, editable invoice data |
+| `POST /invoices/extract/stream` | same as `/invoices/extract` | the same read as server-sent events: `stage` (received, checked, reading with the usual time, cleaning, checking), then `done` or `error` |
+| `POST /invoices/combine` | `{invoices: [2–3]}` | one invoice from several months (rows numbered `m1-…` in the order added; refused when periods overlap or are missing, or currencies differ) |
 | `POST /invoices/check` | `{invoice}` | sanity checks (totals, duplicate waybills, weight and charge outliers) |
 | `POST /comparisons` | `{invoice, scenario?}` (after the partner's review) | per-shipment rows + summary (incl. checks) |
 | `POST /exports/comparison` | `{invoice, scenario?}` | `.xlsx` (Summary, Shipments, By region, By route) |
 | `POST /proposals` | `{invoice, partner, scenario?}` | `application/pdf` (English or Arabic) |
 | `POST /messages` | `{invoice, partner, scenario?}` | WhatsApp text (English or Arabic) |
+| `GET /insights/reading` | – | for the team: corrections per reader, the most corrected fields by courier, the hints the AI gets |
 | `GET /health/ready` | – | `200` when the database answers, else `503` (used by Docker healthchecks) |
 
 The live PDF preview uses `POST /proposals/render` (`{invoice, partner, scenario?}` → `application/pdf`). Saved
@@ -85,6 +89,10 @@ tests, and check that migrations go down and up again.
 - **Privacy**: with Gemini on the free tier (`GEMINI_PAID_KEY=false`, the default) `/config` returns a notice telling
   partners to use sample invoices only. `ALLOW_ONLY_SAMPLE_FILES=true` makes `/invoices/extract` accept only the
   bundled samples (hashes in `app/assets/sample_hashes.json`, rewritten by `scripts/write_sample_hashes.py`).
+- **Learning from corrections**: a saved proposal keeps the invoice as first read and who read it; every value the
+  partner changed is recorded (`reading_corrections`, recomputed on each autosave). The 8 most frequent kinds of AI
+  correction (3+ of a kind in 90 days, by field and courier) are added to the reading instructions as short
+  lessons, are part of the cache key, and can be switched off with `READING_HINTS=false`.
 - **Error reporting**: set `SENTRY_DSN` to send errors to Sentry (errors only, no request bodies or personal data).
 - **Security headers** on every API response: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
   `Referrer-Policy: no-referrer`. `make audit` checks the installed packages for known vulnerabilities (needs the

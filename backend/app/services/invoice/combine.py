@@ -4,6 +4,7 @@ The comparison needs nothing special: monthly figures already scale by the billi
 the earliest start to the latest end. Periods must not overlap (the same shipments would count twice).
 """
 
+import re
 from datetime import date, timedelta
 
 from app.core.exceptions import AppError
@@ -28,10 +29,24 @@ def _distinct(values: list[str | None]) -> list[str]:
     return seen
 
 
+_PART = re.compile(r"^m(\d)-")
+
+
+def parts_in(invoice: InvoiceData) -> int:
+    """How many invoices this one already combines (1 for a single invoice)."""
+    numbers = [int(m.group(1)) for s in invoice.shipments if (m := _PART.match(s.id))]
+    return max(numbers, default=1)
+
+
 def combine_invoices(invoices: list[InvoiceData]) -> InvoiceData:
-    if not 2 <= len(invoices) <= MAX_INVOICES:
+    """Invoices are numbered in the order given (an already combined invoice keeps its numbers), so
+    "Invoice 2" on screen is always the second file added."""
+    total = sum(parts_in(invoice) for invoice in invoices)
+    if len(invoices) < 2 or total > MAX_INVOICES:
         raise AppError(
-            f"Combine 2 or {MAX_INVOICES} invoices.", status_code=422, code="combine_count"
+            f"A proposal can combine up to {MAX_INVOICES} invoices.",
+            status_code=422,
+            code="combine_count",
         )
     missing = [
         i + 1
@@ -83,18 +98,31 @@ def combine_invoices(invoices: list[InvoiceData]) -> InvoiceData:
             )
 
     shipments: list[Shipment] = []
-    for month, invoice in enumerate(ordered, start=1):
-        shipments.extend(
-            s.model_copy(update={"id": f"m{month}-{s.id}"[:40]}) for s in invoice.shipments
-        )
-        warnings.extend(f"Month {month}: {warning}" for warning in invoice.warnings)
+    number = 0
+    for invoice in invoices:
+        if parts_in(invoice) > 1 or any(_PART.match(s.id) for s in invoice.shipments):
+            # Already combined: keep its numbering, shifted after the invoices before it.
+            offset = number
+            for s in invoice.shipments:
+                match = _PART.match(s.id)
+                part = int(match.group(1)) if match else 1
+                rest = s.id[match.end() :] if match else s.id
+                shipments.append(s.model_copy(update={"id": f"m{part + offset}-{rest}"[:40]}))
+            warnings.extend(invoice.warnings)
+            number += parts_in(invoice)
+        else:
+            number += 1
+            shipments.extend(
+                s.model_copy(update={"id": f"m{number}-{s.id}"[:40]}) for s in invoice.shipments
+            )
+            warnings.extend(f"Invoice {number}: {warning}" for warning in invoice.warnings)
 
     subtotals = [invoice.printed_subtotal for invoice in ordered]
     first, last = ordered[0], ordered[-1]
     return InvoiceData(
         carrier_name=first.carrier_name,
         customer_name=first.customer_name,
-        invoice_number=" + ".join(i.invoice_number or "?" for i in ordered)[:80],
+        invoice_number=" + ".join(i.invoice_number or "?" for i in invoices)[:80],
         invoice_date=last.invoice_date,
         period_start=first.period_start,
         period_end=last.period_end,

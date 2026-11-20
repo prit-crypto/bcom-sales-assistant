@@ -32,10 +32,11 @@ def test_combines_months_in_order(client: TestClient) -> None:
     assert response.status_code == 200, response.text
     combined = InvoiceData.model_validate(response.json())
     assert combined.period_start == "2026-10-01" and combined.period_end == "2026-11-30"
+    # Numbered in the order added (the screen's "Invoice 1, 2"), whatever the dates.
     assert [s.id for s in combined.shipments] == ["m1-s1", "m1-s2", "m2-s1", "m2-s2"]
-    assert combined.invoice_number == "INV-10 + INV-11"
+    assert combined.invoice_number == "INV-11 + INV-10"
     assert combined.printed_subtotal == 300
-    assert combined.warnings == ["Month 1: One weight unclear"]
+    assert combined.warnings == ["Invoice 2: One weight unclear"]
 
     # Two months of shipments over two months: the monthly figure is the average, not the total.
     summary = client.post("/api/v1/comparisons", json={"invoice": response.json()}).json()[
@@ -43,6 +44,25 @@ def test_combines_months_in_order(client: TestClient) -> None:
     ]
     single = client.post("/api/v1/comparisons", json={"invoice": october}).json()["summary"]
     assert abs(summary["monthly_current"] - single["monthly_current"]) < 6
+
+
+def test_adding_a_third_month_keeps_the_numbers_and_three_is_the_limit(client: TestClient) -> None:
+    two = client.post(
+        COMBINE,
+        json={"invoices": [month("2026-10-01", "2026-10-31"), month("2026-11-01", "2026-11-30")]},
+    ).json()
+    three = client.post(COMBINE, json={"invoices": [two, month("2026-12-01", "2026-12-31")]}).json()
+    assert [s["id"] for s in three["shipments"]] == [
+        "m1-s1",
+        "m1-s2",
+        "m2-s1",
+        "m2-s2",
+        "m3-s1",
+        "m3-s2",
+    ]
+    assert three["period_start"] == "2026-10-01" and three["period_end"] == "2026-12-31"
+    four = client.post(COMBINE, json={"invoices": [three, month("2027-01-01", "2027-01-31")]})
+    assert four.json()["error"]["code"] == "combine_count"
 
 
 def test_refuses_overlapping_months(client: TestClient) -> None:
