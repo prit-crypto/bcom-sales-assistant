@@ -7,7 +7,16 @@ from fastapi import UploadFile
 
 from app.core.exceptions import AppError
 
-AcceptedMimeType = Literal["application/pdf", "image/jpeg", "image/png", "image/webp"]
+AcceptedMimeType = Literal[
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "text/csv",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]
+XLSX: AcceptedMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+SPREADSHEETS: frozenset[str] = frozenset({"text/csv", XLSX})
 
 _CHUNK = 1024 * 1024
 
@@ -19,8 +28,26 @@ class InvoiceFile:
     file_name: str
 
 
-def detect_mime_type(data: bytes) -> AcceptedMimeType | None:
-    """Checks the file's first bytes so a renamed file cannot pretend to be a PDF or image."""
+def _looks_like_csv(data: bytes, file_name: str) -> bool:
+    """A .csv name and plain text whose first line has several columns."""
+    if not file_name.lower().endswith(".csv"):
+        return False
+    head = data[:4096]
+    if b"\x00" in head:
+        return False
+    try:
+        first_line = head.decode("utf-8-sig").splitlines()[0]
+    except (UnicodeDecodeError, IndexError):
+        return False
+    return max(first_line.count(","), first_line.count(";"), first_line.count("\t")) >= 2
+
+
+def detect_mime_type(data: bytes, file_name: str = "") -> AcceptedMimeType | None:
+    """Checks the file's first bytes so a renamed file cannot pretend to be a PDF, image or spreadsheet."""
+    if data.startswith(b"PK\x03\x04") and b"xl/workbook" in data:
+        return XLSX
+    if _looks_like_csv(data, file_name):
+        return "text/csv"
     if data.startswith(b"%PDF"):
         return "application/pdf"
     if data.startswith(b"\xff\xd8\xff"):
@@ -49,11 +76,12 @@ async def read_invoice_upload(upload: UploadFile | None, max_mb: float) -> Invoi
         raise AppError("The file is empty.", status_code=400, code="file_empty")
 
     data = bytes(buffer)
-    mime_type = detect_mime_type(data)
+    file_name = (upload.filename or "invoice")[:120]
+    mime_type = detect_mime_type(data, file_name)
     if mime_type is None:
         raise AppError(
-            "Upload a PDF, JPG, PNG or WEBP file.", status_code=415, code="file_unsupported"
+            "Upload a PDF, JPG, PNG or WEBP file, or a CSV or Excel statement.",
+            status_code=415,
+            code="file_unsupported",
         )
-    return InvoiceFile(
-        data=data, mime_type=mime_type, file_name=(upload.filename or "invoice")[:120]
-    )
+    return InvoiceFile(data=data, mime_type=mime_type, file_name=file_name)

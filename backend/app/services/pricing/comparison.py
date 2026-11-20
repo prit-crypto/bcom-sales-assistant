@@ -9,15 +9,21 @@ from app.schemas.comparison import (
     ComparisonSummary,
     CurrencyConversion,
     GroupTotal,
+    Scenario,
     ShipmentComparison,
     StatusCounts,
+    TransitTradeoff,
+    ZoneId,
 )
-from app.schemas.invoice import InvoiceData, Shipment
+from app.schemas.invoice import InvoiceData, ServiceLevel, Shipment
+from app.services.invoice.checks import check_invoice
 from app.services.invoice.validation import FIELD_LABELS, get_missing_fields
 from app.services.pricing.calculator import NotEligible, quote_shipment
 from app.services.pricing.rate_card import (
     MAX_WEIGHT_KG,
+    ORIGIN_COUNTRY,
     RATE_CARD_CURRENCY,
+    RATES,
     SERVICE_LABELS,
     ZONE_IDS,
     zone_label,
@@ -60,13 +66,30 @@ def get_monthly_factor(period_days: int | None) -> float:
     return 30 / period_days
 
 
-def _compare_shipment(shipment: Shipment, currency_ok: bool) -> ShipmentComparison:
+def _priced_service(shipment: Shipment, economy_for_non_urgent: bool) -> ServiceLevel | None:
+    """The BCOM service to price: Economy instead of Express for international shipments when the
+    what-if asks for it (UAE domestic stays as it is)."""
+    if (
+        economy_for_non_urgent
+        and shipment.service == "express"
+        and shipment.destination_country
+        and shipment.destination_country != ORIGIN_COUNTRY
+    ):
+        return "economy"
+    return shipment.service
+
+
+def _compare_shipment(
+    shipment: Shipment, currency_ok: bool, economy_for_non_urgent: bool = False
+) -> ShipmentComparison:
+    priced = _priced_service(shipment, economy_for_non_urgent)
     base = ShipmentComparison(
         shipment_id=shipment.id,
         status="compared",
         current=shipment.charge,
         service=shipment.service,
-        service_label=SERVICE_LABELS[shipment.service] if shipment.service else None,
+        proposed_service=priced,
+        service_label=SERVICE_LABELS[priced] if priced else None,
     )
 
     if not shipment.included:
@@ -94,11 +117,12 @@ def _compare_shipment(shipment: Shipment, currency_ok: bool) -> ShipmentComparis
     # get_missing_fields guarantees these are set.
     assert shipment.origin_country and shipment.destination_country
     assert shipment.weight_kg is not None and shipment.service and shipment.charge is not None
+    assert priced is not None
     quote = quote_shipment(
         origin_country=shipment.origin_country,
         destination_country=shipment.destination_country,
         weight_kg=shipment.weight_kg,
-        service=shipment.service,
+        service=priced,
     )
     if isinstance(quote, NotEligible):
         return base.model_copy(update={"status": "not_eligible", "reason": quote.reason})
@@ -150,11 +174,30 @@ def _conversion_assumption(conversion: CurrencyConversion) -> str:
     )
 
 
+def _scenario_assumptions(scenario: Scenario, switched: int) -> list[str]:
+    lines: list[str] = []
+    if scenario.economy_for_non_urgent:
+        lines.append(
+            f"What if: {switched} international Express shipment{'s' if switched != 1 else ''} priced as BCOM Economy, "
+            "which is cheaper but slower (see delivery times). The current charges stay as invoiced."
+        )
+    if scenario.volume_factor != 1:
+        change = round((scenario.volume_factor - 1) * 100)
+        lines.append(
+            f"What if: monthly volume {'+' if change > 0 else '−'}{abs(change)}% compared with this invoice, "
+            "with the same mix of routes and services."
+        )
+    return lines
+
+
 def compare_invoice(
-    invoice: InvoiceData, fx_rates: Mapping[str, float] | None = None
+    invoice: InvoiceData,
+    fx_rates: Mapping[str, float] | None = None,
+    scenario: Scenario | None = None,
 ) -> ComparisonResult:
     """Compares the invoice with the rate card. Amounts in another currency are converted to AED first
     when a rate for it is configured (`fx_rates`, defaulting to the FX_RATES_TO_AED setting)."""
+    scenario = scenario or Scenario()
     rates = get_settings().fx_rates_to_aed if fx_rates is None else fx_rates
     currency = (invoice.currency or RATE_CARD_CURRENCY).upper()
     rate = None if currency == RATE_CARD_CURRENCY else rates.get(currency)
@@ -179,8 +222,14 @@ def compare_invoice(
             for shipment in shipments
         ]
 
-    rows = [_compare_shipment(shipment, currency_ok) for shipment in shipments]
+    rows = [
+        _compare_shipment(shipment, currency_ok, scenario.economy_for_non_urgent)
+        for shipment in shipments
+    ]
 
+    switched_rows = [
+        row for row in rows if row.status == "compared" and row.proposed_service != row.service
+    ]
     counts = StatusCounts()
     zones: dict[str, GroupTotal] = {}
     services: dict[str, GroupTotal] = {}
@@ -199,7 +248,8 @@ def compare_invoice(
         if (row.saving or 0) < 0:
             higher_priced += 1
         _add_to_group(zones, row.zone, zone_label(row.zone), row)
-        _add_to_group(services, row.service, SERVICE_LABELS[row.service], row)
+        priced = row.proposed_service or row.service
+        _add_to_group(services, priced, SERVICE_LABELS[priced], row)
         lane = _lane_label(shipment)
         _add_to_group(lanes, lane.lower(), lane, row)
 
@@ -210,7 +260,9 @@ def compare_invoice(
     period_days = get_period_days(invoice)
     monthly_factor = get_monthly_factor(period_days)
     # Whole dirhams: these are estimates, and yearly must equal monthly x 12 exactly as shown.
-    monthly_saving = int(round_half_up(saving * monthly_factor))
+    # The what-if volume scales the monthly figures only (same mix of routes and services).
+    monthly_scale = monthly_factor * scenario.volume_factor
+    monthly_saving = int(round_half_up(saving * monthly_scale))
 
     assumptions = [
         "BCOM prices come from the sample rate card set up in this tool, to be replaced with BCOM's live rates. Rates are all-in including fuel surcharge, and exclude 5% VAT and customs duties.",
@@ -218,6 +270,7 @@ def compare_invoice(
         "Weights are the chargeable weights on the invoice, rounded up to the next 0.5 kg.",
         f"Only shipments sent from the UAE, up to {MAX_WEIGHT_KG} kg, to destinations on the rate card are compared. Services are matched like for like (express to express, economy to economy).",
         _period_assumption(period_days, monthly_factor),
+        *_scenario_assumptions(scenario, len(switched_rows)),
         "Future savings assume the coming months look like this invoice. Yearly saving = monthly saving x 12.",
     ]
     if invoice.currency is None:
@@ -244,8 +297,8 @@ def compare_invoice(
         spend_coverage_pct=_pct(current_spend, invoice_spend),
         period_days=period_days,
         monthly_factor=monthly_factor,
-        monthly_current=round_money(current_spend * monthly_factor),
-        monthly_proposed=round_money(proposed_spend * monthly_factor),
+        monthly_current=round_money(current_spend * monthly_scale),
+        monthly_proposed=round_money(proposed_spend * monthly_scale),
         monthly_saving=monthly_saving,
         yearly_saving=monthly_saving * 12,
         has_saving=counts.compared > 0 and monthly_saving > 0,
@@ -256,5 +309,33 @@ def compare_invoice(
         top_lanes=sorted(lanes.values(), key=lambda group: group.current, reverse=True)[:TOP_LANES],
         assumptions=assumptions,
         converted_from=conversion,
+        scenario=scenario,
+        # Same volume, like-for-like services: what the Economy switch is compared against.
+        like_for_like_monthly_saving=(
+            compare_invoice(
+                invoice, rates, Scenario(volume_factor=scenario.volume_factor)
+            ).summary.monthly_saving
+            if scenario.economy_for_non_urgent
+            else monthly_saving
+        ),
+        transit_tradeoffs=_transit_tradeoffs(switched_rows),
+        checks=check_invoice(invoice),
     )
     return ComparisonResult(rows=rows, summary=summary)
+
+
+def _transit_tradeoffs(switched_rows: list[ShipmentComparison]) -> list[TransitTradeoff]:
+    counts: dict[ZoneId, int] = {}
+    for row in switched_rows:
+        if row.zone:
+            counts[row.zone] = counts.get(row.zone, 0) + 1
+    return [
+        TransitTradeoff(
+            zone_label=zone_label(zone),
+            express=RATES[zone]["express"].transit_time,
+            economy=RATES[zone]["economy"].transit_time,
+            shipments=counts[zone],
+        )
+        for zone in ZONE_IDS
+        if zone in counts
+    ]

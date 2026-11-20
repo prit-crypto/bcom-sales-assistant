@@ -3,7 +3,7 @@
 import re
 
 from app.core.config import get_settings
-from app.schemas.invoice import InvoiceData, ServiceLevel, Shipment
+from app.schemas.invoice import EDITABLE_FIELDS, EditableField, InvoiceData, ServiceLevel, Shipment
 from app.schemas.raw_invoice import LooseNumber, RawInvoice, RawShipment
 from app.services.invoice.validation import get_missing_fields
 from app.services.pricing.rate_card import RATE_CARD_CURRENCY
@@ -85,6 +85,26 @@ def normalize_service(value: str | None) -> ServiceLevel | None:
     return None
 
 
+# Names a reader may use for a field it was unsure about, mapped to ours.
+_FIELD_ALIASES = {
+    "weight": "weight_kg",
+    "weightkg": "weight_kg",
+    "amount": "charge",
+    "awb": "reference",
+    "waybill": "reference",
+}
+
+
+def normalize_uncertain(names: list[str]) -> list[EditableField]:
+    found: list[EditableField] = []
+    for name in names:
+        key = re.sub(r"[^a-z_]", "", name.strip().lower())
+        key = _FIELD_ALIASES.get(key.replace("_", ""), key)
+        if key in EDITABLE_FIELDS and key not in found:
+            found.append(key)
+    return found
+
+
 def _normalize_shipment(raw: RawShipment, index: int) -> Shipment:
     pieces = normalize_number(raw.pieces)
     return Shipment(
@@ -100,6 +120,7 @@ def _normalize_shipment(raw: RawShipment, index: int) -> Shipment:
         service=normalize_service(raw.service),
         charge=normalize_number(raw.charge),
         included=True,
+        uncertain_fields=normalize_uncertain(raw.uncertain_fields),
     )
 
 
@@ -155,6 +176,7 @@ def normalize_invoice(raw: RawInvoice) -> InvoiceData:
         period_start=period_start,
         period_end=period_end,
         currency=currency,
+        printed_subtotal=normalize_number(raw.invoice_subtotal),
         shipments=shipments[:2000],
         warnings=warnings[:100],
     )

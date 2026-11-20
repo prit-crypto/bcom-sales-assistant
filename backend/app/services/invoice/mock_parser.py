@@ -22,6 +22,7 @@ _CUSTOMER = re.compile(r"BILL TO\s*\n\s*(.+)", re.IGNORECASE)
 _INVOICE_NO = re.compile(r"Invoice No: (\S+)")
 _INVOICE_DATE = re.compile(rf"Invoice Date: ({_DATE})")
 _CURRENCY = re.compile(r"Currency: ([A-Z]{3})")
+_SUBTOTAL = re.compile(r"Subtotal \(excl\. VAT\) ([\d,]+\.\d{2})")
 
 
 def _first(pattern: re.Pattern[str], text: str) -> str | None:
@@ -67,4 +68,7 @@ def parse_sample_invoice_text(pages: list[str]) -> RawInvoice:
         currency=_first(_CURRENCY, flat),
         shipments=shipments,
         notes=notes,
+        invoice_subtotal=(
+            subtotal.replace(",", "") if (subtotal := _first(_SUBTOTAL, flat)) else None
+        ),
     )

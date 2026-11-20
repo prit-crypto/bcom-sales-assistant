@@ -17,7 +17,7 @@ router = APIRouter(prefix="/messages", tags=["messages"])
 @router.post("", dependencies=[Depends(rate_limited("messages"))])
 async def create_message(body: ProposalRequest) -> MessageResponse:
     """Writes the WhatsApp message. Numbers are recalculated here, never taken from the browser."""
-    summary = compare_invoice(body.invoice).summary
+    summary = compare_invoice(body.invoice, scenario=body.scenario).summary
     if not summary.has_saving:
         raise AppError(
             "BCOM is not cheaper than the current courier for these shipments, so there is no saving to message about.",

@@ -132,3 +132,20 @@ def test_partner_details_are_required(client: TestClient) -> None:
         "/api/v1/proposals", json={"invoice": saving_invoice(), "partner": partner}
     )
     assert response.status_code == 422
+
+
+def test_blank_text_fields_are_accepted(client: TestClient) -> None:
+    """Regression: a reader returning no city, invoice number or customer must not crash the request."""
+    invoice = make_invoice(
+        [
+            make_shipment(
+                origin_city=None, destination_city=None, reference=None, origin_country=None
+            )
+        ],
+        invoice_number=None,
+        customer_name=None,
+        carrier_name=None,
+    )
+    response = client.post("/api/v1/comparisons", json={"invoice": invoice.model_dump()})
+    assert response.status_code == 200
+    assert response.json()["rows"][0]["status"] == "missing_data"

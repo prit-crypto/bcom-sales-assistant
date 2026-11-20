@@ -1,12 +1,57 @@
 """Result of comparing an invoice with the BCOM rate card."""
 
-from typing import Literal
+from typing import Annotated, Literal
+
+from pydantic import AfterValidator, Field
 
 from app.schemas.base import ApiModel
 from app.schemas.invoice import InvoiceData, RequiredShipmentField, ServiceLevel
 
 ShipmentStatus = Literal["compared", "missing_data", "not_eligible", "excluded"]
 ZoneId = Literal["Z1", "Z2", "Z3", "Z4", "Z5", "Z6"]
+CheckKind = Literal["total_mismatch", "duplicate_waybill", "weight_outlier", "charge_outlier"]
+VOLUME_FACTORS = (0.8, 1.0, 1.2, 1.5, 2.0)
+
+
+def _check_volume(value: float) -> float:
+    if value not in VOLUME_FACTORS:
+        raise ValueError(f"volume_factor must be one of {VOLUME_FACTORS}")
+    return value
+
+
+# Monthly volume compared with this invoice: 0.8 = 20% fewer shipments, 2 = twice as many.
+VolumeFactor = Annotated[float, AfterValidator(_check_volume)]
+
+
+class InvoiceCheck(ApiModel):
+    """Something on the invoice worth a second look (see app/services/invoice/checks.py)."""
+
+    kind: CheckKind
+    message: str
+    # Lines involved; empty for invoice-level checks such as the totals.
+    shipment_ids: list[str] = []
+
+
+class Scenario(ApiModel):
+    """A "what if" the partner tries with the prospect. The default is like for like."""
+
+    # Monthly volume compared with this invoice: 0.8 = 20% fewer shipments, 2 = twice as many.
+    volume_factor: VolumeFactor = 1.0
+    # Price international Express shipments as BCOM Economy (slower, cheaper).
+    economy_for_non_urgent: bool = False
+
+    @property
+    def is_like_for_like(self) -> bool:
+        return self.volume_factor == 1 and not self.economy_for_non_urgent
+
+
+class TransitTradeoff(ApiModel):
+    """What the prospect gives up when a region's Express shipments move to Economy."""
+
+    zone_label: str
+    express: str
+    economy: str
+    shipments: int
 
 
 class ShipmentComparison(ApiModel):
@@ -21,6 +66,8 @@ class ShipmentComparison(ApiModel):
     zone: ZoneId | None = None
     zone_label: str | None = None
     service: ServiceLevel | None = None
+    # The BCOM service priced: differs from `service` when the what-if moves Express to Economy.
+    proposed_service: ServiceLevel | None = None
     service_label: str | None = None
     billed_weight_kg: float | None = None
     transit_time: str | None = None
@@ -87,6 +134,11 @@ class ComparisonSummary(ApiModel):
     assumptions: list[str]
     # Set when the invoice was in another currency and converted to AED for the comparison.
     converted_from: CurrencyConversion | None = None
+    # The what-if this summary was calculated with, and the like-for-like saving for comparison.
+    scenario: Scenario = Field(default_factory=Scenario)
+    like_for_like_monthly_saving: int = 0
+    transit_tradeoffs: list[TransitTradeoff] = []
+    checks: list[InvoiceCheck] = []
 
 
 class ComparisonResult(ApiModel):
@@ -96,3 +148,12 @@ class ComparisonResult(ApiModel):
 
 class ComparisonRequest(ApiModel):
     invoice: InvoiceData
+    scenario: Scenario = Field(default_factory=Scenario)
+
+
+class CheckRequest(ApiModel):
+    invoice: InvoiceData
+
+
+class CheckResponse(ApiModel):
+    checks: list[InvoiceCheck]

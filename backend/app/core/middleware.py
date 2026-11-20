@@ -58,6 +58,32 @@ class RequestContextMiddleware:
             structlog.contextvars.clear_contextvars()
 
 
+class SecurityHeadersMiddleware:
+    """API responses are data, never pages: tell browsers not to sniff them or frame them."""
+
+    HEADERS = [
+        (b"x-content-type-options", b"nosniff"),
+        (b"x-frame-options", b"DENY"),
+        (b"referrer-policy", b"no-referrer"),
+    ]
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                message.setdefault("headers", [])
+                message["headers"].extend(self.HEADERS)
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
+
+
 class MaxBodySizeMiddleware:
     """Refuses a request whose declared size is over the limit before any of it is read.
     (The upload reader still counts bytes as a second guard, for requests without a Content-Length.)"""

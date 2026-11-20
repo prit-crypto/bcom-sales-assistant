@@ -22,6 +22,15 @@ class SalesMessageFacts:
     total_shipments: int
     proposal_validity_days: int
     top_saving_routes: list[str] = field(default_factory=list)
+    # "en" or "ar": the language of the message.
+    language: str = "en"
+    # Where the prospect can book the call; empty when the partner gave none.
+    booking_url: str = ""
+    # Set when the what-if moves non-urgent parcels to Economy: monthly_saving is then the like-for-like
+    # figure and this the saving with Economy.
+    economy_monthly_saving: str | None = None
+    # What-if volume change, e.g. "+20%"; empty when the estimate uses the invoice's own volume.
+    volume_change: str = ""
 
 
 class AIProvider(Protocol):

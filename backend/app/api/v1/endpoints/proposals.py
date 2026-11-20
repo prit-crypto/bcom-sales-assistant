@@ -17,7 +17,7 @@ router = APIRouter(prefix="/proposals", tags=["proposals"])
 async def create_proposal(body: ProposalRequest) -> Response:
     """Builds the customer proposal PDF. Numbers are recalculated here, never taken from the browser."""
     # PDF rendering is CPU-bound; keep it off the event loop.
-    pdf = await asyncio.to_thread(render_proposal_pdf, body.invoice, body.partner)
+    pdf = await asyncio.to_thread(render_proposal_pdf, body.invoice, body.partner, body.scenario)
     return Response(
         content=pdf.content,
         media_type="application/pdf",

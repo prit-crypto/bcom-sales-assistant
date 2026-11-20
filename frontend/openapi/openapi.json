@@ -19,10 +19,41 @@
         "title": "Body_extract_invoice_api_v1_invoices_extract_post",
         "type": "object"
       },
+      "CheckRequest": {
+        "properties": {
+          "invoice": {
+            "$ref": "#/components/schemas/InvoiceData-Input"
+          }
+        },
+        "required": [
+          "invoice"
+        ],
+        "title": "CheckRequest",
+        "type": "object"
+      },
+      "CheckResponse": {
+        "properties": {
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/InvoiceCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "checks"
+        ],
+        "title": "CheckResponse",
+        "type": "object"
+      },
       "ComparisonRequest": {
         "properties": {
           "invoice": {
             "$ref": "#/components/schemas/InvoiceData-Input"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/Scenario-Input"
           }
         },
         "required": [
@@ -74,6 +105,14 @@
             "title": "By Zone",
             "type": "array"
           },
+          "checks": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/InvoiceCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
           "compared_shipments": {
             "title": "Compared Shipments",
             "type": "integer"
@@ -107,6 +146,11 @@
           "invoice_spend": {
             "title": "Invoice Spend",
             "type": "number"
+          },
+          "like_for_like_monthly_saving": {
+            "default": 0,
+            "title": "Like For Like Monthly Saving",
+            "type": "integer"
           },
           "monthly_current": {
             "title": "Monthly Current",
@@ -147,6 +191,9 @@
             "title": "Saving Pct",
             "type": "number"
           },
+          "scenario": {
+            "$ref": "#/components/schemas/Scenario-Output"
+          },
           "shipment_coverage_pct": {
             "title": "Shipment Coverage Pct",
             "type": "number"
@@ -168,6 +215,14 @@
           "total_shipments": {
             "title": "Total Shipments",
             "type": "integer"
+          },
+          "transit_tradeoffs": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TransitTradeoff"
+            },
+            "title": "Transit Tradeoffs",
+            "type": "array"
           },
           "yearly_saving": {
             "title": "Yearly Saving",
@@ -198,7 +253,11 @@
           "by_service",
           "top_lanes",
           "assumptions",
-          "converted_from"
+          "converted_from",
+          "scenario",
+          "like_for_like_monthly_saving",
+          "transit_tradeoffs",
+          "checks"
         ],
         "title": "ComparisonSummary",
         "type": "object"
@@ -208,6 +267,17 @@
           "max_upload_mb": {
             "title": "Max Upload Mb",
             "type": "number"
+          },
+          "privacy_notice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Privacy Notice"
           },
           "problem": {
             "anyOf": [
@@ -229,12 +299,19 @@
                 "type": "null"
               }
             ]
+          },
+          "samples_only": {
+            "default": false,
+            "title": "Samples Only",
+            "type": "boolean"
           }
         },
         "required": [
           "provider",
           "problem",
-          "max_upload_mb"
+          "max_upload_mb",
+          "privacy_notice",
+          "samples_only"
         ],
         "title": "ConfigResponse",
         "type": "object"
@@ -349,19 +426,53 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "InvoiceCheck": {
+        "description": "Something on the invoice worth a second look (see app/services/invoice/checks.py).",
+        "properties": {
+          "kind": {
+            "enum": [
+              "total_mismatch",
+              "duplicate_waybill",
+              "weight_outlier",
+              "charge_outlier"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "shipment_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Shipment Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "message",
+          "shipment_ids"
+        ],
+        "title": "InvoiceCheck",
+        "type": "object"
+      },
       "InvoiceData-Input": {
         "description": "Everything read from one invoice.",
         "properties": {
           "carrier_name": {
             "anyOf": [
               {
+                "maxLength": 120,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 120,
             "title": "Carrier Name"
           },
           "currency": {
@@ -379,13 +490,13 @@
           "customer_name": {
             "anyOf": [
               {
+                "maxLength": 120,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 120,
             "title": "Customer Name"
           },
           "invoice_date": {
@@ -402,13 +513,13 @@
           "invoice_number": {
             "anyOf": [
               {
+                "maxLength": 80,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 80,
             "title": "Invoice Number"
           },
           "period_end": {
@@ -432,6 +543,19 @@
               }
             ],
             "title": "Period Start"
+          },
+          "printed_subtotal": {
+            "anyOf": [
+              {
+                "maximum": 1000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Printed Subtotal"
           },
           "shipments": {
             "items": {
@@ -460,13 +584,13 @@
           "carrier_name": {
             "anyOf": [
               {
+                "maxLength": 120,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 120,
             "title": "Carrier Name"
           },
           "currency": {
@@ -484,13 +608,13 @@
           "customer_name": {
             "anyOf": [
               {
+                "maxLength": 120,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 120,
             "title": "Customer Name"
           },
           "invoice_date": {
@@ -507,13 +631,13 @@
           "invoice_number": {
             "anyOf": [
               {
+                "maxLength": 80,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 80,
             "title": "Invoice Number"
           },
           "period_end": {
@@ -537,6 +661,19 @@
               }
             ],
             "title": "Period Start"
+          },
+          "printed_subtotal": {
+            "anyOf": [
+              {
+                "maximum": 1000000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Printed Subtotal"
           },
           "shipments": {
             "items": {
@@ -564,6 +701,7 @@
           "period_start",
           "period_end",
           "currency",
+          "printed_subtotal",
           "shipments",
           "warnings"
         ],
@@ -607,6 +745,21 @@
       "PartnerInput": {
         "description": "Partner details entered on the proposal step.",
         "properties": {
+          "booking_url": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Booking Url",
+            "type": "string"
+          },
+          "language": {
+            "default": "en",
+            "enum": [
+              "en",
+              "ar"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
           "partner_company": {
             "maxLength": 120,
             "minLength": 1,
@@ -618,6 +771,18 @@
             "maxLength": 120,
             "title": "Partner Email",
             "type": "string"
+          },
+          "partner_logo": {
+            "anyOf": [
+              {
+                "maxLength": 420000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Logo"
           },
           "partner_name": {
             "maxLength": 80,
@@ -660,6 +825,9 @@
           },
           "partner": {
             "$ref": "#/components/schemas/PartnerInput"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/Scenario-Input"
           }
         },
         "required": [
@@ -710,6 +878,44 @@
         "title": "ProviderInfo",
         "type": "object"
       },
+      "Scenario-Input": {
+        "description": "A \"what if\" the partner tries with the prospect. The default is like for like.",
+        "properties": {
+          "economy_for_non_urgent": {
+            "default": false,
+            "title": "Economy For Non Urgent",
+            "type": "boolean"
+          },
+          "volume_factor": {
+            "default": 1.0,
+            "title": "Volume Factor",
+            "type": "number"
+          }
+        },
+        "title": "Scenario",
+        "type": "object"
+      },
+      "Scenario-Output": {
+        "description": "A \"what if\" the partner tries with the prospect. The default is like for like.",
+        "properties": {
+          "economy_for_non_urgent": {
+            "default": false,
+            "title": "Economy For Non Urgent",
+            "type": "boolean"
+          },
+          "volume_factor": {
+            "default": 1.0,
+            "title": "Volume Factor",
+            "type": "number"
+          }
+        },
+        "required": [
+          "volume_factor",
+          "economy_for_non_urgent"
+        ],
+        "title": "Scenario",
+        "type": "object"
+      },
       "Shipment-Input": {
         "description": "One shipment line from a prospect's courier invoice.",
         "properties": {
@@ -740,25 +946,25 @@
           "destination_city": {
             "anyOf": [
               {
+                "maxLength": 80,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 80,
             "title": "Destination City"
           },
           "destination_country": {
             "anyOf": [
               {
+                "maxLength": 3,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 3,
             "title": "Destination Country"
           },
           "id": {
@@ -775,25 +981,25 @@
           "origin_city": {
             "anyOf": [
               {
+                "maxLength": 80,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 80,
             "title": "Origin City"
           },
           "origin_country": {
             "anyOf": [
               {
+                "maxLength": 3,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 3,
             "title": "Origin Country"
           },
           "pieces": {
@@ -812,13 +1018,13 @@
           "reference": {
             "anyOf": [
               {
+                "maxLength": 80,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 80,
             "title": "Reference"
           },
           "service": {
@@ -835,6 +1041,26 @@
               }
             ],
             "title": "Service"
+          },
+          "uncertain_fields": {
+            "items": {
+              "enum": [
+                "date",
+                "reference",
+                "origin_city",
+                "origin_country",
+                "destination_city",
+                "destination_country",
+                "weight_kg",
+                "pieces",
+                "service",
+                "charge"
+              ],
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Uncertain Fields",
+            "type": "array"
           },
           "weight_kg": {
             "anyOf": [
@@ -886,25 +1112,25 @@
           "destination_city": {
             "anyOf": [
               {
+                "maxLength": 80,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 80,
             "title": "Destination City"
           },
           "destination_country": {
             "anyOf": [
               {
+                "maxLength": 3,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 3,
             "title": "Destination Country"
           },
           "id": {
@@ -921,25 +1147,25 @@
           "origin_city": {
             "anyOf": [
               {
+                "maxLength": 80,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 80,
             "title": "Origin City"
           },
           "origin_country": {
             "anyOf": [
               {
+                "maxLength": 3,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 3,
             "title": "Origin Country"
           },
           "pieces": {
@@ -958,13 +1184,13 @@
           "reference": {
             "anyOf": [
               {
+                "maxLength": 80,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "maxLength": 80,
             "title": "Reference"
           },
           "service": {
@@ -981,6 +1207,26 @@
               }
             ],
             "title": "Service"
+          },
+          "uncertain_fields": {
+            "items": {
+              "enum": [
+                "date",
+                "reference",
+                "origin_city",
+                "origin_country",
+                "destination_city",
+                "destination_country",
+                "weight_kg",
+                "pieces",
+                "service",
+                "charge"
+              ],
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Uncertain Fields",
+            "type": "array"
           },
           "weight_kg": {
             "anyOf": [
@@ -1008,7 +1254,8 @@
           "pieces",
           "service",
           "charge",
-          "included"
+          "included",
+          "uncertain_fields"
         ],
         "title": "Shipment",
         "type": "object"
@@ -1062,6 +1309,21 @@
               }
             ],
             "title": "Proposed"
+          },
+          "proposed_service": {
+            "anyOf": [
+              {
+                "enum": [
+                  "express",
+                  "economy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Service"
           },
           "reason": {
             "anyOf": [
@@ -1178,6 +1440,7 @@
           "zone",
           "zone_label",
           "service",
+          "proposed_service",
           "service_label",
           "billed_weight_kg",
           "transit_time"
@@ -1215,6 +1478,35 @@
           "excluded"
         ],
         "title": "StatusCounts",
+        "type": "object"
+      },
+      "TransitTradeoff": {
+        "description": "What the prospect gives up when a region's Express shipments move to Economy.",
+        "properties": {
+          "economy": {
+            "title": "Economy",
+            "type": "string"
+          },
+          "express": {
+            "title": "Express",
+            "type": "string"
+          },
+          "shipments": {
+            "title": "Shipments",
+            "type": "integer"
+          },
+          "zone_label": {
+            "title": "Zone Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "zone_label",
+          "express",
+          "economy",
+          "shipments"
+        ],
+        "title": "TransitTradeoff",
         "type": "object"
       },
       "ValidationError": {
@@ -1268,7 +1560,7 @@
   "paths": {
     "/api/v1/comparisons": {
       "post": {
-        "description": "Compares the reviewed invoice with the BCOM rate card.",
+        "description": "Compares the reviewed invoice with the BCOM rate card, with an optional what-if scenario.\nThe summary also carries the sanity checks (totals, duplicates, outliers).",
         "operationId": "create_comparison_api_v1_comparisons_post",
         "requestBody": {
           "content": {
@@ -1310,7 +1602,7 @@
     },
     "/api/v1/config": {
       "get": {
-        "description": "Tells the frontend which AI provider is active (never exposes keys).",
+        "description": "Tells the frontend which AI provider is active and what to warn about (never exposes keys).",
         "operationId": "read_config_api_v1_config_get",
         "responses": {
           "200": {
@@ -1327,6 +1619,44 @@
         "summary": "Read Config",
         "tags": [
           "config"
+        ]
+      }
+    },
+    "/api/v1/exports/comparison": {
+      "post": {
+        "description": "The comparison (with any what-if) as an Excel workbook. Numbers are recalculated here.",
+        "operationId": "export_comparison_api_v1_exports_comparison_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComparisonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "The comparison as an Excel workbook"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Comparison",
+        "tags": [
+          "exports"
         ]
       }
     },
@@ -1351,9 +1681,51 @@
         ]
       }
     },
+    "/api/v1/invoices/check": {
+      "post": {
+        "description": "Sanity checks on the reviewed invoice (totals, duplicates, outliers). No AI, instant.",
+        "operationId": "check_api_v1_invoices_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Check",
+        "tags": [
+          "invoices"
+        ]
+      }
+    },
     "/api/v1/invoices/extract": {
       "post": {
-        "description": "Reads an uploaded courier invoice with the active provider and returns clean, editable data.\n\nThe same file read again by the same provider and model comes from the cache (header `X-Cache: hit`).",
+        "description": "Reads an uploaded courier invoice and returns clean, editable data.\n\nPDFs and photos go to the active AI provider; CSV and Excel statements are read directly, without AI.\nThe same file read again by the same provider and model comes from the cache (header `X-Cache: hit`).",
         "operationId": "extract_invoice_api_v1_invoices_extract_post",
         "requestBody": {
           "content": {

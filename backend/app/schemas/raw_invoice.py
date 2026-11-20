@@ -22,6 +22,8 @@ class RawShipment(BaseModel):
     pieces: LooseNumber
     service: str | None
     charge: LooseNumber
+    # Field names the reader could not read clearly (AI readers only).
+    uncertain_fields: list[str] = []
 
 
 class RawInvoice(BaseModel):
@@ -34,6 +36,8 @@ class RawInvoice(BaseModel):
     currency: str | None
     shipments: list[RawShipment]
     notes: list[str]
+    # Total of the lines excluding VAT as printed (the "Subtotal" line), for the totals check.
+    invoice_subtotal: LooseNumber = None
 
 
 def _nullable(kind: str, description: str) -> dict[str, Any]:
@@ -85,6 +89,11 @@ INVOICE_JSON_SCHEMA: dict[str, Any] = _object(
                         "string", "Service name exactly as printed, e.g. Express Worldwide"
                     ),
                     "charge": _nullable("number", "Line amount excluding VAT, as a plain number"),
+                    "uncertain_fields": {
+                        "type": "array",
+                        "description": "Names of fields on this line you could not read clearly (e.g. weight_kg); empty when sure",
+                        "items": {"type": "string"},
+                    },
                 }
             ),
         },
@@ -93,5 +102,9 @@ INVOICE_JSON_SCHEMA: dict[str, Any] = _object(
             "description": "Short notes about anything unreadable, unclear or converted",
             "items": {"type": "string"},
         },
+        "invoice_subtotal": _nullable(
+            "number",
+            "Total of the shipment lines excluding VAT as printed (the subtotal line), plain number",
+        ),
     }
 )

@@ -20,8 +20,12 @@ class Settings(BaseSettings):
 
     # Which engine reads invoices and writes WhatsApp messages.
     ai_provider: ProviderId = "mock"
+    # A second engine to try when the first is busy, rate-limited or failing ("none" to turn off).
+    ai_fallback_provider: Literal["none", "gemini", "openai"] = "none"
 
     gemini_api_key: str = Field(default="", repr=False)
+    # Free-tier Gemini keys may let Google use the data: the app then warns against real customer invoices.
+    gemini_paid_key: bool = False
     gemini_model: str = "gemini-3.5-flash-lite"
     # Used when the main model is busy or out of quota; "none" turns it off.
     gemini_fallback_model: str = "gemini-3.8-flash"
@@ -34,6 +38,9 @@ class Settings(BaseSettings):
     # Longest a single AI request may take, and the whole read including retries and fallback.
     ai_request_timeout_seconds: float = Field(default=40, gt=0, le=300)
     ai_total_timeout_seconds: float = Field(default=55, gt=0, le=600)
+
+    # Accept only the bundled sample invoices (for public demos on a free AI tier).
+    allow_only_sample_files: bool = False
 
     # Largest invoice file accepted, in MB.
     max_upload_mb: float = Field(default=10, gt=0, le=30)

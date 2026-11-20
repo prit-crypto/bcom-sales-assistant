@@ -8,5 +8,6 @@ router = APIRouter(prefix="/comparisons", tags=["comparisons"])
 
 @router.post("")
 async def create_comparison(body: ComparisonRequest) -> ComparisonResult:
-    """Compares the reviewed invoice with the BCOM rate card."""
-    return compare_invoice(body.invoice)
+    """Compares the reviewed invoice with the BCOM rate card, with an optional what-if scenario.
+    The summary also carries the sanity checks (totals, duplicates, outliers)."""
+    return compare_invoice(body.invoice, scenario=body.scenario)

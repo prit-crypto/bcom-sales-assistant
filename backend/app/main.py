@@ -7,7 +7,11 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
-from app.core.middleware import MaxBodySizeMiddleware, RequestContextMiddleware
+from app.core.middleware import (
+    MaxBodySizeMiddleware,
+    RequestContextMiddleware,
+    SecurityHeadersMiddleware,
+)
 
 # Room for multipart headers and form fields around the file itself.
 _REQUEST_OVERHEAD_BYTES = 1024 * 1024
@@ -38,6 +42,7 @@ def create_app() -> FastAPI:
         allow_headers=["Content-Type", "X-Request-ID"],
         expose_headers=["Content-Disposition", "X-Request-ID", "X-Cache"],
     )
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
     app.include_router(api_router, prefix=settings.api_v1_prefix)

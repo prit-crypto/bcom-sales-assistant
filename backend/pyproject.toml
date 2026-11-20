@@ -15,6 +15,7 @@ dependencies = [
     "jinja2>=3.1",               # proposal HTML template
     "weasyprint>=63",            # proposal HTML -> PDF (needs pango system libs)
     "structlog>=24.4",           # structured logs with request ids (team standard)
+    "openpyxl>=3.1",             # Excel export of the comparison; reading .xlsx statements
 ]
 
 [project.optional-dependencies]
@@ -23,6 +24,7 @@ dev = [
     "httpx>=0.28",               # FastAPI TestClient
     "ruff>=0.8",
     "mypy>=1.13",
+    "pip-audit>=2.7",            # make audit: known vulnerabilities in dependencies
 ]
 
 [tool.ruff]
@@ -42,7 +44,7 @@ strict = true
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["weasyprint.*"]
+module = ["weasyprint.*", "openpyxl.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
