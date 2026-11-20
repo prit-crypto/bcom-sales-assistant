@@ -106,7 +106,7 @@ test("reading progress and a two-month review pass axe", async ({ page }) => {
   await expect(page.getByText("Invoice 1 of 2", { exact: false })).toBeVisible();
   await scan(page, "reading progress");
   release();
-  await expect(page.getByRole("main")).toContainText("68 shipments read from 2 invoices");
+  await expect(page.locator("body")).toContainText("68 shipments read from 2 invoices");
   await scan(page, "two-month review");
 });
 

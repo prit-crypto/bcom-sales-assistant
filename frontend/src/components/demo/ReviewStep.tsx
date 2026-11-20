@@ -6,6 +6,7 @@ import { ActionBar } from "@/components/ui/ActionBar";
 import { Banner } from "@/components/ui/Banner";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { PageHeader } from "@/components/ui/Hero";
 import { InvoiceViewer, type InvoiceSource } from "@/components/ui/InvoiceViewer";
 import { Segmented } from "@/components/ui/Segmented";
 import { Sheet } from "@/components/ui/Sheet";
@@ -16,7 +17,13 @@ import { getMissingFields } from "@/lib/validation";
 import { MAX_INVOICES, invoiceParts, partOf } from "@/lib/invoiceParts";
 import type { StageEvent } from "@/lib/client/stream";
 import type { CheckResponse, InvoiceCheck } from "@/types/api";
-import type { EditableField, InvoiceData, RequiredShipmentField, ServiceLevel, Shipment } from "@/types/invoice";
+import type {
+  EditableField,
+  InvoiceData,
+  RequiredShipmentField,
+  ServiceLevel,
+  Shipment,
+} from "@/types/invoice";
 
 interface ReviewStepProps {
   invoice: InvoiceData;
@@ -101,7 +108,12 @@ function toValue(kind: CellKind, raw: string): string | number | null {
     case "number":
       return parseNumber(raw);
     case "country":
-      return textOrNull(raw.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2));
+      return textOrNull(
+        raw
+          .toUpperCase()
+          .replace(/[^A-Z]/g, "")
+          .slice(0, 2),
+      );
     case "service":
       return raw === "express" || raw === "economy" ? raw : null;
     default:
@@ -175,7 +187,10 @@ export function ReviewStep({
     );
     return map;
   }, [checks]);
-  const uncertainCount = invoice.shipments.reduce((count, shipment) => count + shipment.uncertain_fields.length, 0);
+  const uncertainCount = invoice.shipments.reduce(
+    (count, shipment) => count + shipment.uncertain_fields.length,
+    0,
+  );
   const secondLook = invoice.shipments.filter(
     (shipment) => checkReasons.has(shipment.id) || shipment.uncertain_fields.length > 0,
   );
@@ -193,7 +208,12 @@ export function ReviewStep({
   const readyCount = includedCount - needsAttention.length;
   // "Second look" falls back to all once nothing is left to look at.
   const shownFilter: Filter = filter === "second-look" && secondLook.length === 0 ? "all" : filter;
-  const visible = shownFilter === "attention" ? needsAttention : shownFilter === "second-look" ? secondLook : invoice.shipments;
+  const visible =
+    shownFilter === "attention"
+      ? needsAttention
+      : shownFilter === "second-look"
+        ? secondLook
+        : invoice.shipments;
 
   // Which details are missing, e.g. "weight (2)" — counted live, so it updates as the partner fixes rows.
   const missingSummary = useMemo(() => {
@@ -216,7 +236,13 @@ export function ReviewStep({
   const detailsShown = detailsOpen || currencyInvalid;
 
   function updateHeader(field: keyof InvoiceData, value: string) {
-    const cleaned = field === "currency" ? value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3) : value;
+    const cleaned =
+      field === "currency"
+        ? value
+            .toUpperCase()
+            .replace(/[^A-Z]/g, "")
+            .slice(0, 3)
+        : value;
     onChange({ ...invoice, [field]: textOrNull(cleaned) });
   }
 
@@ -226,7 +252,9 @@ export function ReviewStep({
     onChange(
       {
         ...invoice,
-        shipments: invoice.shipments.map((shipment) => (shipment.id === id ? { ...shipment, ...patch } : shipment)),
+        shipments: invoice.shipments.map((shipment) =>
+          shipment.id === id ? { ...shipment, ...patch } : shipment,
+        ),
       },
       note,
     );
@@ -245,7 +273,8 @@ export function ReviewStep({
     const wasUncertain = shipment.uncertain_fields.includes(field);
     const uncertain_fields = shipment.uncertain_fields.filter((name) => name !== field);
     if (value === shipment[field]) {
-      if (wasUncertain) updateShipment(shipment.id, { uncertain_fields }, `${CELL_LABEL[field]} confirmed · ${ref}`);
+      if (wasUncertain)
+        updateShipment(shipment.id, { uncertain_fields }, `${CELL_LABEL[field]} confirmed · ${ref}`);
       return;
     }
     const note = `${CELL_LABEL[field]} set to ${describe(field, value, currency)} · ${ref}`;
@@ -257,15 +286,14 @@ export function ReviewStep({
 
   return (
     <>
-      <main
-        className={`mx-auto flex w-full flex-1 flex-col gap-5 px-4 pt-8 sm:gap-6 sm:px-6 sm:pt-12 ${split ? "max-w-[1680px]" : "max-w-[1200px]"}`}
-      >
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <h1 className="type-title text-[28px] font-bold sm:text-[34px]">Check the shipments</h1>
-            <p className="text-base text-secondary">
+      <PageHeader
+        width={split ? "max-w-[1680px]" : "max-w-[1200px]"}
+        title="Check the shipments"
+        subtitle={
+          <div className="flex flex-col gap-1.5">
+            <p>
               {plural(invoice.shipments.length, "shipment")} read from{" "}
-              <span className="font-medium text-ink">{parts > 1 ? `${parts} invoices` : fileName}</span>
+              <span className="font-medium text-hero-ink">{parts > 1 ? `${parts} invoices` : fileName}</span>
               {parts > 1 && invoice.period_start && invoice.period_end
                 ? ` (${formatDate(invoice.period_start)} – ${formatDate(invoice.period_end)})`
                 : ""}
@@ -273,11 +301,11 @@ export function ReviewStep({
             </p>
             {onAddMonth && parts < MAX_INVOICES ? (
               adding ? (
-                <p role="status" className="text-sm text-secondary">
+                <p role="status" className="text-sm text-hero-secondary">
                   Adding {adding.fileName} · {adding.label}…
                 </p>
               ) : (
-                <label className="pressable inline-flex min-h-9 cursor-pointer items-center gap-1.5 self-start rounded-full px-1 text-sm font-semibold text-accent hover:underline focus-within:outline-2 focus-within:outline-accent">
+                <label className="pressable mt-1 inline-flex min-h-9 cursor-pointer items-center gap-1.5 self-start rounded-full bg-hero-raised px-3.5 text-sm font-semibold text-gold hover:bg-hero-line focus-within:outline-2 focus-within:outline-gold">
                   <Icon name="plus" className="size-4" />
                   Add another month
                   <input
@@ -294,6 +322,12 @@ export function ReviewStep({
               )
             ) : null}
           </div>
+        }
+      />
+      <main
+        className={`mx-auto flex w-full flex-1 flex-col gap-5 px-4 pt-6 sm:gap-6 sm:px-6 sm:pt-8 ${split ? "max-w-[1680px]" : "max-w-[1200px]"}`}
+      >
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {canUndo ? (
               <button
@@ -325,7 +359,9 @@ export function ReviewStep({
               options={[
                 { value: "all", label: `All ${invoice.shipments.length}` },
                 { value: "attention", label: `Needs attention · ${needsAttention.length}` },
-                ...(secondLook.length > 0 ? [{ value: "second-look" as const, label: `Second look · ${secondLook.length}` }] : []),
+                ...(secondLook.length > 0
+                  ? [{ value: "second-look" as const, label: `Second look · ${secondLook.length}` }]
+                  : []),
               ]}
             />
           </div>
@@ -379,7 +415,8 @@ export function ReviewStep({
               ))}
               {uncertainCount > 0 ? (
                 <li>
-                  The reader wasn&apos;t sure about {plural(uncertainCount, "value")} (dotted underline). Tap each one to check it.
+                  The reader wasn&apos;t sure about {plural(uncertainCount, "value")} (dotted underline). Tap
+                  each one to check it.
                 </li>
               ) : null}
             </ul>
@@ -405,122 +442,217 @@ export function ReviewStep({
           onChange={updateHeader}
         />
 
-        <div className={split ? "grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-start gap-5" : "contents"}>
-        <div className="flex min-w-0 flex-col gap-5">
-        {/* Wider screens: a clean table, values become fields when tapped. */}
-        <section aria-label="Shipments" className="hidden overflow-x-auto rounded-[18px] bg-surface shadow-card md:block">
-          {/* Beside the invoice, Date and Pcs step aside so weight and charge stay in view. */}
-          <table className={`w-full border-collapse text-sm ${split ? "min-w-[680px]" : "min-w-[920px]"}`}>
-            <thead>
-              <tr className="text-left text-xs font-medium text-secondary">
-                <th scope="col" className="w-10 py-3.5 pr-2 pl-5 font-medium">
-                  <span className="sr-only">Include</span>
-                </th>
-                <th scope="col" className="px-2 py-3.5 font-medium">Waybill</th>
-                {split ? null : <th scope="col" className="px-2 py-3.5 font-medium">Date</th>}
-                <th scope="col" className="px-2 py-3.5 font-medium">From</th>
-                <th scope="col" className="px-2 py-3.5 font-medium">To</th>
-                <th scope="col" className="px-2 py-3.5 font-medium">Service</th>
-                {split ? null : <th scope="col" className="px-2 py-3.5 text-right font-medium">Pcs</th>}
-                <th scope="col" className="px-2 py-3.5 text-right font-medium">Weight</th>
-                <th scope="col" className="py-3.5 pr-5 pl-2 text-right font-medium">Charge</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((shipment, index) => {
-                const missing = missingById.get(shipment.id) ?? new Set();
-                const isMissing = (field: RequiredShipmentField) => shipment.included && missing.has(field);
-                const ref = shipment.reference ?? shipment.id;
-                const cell = (field: EditableField, kind: CellKind, label: string, display: string, align: "left" | "right" = "left") => (
-                  <EditableCell
-                    kind={kind}
-                    label={`${label} for ${ref}`}
-                    value={shipment[field]}
-                    display={display}
-                    missing={isMissing(field as RequiredShipmentField)}
-                    uncertain={shipment.uncertain_fields.includes(field)}
-                    align={align}
-                    onCommit={(raw) => commit(shipment, field, kind, raw)}
-                  />
-                );
-                return (
-                  <motion.tr
-                    key={shipment.id}
-                    initial={reduce ? false : { opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: "spring", bounce: 0, duration: 0.35, delay: Math.min(index, 12) * 0.025 }}
-                    className={`border-t border-separator ${missing.size && shipment.included ? "bg-attention-tint/50" : ""} ${shipment.included ? "" : "text-tertiary"}`}
-                  >
-                    <td className="py-1.5 pr-2 pl-5">
-                      <input
-                        type="checkbox"
-                        aria-label={`Include shipment ${ref}`}
-                        checked={shipment.included}
-                        onChange={(event) => setIncluded(shipment, event.target.checked)}
-                        className="size-[18px] accent-accent"
-                      />
-                    </td>
-                    <td className="tabular px-1 py-1.5 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        {cell("reference", "text", "Waybill", shipment.reference ?? "—")}
-                        {parts > 1 ? <PartTag id={shipment.id} /> : null}
-                        {checkReasons.has(shipment.id) ? <CheckTag reasons={checkReasons.get(shipment.id)!} /> : null}
-                      </div>
-                    </td>
-                    {split ? null : <td className="px-1 py-1.5 whitespace-nowrap">{cell("date", "date", "Date", formatDate(shipment.date))}</td>}
-                    <td className="px-1 py-1.5">
-                      <div className="flex items-center gap-0.5 whitespace-nowrap">
-                        {cell("origin_city", "text", "Origin city", shipment.origin_city ?? "—")}
-                        {cell("origin_country", "country", "Origin country", shipment.origin_country ?? "—")}
-                      </div>
-                    </td>
-                    <td className="px-1 py-1.5">
-                      <div className="flex items-center gap-0.5 whitespace-nowrap">
-                        {cell("destination_city", "text", "Destination city", shipment.destination_city ?? "—")}
-                        {cell("destination_country", "country", "Destination country", shipment.destination_country ?? "—")}
-                      </div>
-                    </td>
-                    <td className="px-1 py-1.5">{cell("service", "service", "Service", shipment.service ? SERVICE_LABEL[shipment.service] : "—")}</td>
+        <div
+          className={split ? "grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-start gap-5" : "contents"}
+        >
+          <div className="flex min-w-0 flex-col gap-5">
+            {/* Wider screens: a clean table, values become fields when tapped. */}
+            <section
+              aria-label="Shipments"
+              className="hidden overflow-x-auto rounded-[18px] bg-surface shadow-card md:block"
+            >
+              {/* Beside the invoice, Date and Pcs step aside so weight and charge stay in view. */}
+              <table
+                className={`w-full border-collapse text-sm ${split ? "min-w-[680px]" : "min-w-[920px]"}`}
+              >
+                <thead>
+                  <tr className="text-left text-xs font-medium text-secondary">
+                    <th scope="col" className="w-10 py-3.5 pr-2 pl-5 font-medium">
+                      <span className="sr-only">Include</span>
+                    </th>
+                    <th scope="col" className="px-2 py-3.5 font-medium">
+                      Waybill
+                    </th>
                     {split ? null : (
-                      <td className="tabular px-1 py-1.5">{cell("pieces", "number", "Pieces", shipment.pieces === null ? "—" : String(shipment.pieces), "right")}</td>
+                      <th scope="col" className="px-2 py-3.5 font-medium">
+                        Date
+                      </th>
                     )}
-                    <td className="tabular px-1 py-1.5 whitespace-nowrap">
-                      {cell("weight_kg", "number", "Weight in kg", shipment.weight_kg === null ? "—" : `${shipment.weight_kg} kg`, "right")}
-                    </td>
-                    <td className="tabular py-1.5 pr-4 pl-1 font-medium whitespace-nowrap">
-                      {cell("charge", "number", "Charge", shipment.charge === null ? "—" : formatMoneyExact(shipment.charge, currency), "right")}
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {visible.length === 0 ? <p className="px-6 py-8 text-center text-secondary">Nothing needs attention. All set.</p> : null}
-        </section>
+                    <th scope="col" className="px-2 py-3.5 font-medium">
+                      From
+                    </th>
+                    <th scope="col" className="px-2 py-3.5 font-medium">
+                      To
+                    </th>
+                    <th scope="col" className="px-2 py-3.5 font-medium">
+                      Service
+                    </th>
+                    {split ? null : (
+                      <th scope="col" className="px-2 py-3.5 text-right font-medium">
+                        Pcs
+                      </th>
+                    )}
+                    <th scope="col" className="px-2 py-3.5 text-right font-medium">
+                      Weight
+                    </th>
+                    <th scope="col" className="py-3.5 pr-5 pl-2 text-right font-medium">
+                      Charge
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((shipment, index) => {
+                    const missing = missingById.get(shipment.id) ?? new Set();
+                    const isMissing = (field: RequiredShipmentField) =>
+                      shipment.included && missing.has(field);
+                    const ref = shipment.reference ?? shipment.id;
+                    const cell = (
+                      field: EditableField,
+                      kind: CellKind,
+                      label: string,
+                      display: string,
+                      align: "left" | "right" = "left",
+                    ) => (
+                      <EditableCell
+                        kind={kind}
+                        label={`${label} for ${ref}`}
+                        value={shipment[field]}
+                        display={display}
+                        missing={isMissing(field as RequiredShipmentField)}
+                        uncertain={shipment.uncertain_fields.includes(field)}
+                        align={align}
+                        onCommit={(raw) => commit(shipment, field, kind, raw)}
+                      />
+                    );
+                    return (
+                      <motion.tr
+                        key={shipment.id}
+                        initial={reduce ? false : { opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0,
+                          duration: 0.35,
+                          delay: Math.min(index, 12) * 0.025,
+                        }}
+                        className={`border-t border-separator ${missing.size && shipment.included ? "bg-attention-tint/50" : ""} ${shipment.included ? "" : "text-tertiary"}`}
+                      >
+                        <td className="py-1.5 pr-2 pl-5">
+                          <input
+                            type="checkbox"
+                            aria-label={`Include shipment ${ref}`}
+                            checked={shipment.included}
+                            onChange={(event) => setIncluded(shipment, event.target.checked)}
+                            className="size-[18px] accent-accent"
+                          />
+                        </td>
+                        <td className="tabular px-1 py-1.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            {cell("reference", "text", "Waybill", shipment.reference ?? "—")}
+                            {parts > 1 ? <PartTag id={shipment.id} /> : null}
+                            {checkReasons.has(shipment.id) ? (
+                              <CheckTag reasons={checkReasons.get(shipment.id)!} />
+                            ) : null}
+                          </div>
+                        </td>
+                        {split ? null : (
+                          <td className="px-1 py-1.5 whitespace-nowrap">
+                            {cell("date", "date", "Date", formatDate(shipment.date))}
+                          </td>
+                        )}
+                        <td className="px-1 py-1.5">
+                          <div className="flex items-center gap-0.5 whitespace-nowrap">
+                            {cell("origin_city", "text", "Origin city", shipment.origin_city ?? "—")}
+                            {cell(
+                              "origin_country",
+                              "country",
+                              "Origin country",
+                              shipment.origin_country ?? "—",
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-1 py-1.5">
+                          <div className="flex items-center gap-0.5 whitespace-nowrap">
+                            {cell(
+                              "destination_city",
+                              "text",
+                              "Destination city",
+                              shipment.destination_city ?? "—",
+                            )}
+                            {cell(
+                              "destination_country",
+                              "country",
+                              "Destination country",
+                              shipment.destination_country ?? "—",
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-1 py-1.5">
+                          {cell(
+                            "service",
+                            "service",
+                            "Service",
+                            shipment.service ? SERVICE_LABEL[shipment.service] : "—",
+                          )}
+                        </td>
+                        {split ? null : (
+                          <td className="tabular px-1 py-1.5">
+                            {cell(
+                              "pieces",
+                              "number",
+                              "Pieces",
+                              shipment.pieces === null ? "—" : String(shipment.pieces),
+                              "right",
+                            )}
+                          </td>
+                        )}
+                        <td className="tabular px-1 py-1.5 whitespace-nowrap">
+                          {cell(
+                            "weight_kg",
+                            "number",
+                            "Weight in kg",
+                            shipment.weight_kg === null ? "—" : `${shipment.weight_kg} kg`,
+                            "right",
+                          )}
+                        </td>
+                        <td className="tabular py-1.5 pr-4 pl-1 font-medium whitespace-nowrap">
+                          {cell(
+                            "charge",
+                            "number",
+                            "Charge",
+                            shipment.charge === null ? "—" : formatMoneyExact(shipment.charge, currency),
+                            "right",
+                          )}
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {visible.length === 0 ? (
+                <p className="px-6 py-8 text-center text-secondary">Nothing needs attention. All set.</p>
+              ) : null}
+            </section>
 
-        {/* Phones: one card per shipment. */}
-        <section aria-label="Shipments" className="flex flex-col gap-2.5 md:hidden">
-          {visible.map((shipment) => (
-            <ShipmentCard
-              key={shipment.id}
-              shipment={shipment}
-              currency={currency}
-              missing={missingById.get(shipment.id) ?? new Set()}
-              reasons={checkReasons.get(shipment.id) ?? []}
-              onToggleIncluded={(included) => setIncluded(shipment, included)}
-              onCommit={(field, kind, raw) => commit(shipment, field, kind, raw)}
-            />
-          ))}
-          {visible.length === 0 ? <p className="py-8 text-center text-secondary">Nothing needs attention. All set.</p> : null}
-        </section>
-        </div>
+            {/* Phones: one card per shipment. */}
+            <section aria-label="Shipments" className="flex flex-col gap-2.5 md:hidden">
+              {visible.map((shipment) => (
+                <ShipmentCard
+                  key={shipment.id}
+                  shipment={shipment}
+                  currency={currency}
+                  missing={missingById.get(shipment.id) ?? new Set()}
+                  reasons={checkReasons.get(shipment.id) ?? []}
+                  onToggleIncluded={(included) => setIncluded(shipment, included)}
+                  onCommit={(field, kind, raw) => commit(shipment, field, kind, raw)}
+                />
+              ))}
+              {visible.length === 0 ? (
+                <p className="py-8 text-center text-secondary">Nothing needs attention. All set.</p>
+              ) : null}
+            </section>
+          </div>
 
-        {split && source ? (
-          <aside className="sticky top-20 flex flex-col gap-2">
-            <ViewerSwitcher sources={sources} viewing={viewing} onChange={setViewing} />
-            <InvoiceViewer source={source} onClose={() => setShowInvoice(false)} className="h-[calc(100vh-200px)] min-h-[480px]" />
-          </aside>
-        ) : null}
+          {split && source ? (
+            <aside className="sticky top-20 flex flex-col gap-2">
+              <ViewerSwitcher sources={sources} viewing={viewing} onChange={setViewing} />
+              <InvoiceViewer
+                source={source}
+                onClose={() => setShowInvoice(false)}
+                className="h-[calc(100vh-200px)] min-h-[480px]"
+              />
+            </aside>
+          ) : null}
         </div>
 
         {error ? (
@@ -588,7 +720,11 @@ function InvoiceDetails({
     { label: "Current courier", value: invoice.carrier_name ?? "—" },
     { label: "Billing period", value: period, warn: periodMissing },
     { label: "Invoice", value: invoice.invoice_number ?? "—" },
-    { label: "Currency", value: invoice.currency ?? "Not found (AED assumed)", warn: invoice.currency === null || currencyInvalid },
+    {
+      label: "Currency",
+      value: invoice.currency ?? "Not found (AED assumed)",
+      warn: invoice.currency === null || currencyInvalid,
+    },
   ];
   const fields: { field: keyof InvoiceData; label: string; type: "text" | "date"; warn?: boolean }[] = [
     { field: "customer_name", label: "Prospect", type: "text" },
@@ -609,7 +745,9 @@ function InvoiceDetails({
           summary.map((item) => (
             <div key={item.label} className="flex min-w-0 flex-col gap-0.5">
               <span className="text-xs text-secondary">{item.label}</span>
-              <span className={`flex items-center gap-1.5 text-[15px] font-medium ${item.warn ? "text-attention-ink" : ""}`}>
+              <span
+                className={`flex items-center gap-1.5 text-[15px] font-medium ${item.warn ? "text-attention-ink" : ""}`}
+              >
                 {item.warn ? <span aria-hidden="true" className="size-2 rounded-full bg-attention" /> : null}
                 {item.value}
               </span>
@@ -636,7 +774,11 @@ function InvoiceDetails({
       {open ? (
         <div className="grid gap-x-4 gap-y-3 border-t border-separator px-5 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
           {fields.map(({ field, label, type, warn }) => (
-            <label key={field} ref={field === "currency" ? currencyField : undefined} className="flex flex-col gap-1">
+            <label
+              key={field}
+              ref={field === "currency" ? currencyField : undefined}
+              className="flex flex-col gap-1"
+            >
               <span className="text-xs text-secondary">{label}</span>
               <input
                 type={type}
@@ -732,7 +874,16 @@ function EditableCell({
   const fieldClass = `h-9 rounded-lg border bg-surface px-2.5 text-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent/20 ${
     missing ? "border-attention" : "border-accent"
   } ${align === "right" ? "text-right" : ""}`;
-  const width = kind === "country" ? "w-14" : kind === "number" ? "w-24" : kind === "date" ? "w-36" : kind === "service" ? "w-28" : "w-32";
+  const width =
+    kind === "country"
+      ? "w-14"
+      : kind === "number"
+        ? "w-24"
+        : kind === "date"
+          ? "w-36"
+          : kind === "service"
+            ? "w-28"
+            : "w-32";
 
   if (!showField) {
     return (
@@ -767,7 +918,13 @@ function EditableCell({
             />
           </motion.svg>
         ) : null}
-        <span className={uncertain ? "underline decoration-attention decoration-dotted decoration-2 underline-offset-4" : undefined}>
+        <span
+          className={
+            uncertain
+              ? "underline decoration-attention decoration-dotted decoration-2 underline-offset-4"
+              : undefined
+          }
+        >
           {display}
         </span>
       </button>
@@ -782,7 +939,7 @@ function EditableCell({
         <select
           ref={input}
           aria-label={label}
-          value={editing ? draft : (value as string | null) ?? ""}
+          value={editing ? draft : ((value as string | null) ?? "")}
           onChange={(event) => {
             onCommit(event.target.value);
             setEditing(false);
@@ -807,7 +964,9 @@ function EditableCell({
           onFocus={() => {
             if (!editing) start();
           }}
-          onChange={(event) => setDraft(kind === "country" ? event.target.value.toUpperCase() : event.target.value)}
+          onChange={(event) =>
+            setDraft(kind === "country" ? event.target.value.toUpperCase() : event.target.value)
+          }
           onBlur={() => finish(true)}
           onKeyDown={onKeyDown}
           className={`${fieldClass} ${width} ${kind === "country" ? "uppercase" : ""}`}
@@ -863,7 +1022,8 @@ function ShipmentCard({
     ? fields
     : fields.filter(
         ({ field }) =>
-          (shipment.included && missing.has(field as RequiredShipmentField)) || shipment.uncertain_fields.includes(field),
+          (shipment.included && missing.has(field as RequiredShipmentField)) ||
+          shipment.uncertain_fields.includes(field),
       );
 
   return (
@@ -888,7 +1048,8 @@ function ShipmentCard({
         >
           <span className="flex items-baseline justify-between gap-3">
             <span className="truncate text-base font-semibold">
-              {shipment.origin_city ?? shipment.origin_country ?? "?"} → {shipment.destination_city ?? shipment.destination_country ?? "?"}{" "}
+              {shipment.origin_city ?? shipment.origin_country ?? "?"} →{" "}
+              {shipment.destination_city ?? shipment.destination_country ?? "?"}{" "}
               <span className="text-xs font-normal text-secondary">{shipment.destination_country}</span>
             </span>
             <span className="tabular shrink-0 text-[15px] font-semibold">
@@ -943,14 +1104,20 @@ function CardField({
     setDraft(value === null ? "" : String(value));
   }
   const className = `h-11 w-full rounded-xl border bg-surface px-3 text-[15px] outline-none focus:border-accent focus:ring-4 focus:ring-accent/20 ${
-    missing ? "border-attention bg-attention-tint" : uncertain ? "border-dashed border-attention" : "border-separator"
+    missing
+      ? "border-attention bg-attention-tint"
+      : uncertain
+        ? "border-dashed border-attention"
+        : "border-separator"
   }`;
   return (
     <label className="flex flex-col gap-1">
       <span className="flex items-center gap-1.5 text-xs text-secondary">
         {missing ? <span aria-hidden="true" className="size-1.5 rounded-full bg-attention" /> : null}
         {label}
-        {uncertain ? <span className="font-medium text-attention-ink"> · reader wasn&apos;t sure</span> : null}
+        {uncertain ? (
+          <span className="font-medium text-attention-ink"> · reader wasn&apos;t sure</span>
+        ) : null}
       </span>
       {kind === "service" ? (
         <select value={draft} onChange={(event) => onCommit(event.target.value)} className={className}>
@@ -965,7 +1132,9 @@ function CardField({
           maxLength={kind === "country" ? 2 : undefined}
           placeholder={missing ? "Add" : undefined}
           value={draft}
-          onChange={(event) => setDraft(kind === "country" ? event.target.value.toUpperCase() : event.target.value)}
+          onChange={(event) =>
+            setDraft(kind === "country" ? event.target.value.toUpperCase() : event.target.value)
+          }
           onBlur={() => onCommit(draft)}
           onKeyDown={(event) => {
             if (event.key === "Enter") (event.target as HTMLInputElement).blur();

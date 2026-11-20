@@ -14,6 +14,8 @@ import { formatMoney, formatMoneyExact, formatPercent } from "@/lib/format";
 import { useCountUp } from "@/lib/hooks";
 import type { ComparisonResult, GroupTotal, Scenario, ShipmentStatus } from "@/types/api";
 import type { InvoiceData } from "@/types/invoice";
+import { HeroBand } from "@/components/ui/Hero";
+import { RouteMap } from "./RouteMap";
 import { WhatIfPanel } from "./WhatIfPanel";
 
 interface SavingsStepProps {
@@ -133,73 +135,66 @@ export function SavingsStep({
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-5 px-4 pt-8 sm:gap-6 sm:px-6 sm:pt-12">
+      <HeroBand inner="flex flex-col gap-8 pt-12 pb-28 sm:pt-14">
         <section
           aria-labelledby="savings-title"
           aria-busy={updating}
-          className={`flex flex-wrap items-end justify-between gap-8 rounded-[28px] bg-surface p-6 shadow-raised transition-opacity duration-200 sm:p-10 ${
-            updating ? "opacity-60" : ""
-          }`}
+          className={`flex flex-col gap-2.5 transition-opacity duration-200 ${updating ? "opacity-60" : ""}`}
         >
-          <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <p className="text-[15px] font-medium text-secondary">
-                {sameCost ? `${prospect} would pay` : saves ? `${prospect} could save` : `With BCOM, ${prospect} would pay`}
-              </p>
-              {conversion ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-tint px-2.5 py-0.5 text-xs font-semibold text-accent">
-                  Converted from {conversion.currency}
-                </span>
-              ) : null}
-              {scenarioChips.map((chip) => (
-                <span key={chip} className="inline-flex items-center rounded-full bg-attention-tint px-2.5 py-0.5 text-xs font-semibold text-attention-ink">
-                  {chip}
-                </span>
-              ))}
-            </div>
-            <h1 id="savings-title" className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1 font-bold">
-              {sameCost ? (
-                <span className="type-title text-[40px] sm:text-[56px]">About the same as today</span>
-              ) : (
-                <>
-                  <span className={`type-display tabular text-[56px] sm:text-[88px] ${saves ? "text-accent" : "text-bad"}`}>
-                    <span className="sr-only">{formatMoney(Math.abs(summary.monthly_saving))}</span>
-                    <span aria-hidden="true">{formatMoney(headline)}</span>
-                  </span>
-                  <span className="type-title text-[22px] sm:text-[30px]">{saves ? "a month" : "more a month"}</span>
-                </>
-              )}
-            </h1>
-            {sameCost ? null : (
-              <p className="mt-1.5 text-lg leading-snug text-secondary">
-                {formatMoney(Math.abs(summary.yearly_saving))} a year ·{" "}
-                <strong className={`font-semibold ${saves ? "text-accent" : "text-bad"}`}>
-                  {formatPercent(Math.abs(summary.saving_pct))} {saves ? "less" : "more"}
-                </strong>{" "}
-                than {courier} {scenario.economy_for_non_urgent ? "for the same parcels" : "for the same services"}
-              </p>
-            )}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <p className="text-[17px] text-hero-secondary sm:text-[19px]">
+              {sameCost ? `${prospect} would pay` : saves ? `${prospect} could save` : `With BCOM, ${prospect} would pay`}
+            </p>
             {conversion ? (
-              <p className="text-sm text-secondary">
-                {conversion.currency}{" "}
-                {conversion.original_spend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on the
-                invoice, converted at {conversion.rate} AED per {conversion.currency}
-                {conversion.currency === "USD" ? " (the dirham's fixed peg)" : ""}.
-              </p>
+              <span className="inline-flex items-center rounded-full bg-hero-raised px-2.5 py-0.5 text-xs font-semibold text-hero-ink">
+                Converted from {conversion.currency}
+              </span>
             ) : null}
+            {scenarioChips.map((chip) => (
+              <span key={chip} className="inline-flex items-center rounded-full bg-gold px-2.5 py-0.5 text-xs font-semibold text-on-gold">
+                {chip}
+              </span>
+            ))}
           </div>
-          <dl className="grid flex-[1_1_440px] grid-cols-3 overflow-hidden rounded-[18px] bg-canvas">
-            <Stat label="Today" value={<CountMoney value={summary.monthly_current} />} detail="per month" />
-            <Stat label="With BCOM" value={<CountMoney value={summary.monthly_proposed} />} detail="per month" divider />
-            <Stat
-              label="Compared"
-              value={`${summary.compared_shipments} of ${summary.total_shipments}`}
-              detail={`${formatPercent(summary.spend_coverage_pct)} of spend`}
-              divider
-            />
-          </dl>
+          <h1 id="savings-title" className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-bold">
+            {sameCost ? (
+              <span className="type-title text-[40px] sm:text-[64px]">About the same as today</span>
+            ) : (
+              <>
+                <span className={`type-display tabular text-[60px] sm:text-[112px] ${saves ? "text-hero-ink" : "text-bad"}`}>
+                  <span className="sr-only">{formatMoney(Math.abs(summary.monthly_saving))}</span>
+                  <span aria-hidden="true">{formatMoney(headline)}</span>
+                </span>
+                <span className="type-title text-[24px] text-gold sm:text-[32px]">{saves ? "a month" : "more a month"}</span>
+              </>
+            )}
+          </h1>
+          {sameCost ? null : (
+            <p className="text-lg leading-snug text-hero-secondary sm:text-[21px]">
+              <strong className="font-semibold text-hero-ink">{formatMoney(Math.abs(summary.yearly_saving))} a year.</strong>{" "}
+              {formatPercent(Math.abs(summary.saving_pct))} {saves ? "less" : "more"} than {courier}
+              {scenario.economy_for_non_urgent ? ", for the same parcels." : ", for the same services."}
+            </p>
+          )}
+          {conversion ? (
+            <p className="text-sm text-hero-secondary">
+              {conversion.currency}{" "}
+              {conversion.original_spend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on the
+              invoice, converted at {conversion.rate} AED per {conversion.currency}
+              {conversion.currency === "USD" ? " (the dirham's fixed peg)" : ""}.
+            </p>
+          ) : null}
         </section>
+        <div className="flex max-w-[760px] flex-col gap-4 rounded-[22px] bg-hero-raised p-5 sm:p-6">
+          <CompareBar label="Today" value={summary.monthly_current} max={Math.max(summary.monthly_current, summary.monthly_proposed)} tone="today" />
+          <CompareBar label="With BCOM" value={summary.monthly_proposed} max={Math.max(summary.monthly_current, summary.monthly_proposed)} tone="bcom" />
+          <p className="text-[13px] text-hero-secondary">
+            {summary.compared_shipments} of {summary.total_shipments} shipments compared · {formatPercent(summary.spend_coverage_pct)} of spend
+          </p>
+        </div>
+      </HeroBand>
 
+      <main className="mx-auto -mt-16 flex w-full max-w-[1200px] flex-1 flex-col gap-5 px-4 sm:gap-6 sm:px-6">
         <WhatIfPanel scenario={scenario} summary={summary} updating={updating} error={scenarioError} onChange={onScenarioChange} />
 
         {exportError ? (
@@ -257,9 +252,9 @@ export function SavingsStep({
           </div>
         </section>
 
-        <section aria-labelledby="where-title" className="overflow-hidden rounded-[22px] bg-surface shadow-card">
+        <section aria-labelledby="where-title" className="overflow-hidden rounded-[28px] bg-surface shadow-raised">
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-5 pb-3.5">
-            <h2 id="where-title" className="type-headline text-[22px] font-semibold">
+            <h2 id="where-title" className="type-title text-[24px] font-bold sm:text-[28px]">
               Where you save
             </h2>
             <Segmented
@@ -273,6 +268,11 @@ export function SavingsStep({
               ]}
             />
           </div>
+          {view === "region" ? (
+            <div className="px-4 pb-4 sm:px-6">
+              <RouteMap zones={summary.by_zone} currency={summary.currency} />
+            </div>
+          ) : null}
           <ul>
             {groups.map((group, index) => {
               const up = group.saving >= 0;
@@ -419,33 +419,28 @@ export function SavingsStep({
   );
 }
 
-/** Money that counts up with the headline the first time Savings opens. */
-function CountMoney({ value }: { value: number }) {
+function CompareBar({ label, value, max, tone }: { label: string; value: number; max: number; tone: "today" | "bcom" }) {
   const shown = useCountUp(value);
+  const reduce = useReducedMotion();
+  const width = `${Math.max(4, (value / Math.max(1, max)) * 100)}%`;
   return (
-    <>
-      <span className="sr-only">{formatMoney(value)}</span>
-      <span aria-hidden="true">{formatMoney(shown)}</span>
-    </>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  detail,
-  divider = false,
-}: {
-  label: string;
-  value: React.ReactNode;
-  detail: string;
-  divider?: boolean;
-}) {
-  return (
-    <div className={`flex min-w-0 flex-col gap-1 px-3 py-4 sm:px-5 ${divider ? "border-l border-separator" : ""}`}>
-      <dt className="text-xs text-secondary">{label}</dt>
-      <dd className="type-headline tabular text-[15px] font-semibold sm:text-[22px]">{value}</dd>
-      <dd className="text-xs text-secondary">{detail}</dd>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-4 text-[15px]">
+        <span className="text-hero-secondary">{label}</span>
+        <span className={`tabular font-semibold ${tone === "bcom" ? "text-hero-save" : "text-hero-ink"}`}>
+          <span className="sr-only">{formatMoney(value)} per month</span>
+          <span aria-hidden="true">{formatMoney(shown)} / mo</span>
+        </span>
+      </div>
+      <div aria-hidden="true" className="h-2.5 overflow-hidden rounded-full bg-hero-line">
+        <motion.div
+          className={`h-full origin-left rounded-full ${tone === "bcom" ? "bg-hero-save" : "bg-tertiary"}`}
+          style={{ width }}
+          initial={reduce ? false : { scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ type: "spring", bounce: 0, duration: 0.7, delay: tone === "bcom" ? 0.2 : 0.05 }}
+        />
+      </div>
     </div>
   );
 }

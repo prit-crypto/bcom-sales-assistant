@@ -47,7 +47,7 @@ test.describe("reduced motion and dark mode", () => {
     // No count-up: the visible number is final straight away.
     expect(await page.locator("#savings-title [aria-hidden=true]").first().innerText()).toBe("AED 1,854");
     expect(await headline(page)).toContain("AED 1,854");
-    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(13, 17, 23)");
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(0, 0, 0)");
     expect(errors).toEqual([]);
   });
 });

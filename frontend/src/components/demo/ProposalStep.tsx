@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ActionBar } from "@/components/ui/ActionBar";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { PageHeader } from "@/components/ui/Hero";
 import { Icon } from "@/components/ui/Icon";
 import { Segmented } from "@/components/ui/Segmented";
 import { Sheet } from "@/components/ui/Sheet";
@@ -175,12 +176,9 @@ export function ProposalStep({
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-wrap items-start gap-8 px-4 pt-8 sm:px-6 sm:pt-12">
+      <PageHeader title="Customer proposal" subtitle="Check the names. The preview updates as you type." />
+      <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-wrap items-start gap-8 px-4 pt-8 sm:px-6 sm:pt-10">
         <form className="flex w-full max-w-[440px] flex-[1_1_380px] flex-col gap-6" onSubmit={(event) => event.preventDefault()}>
-          <div className="flex flex-col gap-1.5">
-            <h1 className="type-title text-[28px] font-bold sm:text-[34px]">Customer proposal</h1>
-            <p className="text-base leading-relaxed text-secondary">Check the names. The preview updates as you type.</p>
-          </div>
 
           <Group legend="Prepared for">
             <Field

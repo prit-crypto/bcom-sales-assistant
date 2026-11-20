@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Disclosure } from "@/components/ui/Disclosure";
+import { HeroBand } from "@/components/ui/Hero";
 import { Icon } from "@/components/ui/Icon";
 import { errorMessage, getFile, getJson, postJson, saveBlob } from "@/lib/client/api";
 import { formatDate, formatMoney, formatMoneyExact, formatPercent } from "@/lib/format";
@@ -196,77 +197,83 @@ export function CustomerProposal({ token }: { token: string }) {
 
   return (
     <div dir={dir} lang={language} className="flex min-h-screen flex-col">
-      <header className="border-b border-separator bg-surface">
-        <div className="mx-auto flex max-w-[880px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <Image
-            src="/brand/bcom-global-logo.png"
-            alt="BCOM Global"
-            width={464}
-            height={213}
-            priority
-            className="h-7 w-auto"
-          />
-          {partner.logo ? (
-            <span className="flex items-center gap-2 text-xs text-secondary">
+      <HeroBand width="max-w-[880px]" inner="flex flex-col gap-8 pt-4 pb-24 sm:pb-28">
+        <header className="flex items-center justify-between gap-4">
+          <span className="flex rounded-lg bg-white px-2 py-1">
+            <Image
+              src="/brand/bcom-global-logo.png"
+              alt="BCOM Global"
+              width={464}
+              height={213}
+              priority
+              className="h-6 w-auto"
+            />
+          </span>
+          <span className="flex items-center gap-2 text-end text-xs leading-snug text-hero-secondary">
+            <span>
               {t.inPartnership}
-              {/* A data: URL chosen by the partner; next/image adds nothing here. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <br />
+              <span className="font-semibold text-hero-ink">{partner.company}</span>
+            </span>
+            {partner.logo ? (
+              /* A data: URL chosen by the partner; next/image adds nothing here. */
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={partner.logo}
-                alt={partner.company}
-                className="h-8 max-w-[120px] rounded bg-white object-contain p-0.5"
+                alt=""
+                className="h-8 max-w-[96px] rounded bg-white object-contain p-0.5"
               />
-            </span>
-          ) : null}
-        </div>
-      </header>
-
-      <main className="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 px-4 pt-8 pb-16 sm:px-6 sm:pt-12">
+            ) : null}
+          </span>
+        </header>
         <motion.section
           aria-labelledby="saving-title"
           initial={reduce ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-          className="flex flex-col gap-6 rounded-[28px] bg-surface p-6 shadow-raised sm:p-10"
+          transition={{ type: "spring", bounce: 0, duration: 0.45 }}
+          className="flex flex-col gap-7"
         >
           <div className="flex flex-col gap-2">
-            <p className="text-[15px] font-medium text-secondary">
+            <p className="text-[15px] text-hero-secondary sm:text-[17px]">
               {t.preparedFor} {proposal.prospect_name}
             </p>
-            <h1 id="saving-title" className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-bold">
+            <h1 id="saving-title" className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1 font-bold">
               <span className="sr-only">
                 {proposal.prospect_name} {t.couldSave}
               </span>
-              <span className="type-display tabular text-[52px] text-accent sm:text-[80px]">
+              <span className="type-display tabular text-[56px] sm:text-[96px]">
                 <bdi className="whitespace-nowrap">{formatMoney(proposal.monthly_saving, currency)}</bdi>
               </span>
-              <span className="type-title text-[22px] sm:text-[28px]">{t.aMonth}</span>
+              <span className="type-title text-[22px] text-gold sm:text-[30px]">{t.aMonth}</span>
             </h1>
-            <p className="text-lg text-secondary">
-              <bdi className="whitespace-nowrap">{formatMoney(proposal.yearly_saving, currency)}</bdi> {t.aYear} ·{" "}
-              <strong className="font-semibold text-accent">
-                <bdi className="whitespace-nowrap">{formatPercent(proposal.saving_pct)}</bdi> {t.less}
-              </strong>
+            <p className="text-lg text-hero-secondary">
+              <bdi className="font-semibold whitespace-nowrap text-hero-ink">
+                {formatMoney(proposal.yearly_saving, currency)}
+              </bdi>{" "}
+              {t.aYear} · <bdi className="whitespace-nowrap">{formatPercent(proposal.saving_pct)}</bdi>{" "}
+              {t.less}
             </p>
           </div>
-          <dl className="grid grid-cols-2 overflow-hidden rounded-[18px] bg-canvas">
-            <div className="flex flex-col gap-1 px-4 py-4 sm:px-6">
-              <dt className="text-xs text-secondary">{t.today}</dt>
-              <dd className="type-headline tabular text-lg font-semibold sm:text-[22px]">
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[20px] bg-hero-line">
+            <div className="flex flex-col gap-1 bg-hero-raised px-4 py-4 sm:px-6">
+              <dt className="text-[13px] text-hero-secondary">{t.today}</dt>
+              <dd className="type-headline tabular text-lg font-semibold sm:text-[24px]">
                 <bdi className="whitespace-nowrap">{formatMoney(proposal.monthly_current, currency)}</bdi>
               </dd>
-              <dd className="text-xs text-secondary">{t.perMonth}</dd>
+              <dd className="text-[13px] text-hero-secondary">{t.perMonth}</dd>
             </div>
-            <div className="flex flex-col gap-1 border-s border-separator px-4 py-4 sm:px-6">
-              <dt className="text-xs text-secondary">{t.withBcom}</dt>
-              <dd className="type-headline tabular text-lg font-semibold sm:text-[22px]">
+            <div className="flex flex-col gap-1 bg-hero-raised px-4 py-4 sm:px-6">
+              <dt className="text-[13px] text-hero-secondary">{t.withBcom}</dt>
+              <dd className="type-headline tabular text-lg font-semibold text-hero-save sm:text-[24px]">
                 <bdi className="whitespace-nowrap">{formatMoney(proposal.monthly_proposed, currency)}</bdi>
               </dd>
-              <dd className="text-xs text-secondary">{t.perMonth}</dd>
+              <dd className="text-[13px] text-hero-secondary">{t.perMonth}</dd>
             </div>
           </dl>
         </motion.section>
+      </HeroBand>
 
+      <main className="mx-auto -mt-16 flex w-full max-w-[880px] flex-1 flex-col gap-5 px-4 pb-16 sm:px-6">
         {proposal.status === "accepted" ? (
           <Banner tone="success" title={t.acceptedTitle}>
             {proposal.accepted_by ? `${t.acceptedBy} ${proposal.accepted_by}. ` : ""}
@@ -298,8 +305,9 @@ export function CustomerProposal({ token }: { token: string }) {
                 <span className="flex min-w-0 flex-col">
                   <span className="font-semibold">{region.label}</span>
                   <span className="text-[13px] text-secondary">
-                    {region.shipments} {t.shipments} · <bdi className="whitespace-nowrap">{formatMoneyExact(region.current, currency)}</bdi>{" "}
-                    → <bdi className="whitespace-nowrap">{formatMoneyExact(region.proposed, currency)}</bdi>
+                    {region.shipments} {t.shipments} ·{" "}
+                    <bdi className="whitespace-nowrap">{formatMoneyExact(region.current, currency)}</bdi> →{" "}
+                    <bdi className="whitespace-nowrap">{formatMoneyExact(region.proposed, currency)}</bdi>
                   </span>
                 </span>
                 <span
@@ -334,13 +342,13 @@ export function CustomerProposal({ token }: { token: string }) {
         {proposal.status === "open" ? (
           <section
             aria-labelledby="accept-title"
-            className="flex flex-col gap-4 rounded-[22px] bg-surface p-6 shadow-raised"
+            className="flex flex-col gap-4 rounded-[24px] bg-hero p-6 text-hero-ink sm:p-7"
           >
             <div className="flex flex-col gap-1">
-              <h2 id="accept-title" className="type-headline text-[20px] font-semibold">
+              <h2 id="accept-title" className="type-title text-[24px] font-bold">
                 {t.acceptTitle}
               </h2>
-              <p className="text-[15px] text-secondary">{t.acceptIntro}</p>
+              <p className="text-[15px] leading-snug text-hero-secondary">{t.acceptIntro}</p>
             </div>
             <form
               className="flex flex-col gap-3"
@@ -350,37 +358,41 @@ export function CustomerProposal({ token }: { token: string }) {
               }}
             >
               <label className="flex flex-col gap-1">
-                <span className="text-[13px] text-secondary">{t.yourName}</span>
+                <span className="text-[13px] text-hero-secondary">{t.yourName}</span>
                 <input
                   value={name}
                   required
                   maxLength={80}
                   autoComplete="name"
                   onChange={(event) => setName(event.target.value)}
-                  className="h-12 rounded-xl border border-separator bg-surface px-3 text-base outline-none focus:border-accent focus:ring-4 focus:ring-accent/20"
+                  className="h-12 rounded-xl border border-hero-line bg-hero-raised px-3 text-[17px] text-hero-ink outline-none focus:border-gold focus:ring-4 focus:ring-gold/25"
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-[13px] text-secondary">{t.note}</span>
+                <span className="text-[13px] text-hero-secondary">{t.note}</span>
                 <textarea
                   value={note}
                   maxLength={500}
                   rows={3}
                   onChange={(event) => setNote(event.target.value)}
-                  className="rounded-xl border border-separator bg-surface px-3 py-2.5 text-base outline-none focus:border-accent focus:ring-4 focus:ring-accent/20"
+                  className="rounded-xl border border-hero-line bg-hero-raised px-3 py-2.5 text-[17px] text-hero-ink outline-none focus:border-gold focus:ring-4 focus:ring-gold/25"
                 />
               </label>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="text-[13px] text-secondary">
+                <span className="text-[13px] text-hero-secondary">
                   {t.validUntil} {formatDate(proposal.valid_until)}
                 </span>
-                <Button type="submit" size="large" disabled={accepting || !name.trim()}>
+                <button
+                  type="submit"
+                  disabled={accepting || !name.trim()}
+                  className="pressable inline-flex min-h-[52px] items-center gap-2 rounded-full bg-gold px-7 text-[17px] font-semibold text-on-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:cursor-not-allowed disabled:opacity-60"
+                >
                   <Icon name="check" className="size-4" />
                   {accepting ? t.accepting : t.accept}
-                </Button>
+                </button>
               </div>
               {acceptError ? (
-                <p role="alert" className="text-sm font-medium text-bad">
+                <p role="alert" className="text-sm font-medium text-[#ff9b94]">
                   {acceptError}
                 </p>
               ) : null}

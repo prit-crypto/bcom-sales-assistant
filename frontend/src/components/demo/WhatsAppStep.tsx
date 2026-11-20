@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActionBar } from "@/components/ui/ActionBar";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { PageHeader } from "@/components/ui/Hero";
 import { Icon } from "@/components/ui/Icon";
 import { errorMessage, postJson } from "@/lib/client/api";
 import { partnerForRequest } from "@/lib/partner";
@@ -127,22 +128,23 @@ export function WhatsAppStep({
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col gap-5 px-4 pt-8 sm:px-6 sm:pt-12">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="flex flex-col gap-1.5">
-            <h1 className="type-title text-[28px] font-bold sm:text-[34px]">WhatsApp message</h1>
-            <p className="text-base text-secondary">This is what the prospect will see. Tap the message to edit it.</p>
-          </div>
+      <PageHeader
+        width="max-w-[720px]"
+        title="WhatsApp message"
+        subtitle="This is what the prospect will see. Tap the message to edit it."
+        actions={
           <button
             type="button"
             onClick={() => void write()}
             disabled={busy}
-            className="pressable inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent disabled:text-tertiary"
+            className="pressable inline-flex min-h-11 items-center gap-1.5 rounded-full bg-hero-raised px-4 text-sm font-semibold text-gold hover:bg-hero-line focus-visible:outline-2 focus-visible:outline-gold disabled:opacity-60"
           >
             <Icon name="refresh" className="size-4" />
             {busy ? "Writing…" : "Write again"}
           </button>
-        </div>
+        }
+      />
+      <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col gap-5 px-4 pt-8 sm:px-6 sm:pt-10">
 
         {message?.notice ? <Banner tone="attention">{message.notice}</Banner> : null}
         {error ? (

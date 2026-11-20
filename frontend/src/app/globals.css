@@ -1,24 +1,25 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. Navy ink, teal accent, warm sand canvas (approved 19 Nov 2026).
- * Every colour is a variable so dark mode and the accessibility settings below can redefine it.
- * Text pairs are at least 4.5:1 in both themes.
+ * Design tokens: graphite and gold (approved 20 Nov 2026), in the spirit of Apple's product pages.
+ * Graphite for the hero bands, gold for the special moments, green for savings and actions. No blue:
+ * the company's other product uses navy. Every colour is a variable so dark mode and the accessibility
+ * settings below can redefine it. Text pairs are at least 4.5:1 in both themes.
  */
 :root {
   color-scheme: light dark;
-  --canvas: #f6f3ee;
+  --canvas: #f5f5f7;
   --surface: #ffffff;
-  --ink: #0b2545;
-  --secondary: #5e6470;
-  --tertiary: #8a8f99;
-  --accent: #0b7a75;
-  --accent-hover: #086661;
+  --ink: #1d1d1f;
+  --secondary: #636366;
+  --tertiary: #8e8e93;
+  --accent: #19764d;
+  --accent-hover: #125c3b;
   --on-accent: #ffffff;
-  --accent-tint: #e8f3f1; /* light enough for teal text on it to pass 4.5:1 */
-  --fill: #ece6dc;
-  --fill-soft: #f1ebe2;
-  --separator: rgba(11, 37, 69, 0.08);
+  --accent-tint: #e7f4ec;
+  --fill: rgba(118, 118, 128, 0.12);
+  --fill-soft: rgba(118, 118, 128, 0.07);
+  --separator: rgba(60, 60, 67, 0.16);
   --bad: #b42318;
   --bad-bar: #c2410c;
   --bad-tint: #fde8e6;
@@ -30,26 +31,38 @@
   --bubble: #d9fdd3;
   --bubble-ink: #111b21;
   --bar: rgba(255, 255, 255, 0.72);
-  --bar-strong: rgba(255, 255, 255, 0.82);
-  --shadow-card: 0 1px 2px rgba(11, 37, 69, 0.05);
-  --shadow-raised: 0 1px 2px rgba(11, 37, 69, 0.04), 0 12px 32px rgba(11, 37, 69, 0.06);
-  --shadow-float: 0 0 0 1px rgba(11, 37, 69, 0.06), 0 12px 32px rgba(11, 37, 69, 0.14);
+  --bar-strong: rgba(255, 255, 255, 0.84);
+  /* The graphite bands at the top of the main screens, and what sits on them */
+  --hero: #141416;
+  --hero-raised: #232326;
+  --hero-line: #38383c;
+  --hero-ink: #f5f5f7;
+  --hero-secondary: #a1a1a6;
+  --hero-save: #6bd69c;
+  /* Gold: follow-ups, premium highlights, the customer's Accept */
+  --gold: #d4af6a;
+  --gold-ink: #8a6416;
+  --gold-tint: #f7eedc;
+  --on-gold: #1d1d1f;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
+  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.04), 0 18px 48px rgba(0, 0, 0, 0.1);
+  --shadow-float: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 12px 40px rgba(0, 0, 0, 0.16);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --canvas: #0d1117;
-    --surface: #161b22;
-    --ink: #e6edf3;
-    --secondary: #9da7b3;
-    --tertiary: #7d8590;
-    --accent: #3cc4b9;
-    --accent-hover: #5fd3c9;
-    --on-accent: #0d1117;
-    --accent-tint: rgba(60, 196, 185, 0.14);
-    --fill: #21262d;
-    --fill-soft: #1c2128;
-    --separator: rgba(240, 246, 252, 0.1);
+    --canvas: #000000;
+    --surface: #1c1c1e;
+    --ink: #f5f5f7;
+    --secondary: #aeaeb2; /* readable on the grey controls (fill) too */
+    --tertiary: #6e6e73;
+    --accent: #4cd38a;
+    --accent-hover: #6fe0a2;
+    --on-accent: #000000;
+    --accent-tint: rgba(76, 211, 138, 0.16);
+    --fill: rgba(118, 118, 128, 0.24);
+    --fill-soft: rgba(118, 118, 128, 0.14);
+    --separator: rgba(84, 84, 88, 0.6);
     --bad: #ff7b72;
     --bad-bar: #f0883e;
     --bad-tint: rgba(255, 123, 114, 0.14);
@@ -59,11 +72,17 @@
     --chat: #0b141a;
     --bubble: #005c4b;
     --bubble-ink: #e9edef;
-    --bar: rgba(22, 27, 34, 0.72);
-    --bar-strong: rgba(22, 27, 34, 0.85);
-    --shadow-card: 0 0 0 1px rgba(240, 246, 252, 0.06);
-    --shadow-raised: 0 0 0 1px rgba(240, 246, 252, 0.08);
-    --shadow-float: 0 0 0 1px rgba(240, 246, 252, 0.1), 0 12px 32px rgba(0, 0, 0, 0.5);
+    --bar: rgba(28, 28, 30, 0.72);
+    --bar-strong: rgba(28, 28, 30, 0.86);
+    --hero: #161618;
+    --hero-raised: #2c2c2e;
+    --hero-line: #3a3a3c;
+    --hero-secondary: #a1a1a6;
+    --gold-ink: #e3c27f;
+    --gold-tint: rgba(212, 175, 106, 0.16);
+    --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+    --shadow-raised: 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+    --shadow-float: 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 12px 32px rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -114,10 +133,21 @@
   --color-bubble-ink: var(--bubble-ink);
   --color-bar: var(--bar);
   --color-bar-strong: var(--bar-strong);
+  --color-hero: var(--hero);
+  --color-hero-raised: var(--hero-raised);
+  --color-hero-line: var(--hero-line);
+  --color-hero-ink: var(--hero-ink);
+  --color-hero-secondary: var(--hero-secondary);
+  --color-hero-save: var(--hero-save);
+  --color-gold: var(--gold);
+  --color-gold-ink: var(--gold-ink);
+  --color-gold-tint: var(--gold-tint);
+  --color-on-gold: var(--on-gold);
   --shadow-card: var(--shadow-card);
   --shadow-raised: var(--shadow-raised);
   --shadow-float: var(--shadow-float);
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-arabic: "SF Arabic", "Noto Naskh Arabic", "Geeza Pro", "Segoe UI", sans-serif;
 }
 
 body {
@@ -143,6 +173,11 @@ body {
 }
 .type-headline {
   letter-spacing: -0.01em;
+}
+
+/* Arabic words inside English screens (greetings, language names). */
+.font-arabic {
+  font-family: var(--font-arabic);
 }
 
 /* Lined-up figures wherever money is shown. */

@@ -6,6 +6,7 @@
 node_modules/
 .next/
 .next-e2e/
+.next-shot/
 test-results/
 playwright-report/
 out/

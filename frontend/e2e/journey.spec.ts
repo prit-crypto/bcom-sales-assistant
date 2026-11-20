@@ -6,7 +6,7 @@ test("full journey: sample 1 to proposal PDF and WhatsApp link", async ({ page }
   await openApp(page);
   await page.locator("input[type=file]").setInputFiles(sample("sample-1-al-noor-mobile.pdf"));
   await expect(page.getByRole("heading", { name: "Check the shipments" })).toBeVisible();
-  await expect(page.getByRole("main")).toContainText("46 shipments read");
+  await expect(page.locator("body")).toContainText("46 shipments read");
 
   await compare(page);
   await expect.poll(() => headline(page)).toContain("AED 1,854");

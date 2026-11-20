@@ -27,8 +27,8 @@ const SAVE_TEXT: Record<SaveState, string> = {
 };
 
 /**
- * Slim translucent top bar: logo (back to the proposals list), where you are in the journey with its
- * progress dots, and a way out. Pages outside the journey leave out the steps and pass their own actions.
+ * Slim translucent top bar (Apple material): logo (back to the proposals list), where you are in the journey
+ * as a breadcrumb, and a way out. Pages outside the journey leave out the steps and pass their own actions.
  */
 export function AppBar({
   current,
@@ -79,7 +79,7 @@ export function AppBar({
           {sampleMode ? (
             <span
               title="No AI reader is switched on: the sample PDFs and CSV or Excel statements work."
-              className="rounded-full bg-fill px-2.5 py-0.5 text-xs font-semibold text-secondary"
+              className="rounded-full bg-gold-tint px-2.5 py-0.5 text-xs font-semibold text-gold-ink"
             >
               Sample mode
             </span>
@@ -91,34 +91,39 @@ export function AppBar({
             aria-label="Progress"
             className="order-3 flex w-full items-center justify-between gap-3 sm:order-none sm:w-auto sm:justify-start"
           >
-            <p className="text-[13px] text-secondary">
+            {/* Phones: where you are, in words. */}
+            <p className="text-[13px] text-secondary md:hidden">
               Step {currentIndex + 1} of {STEPS.length} ·{" "}
               <span className="font-semibold text-ink">{STEPS[currentIndex]!.label}</span>
             </p>
-            <ol className="flex items-center">
+            {/* Wider screens: the whole journey as a breadcrumb; steps already reached can be revisited. */}
+            <ol className="hidden items-center gap-0.5 text-[13px] md:flex">
               {STEPS.map((step, index) => {
                 const isCurrent = index === currentIndex;
                 const available = index <= reachedIndex && !isCurrent;
-                const dot = `block h-2 rounded-full transition-all duration-300 ${isCurrent ? "w-[22px] bg-accent" : index <= reachedIndex ? "w-2 bg-accent" : "w-2 bg-fill"}`;
                 return (
-                  <li key={step.id}>
+                  <li key={step.id} className="flex items-center gap-0.5">
+                    {index > 0 ? (
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="size-3 text-tertiary" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    ) : null}
                     {available ? (
                       <button
                         type="button"
                         onClick={() => onSelect?.(step.id)}
                         aria-label={`Go to ${step.label}`}
-                        className="flex h-6 min-w-6 items-center justify-center rounded-full px-[3px] focus-visible:outline-2 focus-visible:outline-accent"
+                        className="pressable min-h-8 rounded-full px-2.5 font-medium text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
                       >
-                        <span className={dot} />
+                        {step.label}
                       </button>
                     ) : (
                       <span
-                        className="flex h-6 min-w-6 items-center justify-center px-[3px]"
                         aria-current={isCurrent ? "step" : undefined}
-                        aria-label={`${step.label}${isCurrent ? ", current step" : ", not reached yet"}`}
-                        role="img"
+                        className={`px-2.5 ${isCurrent ? "font-semibold text-ink" : "text-secondary"}`}
                       >
-                        <span className={dot} />
+                        {step.label}
+                        {isCurrent ? null : <span className="sr-only">, not reached yet</span>}
                       </span>
                     )}
                   </li>

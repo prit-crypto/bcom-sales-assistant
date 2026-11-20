@@ -26,11 +26,17 @@ The backend must allow this origin in its `CORS_ORIGINS` (default `http://localh
 
 ## Design
 
-Approved on 19 Nov 2026 (mock-ups: https://claude.ai/artifact/XKyJeNfN3sxunUJWeE54sS).
+Graphite and gold, approved on 20 Nov 2026 (mock-ups: https://claude.ai/artifact/UDRJr4dwhiPAtF1Z6YFizt), in the
+spirit of Apple's product pages. No blue: the company's other product uses navy.
 
-- **Colours** are CSS variables in `src/app/globals.css`, mapped to Tailwind with `@theme inline`: navy ink
-  `#0B2545`, teal accent `#0B7A75`, warm sand canvas `#F6F3EE`; red only for "costs more", amber for "needs
-  attention". Use the semantic classes (`bg-surface`, `text-secondary`, `bg-accent`…), never raw hex values.
+- **Colours** are CSS variables in `src/app/globals.css`, mapped to Tailwind with `@theme inline`: graphite hero
+  bands (`bg-hero`, `#141416`) with their own text colours (`text-hero-ink`, `text-hero-secondary`,
+  `text-hero-save`), gold for special moments (`gold`, `#D4AF6A`: follow-ups, "a month", the customer's Accept),
+  green for savings and actions (`accent`, `#19764D`), Apple grey canvas `#F5F5F7`; red only for "costs more",
+  amber for "needs attention". Use the semantic classes, never raw hex values.
+- **Hero bands** (`HeroBand`, `PageHeader` in `src/components/ui/Hero.tsx`): the home, upload, savings, proposal
+  and customer pages open on a graphite band with cards floating over its lower edge; the working steps get a
+  compact graphite header. The savings region view draws the routes from Dubai (`RouteMap`).
 - **Dark mode** follows the device (`prefers-color-scheme`); every variable has a dark value.
 - **Accessibility settings**: "increase contrast" swaps soft shadows for solid edges; "reduce transparency" makes
   the top and bottom bars solid; "reduce motion" turns slides into short fades and stops the savings count-up.
@@ -43,8 +49,9 @@ Approved on 19 Nov 2026 (mock-ups: https://claude.ai/artifact/XKyJeNfN3sxunUJWeE
   figures count up once, a tick draws in when a missing value is filled, "Copy" turns into "Copied ✓", the PDF
   preview cross-fades when it updates, a half-typed currency gives one small shake. Only `transform` and
   `opacity` are animated, nothing runs longer than about 0.5 s, and "reduce motion" turns all of it off.
-- **Layout**: a translucent top bar (`AppBar`) and a floating bottom bar (`ActionBar`) on every step, so the next
-  action is always in reach. Phones get shipment cards and a bottom sheet for the PDF preview.
+- **Layout**: a translucent top bar (`AppBar`, with the journey as a breadcrumb) and a floating bottom bar
+  (`ActionBar`) on every step, so the next action is always in reach. Lists are grouped iPhone-style rows with
+  hairline dividers. Phones get shipment cards and a bottom sheet for the PDF preview.
 
 ## Pages
 

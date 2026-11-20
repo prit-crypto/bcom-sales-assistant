@@ -154,7 +154,7 @@ test("the CSV template reads back without AI", async ({ page }) => {
   await expect(template).toHaveAttribute("href", "/templates/bcom-shipments-template.csv");
   await page.locator("input[type=file]").first().setInputFiles(path.join(PUBLIC, "templates", "bcom-shipments-template.csv"));
   await expect(page.getByRole("heading", { name: "Check the shipments" })).toBeVisible();
-  await expect(page.getByRole("main")).toContainText("2 shipments read from bcom-shipments-template.csv");
+  await expect(page.locator("body")).toContainText("2 shipments read from bcom-shipments-template.csv");
   await expect(page.getByRole("button", { name: "Show invoice" })).toHaveCount(0);
   await compare(page);
 });

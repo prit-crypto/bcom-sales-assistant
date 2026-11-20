@@ -41,7 +41,7 @@ test("a proposal from sent to follow-up, won, lost and reopened, with notes, fil
   const due = page.getByRole("region", { name: /Follow up today/ });
   await expect(due.getByRole("link", { name: /Al Noor/ }).first()).toBeVisible();
   await page.getByRole("radio", { name: /^Sent/ }).click();
-  const rows = page.getByRole("region", { name: "All proposals" }).getByRole("link");
+  const rows = page.getByRole("list", { name: "All proposals" }).getByRole("link");
   await expect(rows.filter({ hasText: "Al Noor" }).first()).toBeVisible();
   await expect(rows.filter({ hasNotText: "Sent" })).toHaveCount(0);
   await page.getByRole("searchbox").fill("nobody like this");

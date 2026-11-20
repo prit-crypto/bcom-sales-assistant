@@ -40,7 +40,7 @@ test("a broken stream falls back to the plain read; a reading error from the str
   await page.route("**/invoices/extract/stream", (route) => route.fulfill({ status: 200, json: {}, headers: CORS }));
   await openApp(page);
   await loadSample(page, "Clean PDF");
-  await expect(page.getByRole("main")).toContainText("46 shipments read");
+  await expect(page.locator("body")).toContainText("46 shipments read");
 
   await page.unroute("**/invoices/extract/stream");
   await page.route("**/invoices/extract/stream", (route) =>
@@ -73,7 +73,7 @@ test("two months in one proposal: combined rows, an average over both, both file
     .first()
     .setInputFiles([sample("sample-1-al-noor-mobile.pdf"), sample("sample-2-gulf-spice.pdf")]);
   await expect(page.getByRole("heading", { name: "Check the shipments" })).toBeVisible();
-  await expect(page.getByRole("main")).toContainText("68 shipments read from 2 invoices (01 Oct 2026 – 30 Nov 2026)");
+  await expect(page.locator("body")).toContainText("68 shipments read from 2 invoices (01 Oct 2026 – 30 Nov 2026)");
   await expect(page.locator("table").getByText("Inv 2").first()).toBeVisible();
 
   // The viewer can show either invoice.
@@ -94,10 +94,10 @@ test("add another month on the shipments step, and undo it", async ({ page }) =>
   await openApp(page);
   await loadSample(page, "Clean PDF");
   await page.getByLabel("Add another month").setInputFiles(sample("sample-2-gulf-spice.pdf"));
-  await expect(page.getByRole("main")).toContainText("68 shipments read from 2 invoices");
+  await expect(page.locator("body")).toContainText("68 shipments read from 2 invoices");
   await expect(page.getByText("Added sample-2-gulf-spice.pdf")).toBeVisible();
   await page.getByRole("button", { name: "Undo", exact: true }).first().click();
-  await expect(page.getByRole("main")).toContainText("46 shipments read");
+  await expect(page.locator("body")).toContainText("46 shipments read");
 });
 
 test("a partner's correction is recorded for learning", async ({ page }) => {

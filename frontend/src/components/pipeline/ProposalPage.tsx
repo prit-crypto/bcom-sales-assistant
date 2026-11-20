@@ -6,12 +6,13 @@ import { useEffect, useRef, useState } from "react";
 import { AppBar } from "@/components/ui/AppBar";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { HeroBand } from "@/components/ui/Hero";
 import { Icon } from "@/components/ui/Icon";
 import { errorMessage, getFile, getJson, patchJson, saveBlob, sendNoContent } from "@/lib/client/api";
 import { formatDate, formatDueDate, formatMoney, formatPercent, formatWhen } from "@/lib/format";
 import type { ProposalDetail, ProposalStatus } from "@/types/api";
 import { EmailCard } from "./EmailCard";
-import { ProposalStatusPill } from "./ProposalStatusPill";
+import { STATUS_LABEL } from "./ProposalStatusPill";
 import { ShareCard } from "./ShareCard";
 
 type Event = ProposalDetail["events"][number];
@@ -230,46 +231,58 @@ export function ProposalPage({ id }: { id: string }) {
           </Link>
         }
       />
-      <main className="mx-auto flex w-full max-w-[1000px] flex-1 flex-col gap-5 px-4 pt-6 pb-16 sm:px-6 sm:pt-10">
+      <HeroBand width="max-w-[1000px]" inner="flex flex-col gap-5 pt-6 pb-24 sm:pt-8">
         <Link
           href="/"
-          className="pressable inline-flex min-h-10 items-center gap-1 self-start rounded-full pr-3 text-[15px] font-medium text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+          className="pressable inline-flex min-h-10 items-center gap-1 self-start rounded-full pr-3 text-[15px] font-medium text-gold hover:underline focus-visible:outline-2 focus-visible:outline-gold"
         >
           <Icon name="chevronLeft" className="size-4" />
           Proposals
         </Link>
-
-        <section aria-labelledby="proposal-title" className="flex flex-col gap-5 rounded-[28px] bg-surface p-6 shadow-raised sm:p-8">
+        <section aria-labelledby="proposal-title" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 flex-col gap-1">
-              <h1 id="proposal-title" className="type-title text-[28px] font-bold sm:text-[34px]">
+              <h1 id="proposal-title" className="type-title text-[32px] font-bold sm:text-[44px]">
                 {proposal.prospect_name}
               </h1>
-              <p className="text-[15px] text-secondary">
+              <p className="text-[15px] text-hero-secondary">
                 {proposal.reference} · saved {formatWhen(proposal.created_at)}
                 {proposal.source_file_name ? ` from ${proposal.source_file_name}` : ""}
               </p>
             </div>
-            <ProposalStatusPill status={proposal.status} />
+            <span
+              className={`rounded-full px-3 py-1 text-[13px] font-semibold ${
+                proposal.status === "won"
+                  ? "bg-hero-save text-hero"
+                  : proposal.status === "sent"
+                    ? "bg-gold text-on-gold"
+                    : "bg-hero-raised text-hero-ink"
+              }`}
+            >
+              {STATUS_LABEL[proposal.status]}
+            </span>
           </div>
           {summary.has_saving ? (
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="type-display tabular text-[44px] font-bold text-accent sm:text-[56px]">
+              <span className="type-display tabular text-[56px] font-bold sm:text-[80px]">
                 {formatMoney(summary.monthly_saving, summary.currency)}
               </span>
-              <span className="type-title text-xl font-semibold">a month</span>
-              <span className="w-full text-[15px] text-secondary">
+              <span className="type-title text-2xl font-semibold text-gold">a month</span>
+              <span className="w-full text-[15px] text-hero-secondary sm:text-[17px]">
                 {formatMoney(summary.yearly_saving, summary.currency)} a year · {formatPercent(summary.saving_pct)} less ·{" "}
                 {summary.compared_shipments} of {summary.total_shipments} shipments compared
                 {scenarioParts.length ? ` · with ${scenarioParts.join(" and ")}` : ""}
               </span>
             </div>
           ) : (
-            <Banner tone="attention" title="No saving to propose">
-              BCOM is not cheaper for these shipments. Continue editing to check them.
-            </Banner>
+            <p className="rounded-2xl bg-hero-raised px-4 py-3 text-[15px] text-hero-ink">
+              <strong className="font-semibold">No saving to propose.</strong> BCOM is not cheaper for these shipments.
+              Continue editing to check them.
+            </p>
           )}
         </section>
+      </HeroBand>
+      <main className="mx-auto -mt-14 flex w-full max-w-[1000px] flex-1 flex-col gap-5 px-4 pb-16 sm:px-6">
 
         {actionError ? (
           <Banner tone="error" title="That didn't work">
@@ -279,7 +292,7 @@ export function ProposalPage({ id }: { id: string }) {
 
         <div className="grid items-start gap-5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-5">
-            <section aria-labelledby="stands-title" className="flex flex-col gap-4 rounded-[22px] bg-surface p-5 shadow-card sm:p-6">
+            <section aria-labelledby="stands-title" className="flex flex-col gap-4 rounded-[22px] bg-surface p-5 shadow-raised sm:p-6">
               <h2 id="stands-title" className="type-headline text-lg font-semibold">
                 Where it stands
               </h2>
