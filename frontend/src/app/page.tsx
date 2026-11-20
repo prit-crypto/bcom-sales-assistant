@@ -1,5 +1,5 @@
-import { DemoFlow } from "@/components/demo/DemoFlow";
+import { ProposalsHome } from "@/components/pipeline/ProposalsHome";
 
 export default function HomePage() {
-  return <DemoFlow />;
+  return <ProposalsHome />;
 }

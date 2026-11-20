@@ -168,7 +168,7 @@ test.describe("upload screen", () => {
   });
 
   test("sample mode is labelled, and the page sends security headers", async ({ page }) => {
-    const response = await page.goto("/");
+    const response = await page.goto("/new");
     await expect(page.getByText("Sample mode")).toBeVisible();
     const headers = response!.headers();
     expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
@@ -197,8 +197,11 @@ test("a refreshed page keeps the what-if", async ({ page }) => {
   await openApp(page);
   await page.locator("input[type=file]").first().setInputFiles(sample("sample-1-al-noor-mobile.pdf"));
   await compare(page);
+  await expect(page).toHaveURL(/\/edit$/);
+  const saved = page.waitForResponse((response) => response.request().method() === "PATCH" && response.ok());
   await page.getByRole("switch", { name: "Send non-urgent parcels by Economy" }).click();
   await expect.poll(() => headline(page)).toContain("AED 3,916");
+  await saved;
   await page.reload();
   await expect.poll(() => headline(page)).toContain("AED 3,916");
   await expect(page.getByRole("switch", { name: "Send non-urgent parcels by Economy" })).toHaveAttribute("aria-checked", "true");

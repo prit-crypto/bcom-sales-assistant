@@ -61,3 +61,23 @@ for (const mode of MODES) {
     await scan(page, "whatsapp");
   });
 }
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`proposals list and a proposal page pass axe (${colorScheme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
+    await openApp(page);
+    await loadSample(page, "Clean PDF");
+    await compare(page);
+    await expect(page).toHaveURL(/\/edit$/);
+    const id = page.url().match(/proposals\/([0-9a-f-]{36})/)![1]!;
+
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Proposals", exact: true })).toBeVisible();
+    await scan(page, "proposals list");
+
+    await page.goto(`/proposals/${id}`);
+    await page.getByRole("button", { name: "Mark as sent" }).click();
+    await expect(page.getByText(/Follow up in 3 days/)).toBeVisible();
+    await scan(page, "proposal page");
+  });
+}

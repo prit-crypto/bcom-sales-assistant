@@ -28,8 +28,8 @@ export default defineConfig({
   },
   webServer: [
     {
-      // Its own database (bcom_e2e), brought to the latest migration first.
-      command: `.venv/bin/alembic upgrade head && .venv/bin/uvicorn app.main:app --port ${API_PORT}`,
+      // Its own database (bcom_e2e), emptied and brought to the latest migration first.
+      command: `.venv/bin/alembic downgrade base && .venv/bin/alembic upgrade head && .venv/bin/uvicorn app.main:app --port ${API_PORT}`,
       cwd: "../backend",
       url: `http://localhost:${API_PORT}/api/v1/health`,
       reuseExistingServer: false,

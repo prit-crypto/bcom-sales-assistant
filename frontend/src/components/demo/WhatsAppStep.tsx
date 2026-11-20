@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ActionBar } from "@/components/ui/ActionBar";
@@ -11,6 +12,8 @@ import { partnerForRequest } from "@/lib/partner";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import type { MessageResponse, PartnerDetailsInput, Scenario } from "@/types/api";
 import type { InvoiceData } from "@/types/invoice";
+import { formatDueDate } from "@/lib/format";
+import type { SavedInfo } from "./DemoFlow";
 import type { ProposalFile } from "./ProposalStep";
 
 interface WhatsAppStepProps {
@@ -20,10 +23,40 @@ interface WhatsAppStepProps {
   proposal: ProposalFile | null;
   message: MessageResponse | null;
   onMessage: (message: MessageResponse) => void;
+  /** The saved proposal behind this journey, if it was saved */
+  saved?: SavedInfo | null;
+  onMarkSent?: () => Promise<void>;
+  onEvent?: (kind: "message_copied" | "whatsapp_opened") => void;
   onBack: () => void;
 }
 
-export function WhatsAppStep({ invoice, scenario, partner, proposal, message, onMessage, onBack }: WhatsAppStepProps) {
+export function WhatsAppStep({
+  invoice,
+  scenario,
+  partner,
+  proposal,
+  message,
+  onMessage,
+  saved = null,
+  onMarkSent,
+  onEvent,
+  onBack,
+}: WhatsAppStepProps) {
+  const [marking, setMarking] = useState(false);
+  const [markError, setMarkError] = useState<string | null>(null);
+
+  async function markSent() {
+    if (!onMarkSent) return;
+    setMarking(true);
+    setMarkError(null);
+    try {
+      await onMarkSent();
+    } catch (failure) {
+      setMarkError(errorMessage(failure));
+    } finally {
+      setMarking(false);
+    }
+  }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
@@ -59,6 +92,7 @@ export function WhatsAppStep({ invoice, scenario, partner, proposal, message, on
     if (!message) return;
     try {
       await navigator.clipboard.writeText(message.message);
+      onEvent?.("message_copied");
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -182,6 +216,52 @@ export function WhatsAppStep({ invoice, scenario, partner, proposal, message, on
             </div>
           ) : null}
         </div>
+
+        {saved ? (
+          <section
+            aria-label="Proposal status"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] bg-surface px-5 py-4 shadow-card"
+          >
+            {saved.status === "draft" ? (
+              <>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-[15px] font-semibold">Sent it to the prospect?</span>
+                  <span className="text-[13px] text-secondary">
+                    Mark it as sent and it will come back to you when it&apos;s time to follow up.
+                  </span>
+                </span>
+                <Button variant="tinted" onClick={() => void markSent()} disabled={marking}>
+                  <Icon name="check" className="size-4" />
+                  {marking ? "Marking…" : "Mark as sent"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-[15px] font-semibold">
+                    {saved.status === "sent" ? "Marked as sent" : saved.status === "won" ? "Won" : "Lost"}
+                  </span>
+                  <span className="text-[13px] text-secondary">
+                    {saved.status === "sent" && saved.followUpOn
+                      ? `Follow up ${formatDueDate(saved.followUpOn)}.`
+                      : `Proposal ${saved.reference}.`}
+                  </span>
+                </span>
+                <Link
+                  href={`/proposals/${saved.id}`}
+                  className="pressable rounded-full px-3 py-2 text-sm font-semibold text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
+                >
+                  See proposal
+                </Link>
+              </>
+            )}
+            {markError ? (
+              <p role="alert" className="w-full text-sm font-medium text-bad">
+                {markError}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
       </main>
 
       <ActionBar backLabel="Proposal" onBack={onBack} status={copied ? "Copied to the clipboard" : "You send it yourself from WhatsApp"}>
@@ -205,6 +285,7 @@ export function WhatsAppStep({ invoice, scenario, partner, proposal, message, on
             href={buildWhatsAppLink(message.message, phone)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => onEvent?.("whatsapp_opened")}
             className={`${buttonClasses("whatsapp")} flex-1 md:flex-none`}
           >
             Open in WhatsApp

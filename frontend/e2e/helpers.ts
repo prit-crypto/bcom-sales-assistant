@@ -7,9 +7,9 @@ export function sample(file: string): string {
   return path.join(SAMPLES, file);
 }
 
-/** Opens the app and waits for the upload screen. */
+/** Opens a new proposal and waits for the upload screen. */
 export async function openApp(page: Page): Promise<void> {
-  await page.goto("/");
+  await page.goto("/new");
   await expect(page.getByText("No invoice to hand? Try a sample")).toBeVisible();
 }
 

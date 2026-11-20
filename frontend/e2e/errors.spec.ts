@@ -33,7 +33,7 @@ test("a half-typed currency blocks Compare; an unknown currency cannot be compar
 
 test("backend down: a clear message instead of a crash", async ({ page }) => {
   await page.route("**/api/v1/**", (route) => route.abort());
-  await page.goto("/");
+  await page.goto("/new");
   await expect(page.getByText("Invoice reading isn't available right now")).toBeVisible();
   await expect(page.getByText("Could not reach the server").first()).toBeVisible();
   await page.locator("input[type=file]").setInputFiles(path.join(__dirname, "..", "public", "samples", "sample-1-al-noor-mobile.pdf"));
@@ -52,7 +52,7 @@ test("AI switched on without a key: the reason is shown", async ({ page }) => {
       },
     }),
   );
-  await page.goto("/");
+  await page.goto("/new");
   await expect(page.getByText("GEMINI_API_KEY is empty")).toBeVisible();
 });
 

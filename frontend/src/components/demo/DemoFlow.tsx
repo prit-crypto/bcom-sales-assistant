@@ -1,12 +1,16 @@
 "use client";
 
 import { AnimatePresence, motion, useIsPresent, useReducedMotion, type Variants } from "motion/react";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppBar, stepIndex, type StepId } from "@/components/ui/AppBar";
 import { Banner } from "@/components/ui/Banner";
 import type { InvoiceSource } from "@/components/ui/InvoiceViewer";
 import { Toast, type ToastData } from "@/components/ui/Toast";
-import { errorMessage, getJson, postJson } from "@/lib/client/api";
+import { errorMessage, getJson, patchJson, postJson, sendNoContent } from "@/lib/client/api";
+import { partnerForRequest } from "@/lib/partner";
+import { EXAMPLE_PARTNER, loadPartnerDefaults, savePartnerDefaults } from "@/lib/partnerDefaults";
+import { partnerSavable, useProposalSync } from "@/lib/useProposalSync";
 import {
   clearSession,
   clearSourceFile,
@@ -24,6 +28,7 @@ import type {
   ExtractResponse,
   MessageResponse,
   PartnerDetailsInput,
+  ProposalDetail,
   ProviderInfo,
   Scenario,
 } from "@/types/api";
@@ -35,18 +40,6 @@ import { SavingsStep } from "./SavingsStep";
 import { UploadStep } from "./UploadStep";
 import { WhatsAppStep } from "./WhatsAppStep";
 
-/** Example partner details for the demo – clearly placeholders, edited on the proposal step. */
-const EXAMPLE_PARTNER: Omit<PartnerDetailsInput, "prospect_name"> = {
-  partner_name: "Rahul Mehta",
-  partner_company: "Sharjah Logistics Partners",
-  partner_phone: "+971 50 000 0000",
-  partner_email: "rahul@example.com",
-  validity_days: 30,
-  language: "en",
-  booking_url: "",
-  partner_logo: null,
-};
-
 /** Wait this long after the last what-if change before asking for new figures. */
 const SCENARIO_DELAY_MS = 250;
 
@@ -55,8 +48,26 @@ const HISTORY_LIMIT = 20;
 
 interface Extracted {
   invoice: InvoiceData;
-  provider: ProviderInfo;
+  /** Who read the invoice; unknown for a proposal opened from the list */
+  provider: ProviderInfo | null;
   fileName: string;
+}
+
+/** The saved proposal behind this journey (after "Compare"), as the server last reported it. */
+export interface SavedInfo {
+  id: string;
+  reference: string;
+  status: ProposalDetail["status"];
+  followUpOn: string | null;
+}
+
+function savedInfo(detail: ProposalDetail): SavedInfo {
+  return { id: detail.id, reference: detail.reference, status: detail.status, followUpOn: detail.follow_up_on };
+}
+
+/** Shows the proposal's own address, so a reload reopens it from the server. */
+function showAddress(path: string) {
+  if (window.location.pathname !== path) window.history.replaceState(null, "", path);
 }
 
 /** Forward: the new step comes in from the right. Back: it comes in from the left, the old one leaves right. */
@@ -82,8 +93,11 @@ function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 }
 
-/** Holds the state of the whole journey: upload → review → savings → proposal → WhatsApp. */
-export function DemoFlow() {
+/**
+ * Holds the state of the whole journey: upload → review → savings → proposal → WhatsApp. At "Compare" the
+ * work is saved as a draft proposal and autosaved from then on; `proposalId` reopens a saved one.
+ */
+export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) {
   const reduce = useReducedMotion();
   const [config, setConfig] = useState<ConfigResponse | null>(null);
   const [step, setStep] = useState<StepId>("upload");
@@ -100,7 +114,10 @@ export function DemoFlow() {
   const [scenarioError, setScenarioError] = useState<string | null>(null);
   const scenarioTimer = useRef<number | undefined>(undefined);
   const scenarioRequest = useRef(0);
-  const [partner, setPartner] = useState<PartnerDetailsInput>({ ...EXAMPLE_PARTNER, prospect_name: "" });
+  // The partner's own details are remembered on this device (there are no accounts yet).
+  const [partner, setPartner] = useState<PartnerDetailsInput>(() => ({ ...loadPartnerDefaults(), prospect_name: "" }));
+  const [saved, setSaved] = useState<SavedInfo | null>(null);
+  const [openError, setOpenError] = useState<string | null>(null);
   const [proposal, setProposal] = useState<ProposalFile | null>(null);
   const [message, setMessage] = useState<MessageResponse | null>(null);
   /** The uploaded invoice, for the viewer beside the shipments */
@@ -138,20 +155,59 @@ export function DemoFlow() {
     setComparing(true);
     setCompareError(null);
     try {
-      setComparison(await postJson<ComparisonResult>("/comparisons", { invoice, scenario: what }));
-      return true;
+      const result = await postJson<ComparisonResult>("/comparisons", { invoice, scenario: what });
+      setComparison(result);
+      return result;
     } catch (error) {
       setCompareError(errorMessage(error));
-      return false;
+      return null;
     } finally {
       setComparing(false);
     }
   }, []);
 
-  // After a refresh, bring the journey back from this tab's session storage.
+  // A saved proposal opened from the list: everything comes from the server; it resumes at Savings.
   useEffect(() => {
+    if (!proposalId) return;
+    let cancelled = false;
+    getJson<ProposalDetail>(`/proposals/${proposalId}`)
+      .then((detail) => {
+        if (cancelled) return;
+        setExtracted({ invoice: detail.invoice, provider: null, fileName: detail.source_file_name ?? detail.reference });
+        setPartner({ ...loadPartnerDefaults(), ...detail.partner });
+        setScenario(detail.scenario);
+        setComparison(detail.comparison);
+        setMessage(detail.message ? { message: detail.message, source: "template", notice: null } : null);
+        setSaved(savedInfo(detail));
+        setReached(detail.message ? "whatsapp" : "proposal");
+        setStep("savings");
+        // Reloaded in the tab that uploaded it: the invoice file is still here for the viewer.
+        const session = loadSession();
+        if (session?.proposalId === proposalId && session.source) {
+          const kept = session.source;
+          void loadSourceFile().then((file) => {
+            if (file && !cancelled) setSource({ url: URL.createObjectURL(file), ...kept });
+          });
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setOpenError(errorMessage(error));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [proposalId]);
+
+  // After a refresh, bring the unsaved journey back from this tab's session storage.
+  useEffect(() => {
+    if (proposalId) return;
     const saved = loadSession();
     if (!saved?.extracted) return;
+    // Work that was already saved reopens from the server, not from this copy.
+    if (saved.proposalId) {
+      clearSession();
+      return;
+    }
     const restore = async (session: SavedSession & { extracted: Extracted }) => {
       setExtracted(session.extracted);
       // Sessions saved before newer partner fields existed get their defaults.
@@ -166,13 +222,13 @@ export function DemoFlow() {
       if (file && session.source) setSource({ url: URL.createObjectURL(file), ...session.source });
       if (stepIndex(session.step) > stepIndex("review")) {
         setRestoring(true);
-        const ok = await loadComparison(session.extracted.invoice, savedScenario);
+        const ok = (await loadComparison(session.extracted.invoice, savedScenario)) !== null;
         if (!ok) setStep("review");
         setRestoring(false);
       }
     };
     void restore(saved as SavedSession & { extracted: Extracted });
-  }, [loadComparison]);
+  }, [loadComparison, proposalId]);
 
   // Save the journey whenever it changes (not on the very first render, before any restore ran).
   useEffect(() => {
@@ -190,8 +246,20 @@ export function DemoFlow() {
       message,
       source: source ? { name: source.name, kind: source.kind } : null,
       scenario,
+      proposalId: saved?.id ?? null,
     });
-  }, [step, reached, extracted, partner, message, source, scenario]);
+  }, [step, reached, extracted, partner, message, source, scenario, saved]);
+
+  // Autosave of a saved proposal: the shipments, the what-if, the partner details and the message.
+  const draft = useMemo(
+    () =>
+      extracted && saved
+        ? { invoice: extracted.invoice, scenario, partner, message: message?.message ?? null }
+        : null,
+    [extracted, saved, scenario, partner, message],
+  );
+  const onSaved = useCallback((detail: ProposalDetail) => setSaved(savedInfo(detail)), []);
+  const sync = useProposalSync(saved?.id ?? null, draft, onSaved);
 
   useEffect(() => () => window.clearTimeout(scenarioTimer.current), []);
 
@@ -245,6 +313,9 @@ export function DemoFlow() {
   }
 
   function handleExtracted(result: ExtractResponse, file: File) {
+    // A new invoice starts a new proposal.
+    setSaved(null);
+    showAddress("/new");
     setExtracted({ invoice: result.invoice, provider: result.provider, fileName: file.name });
     if (isSpreadsheet(file)) {
       // A statement has no pages to show beside the table.
@@ -296,11 +367,66 @@ export function DemoFlow() {
 
   async function compare() {
     if (!extracted) return;
-    if (await loadComparison(extracted.invoice, scenario)) goTo("savings");
+    const result = await loadComparison(extracted.invoice, scenario);
+    if (!result) return;
+    goTo("savings");
+    if (!saved && result.summary.compared_shipments > 0) void saveDraft(extracted);
+  }
+
+  /** First save, at Compare. Blank names are filled from the remembered details so it can be stored. */
+  async function saveDraft(current: Extracted) {
+    const defaults = loadPartnerDefaults();
+    const details: PartnerDetailsInput = partnerSavable(partner)
+      ? partner
+      : {
+          ...partner,
+          prospect_name: partner.prospect_name.trim() || current.invoice.customer_name || "Unnamed prospect",
+          partner_name: partner.partner_name.trim() || defaults.partner_name || EXAMPLE_PARTNER.partner_name,
+          partner_company: partner.partner_company.trim() || defaults.partner_company || EXAMPLE_PARTNER.partner_company,
+        };
+    try {
+      const detail = await postJson<ProposalDetail>("/proposals", {
+        invoice: current.invoice,
+        scenario,
+        partner: partnerForRequest(details),
+        source_file_name: current.fileName,
+      });
+      setSaved(savedInfo(detail));
+      showAddress(`/proposals/${detail.id}/edit`);
+      toastCount.current += 1;
+      setToast({ id: toastCount.current, message: `Saved to your proposals · ${detail.reference}` });
+    } catch (error) {
+      // Saving is a convenience: the journey carries on, and the partner is told.
+      toastCount.current += 1;
+      setToast({ id: toastCount.current, message: `Not saved: ${errorMessage(error)}` });
+    }
+  }
+
+  /** History lines for things done outside the server (downloads, copy, WhatsApp). */
+  const recordEvent = useCallback(
+    (kind: "pdf_downloaded" | "message_copied" | "whatsapp_opened") => {
+      if (saved) void sendNoContent(`/proposals/${saved.id}/events`, "POST", { kind }).catch(() => undefined);
+    },
+    [saved],
+  );
+
+  /** "Mark as sent": the server sets the follow-up date. Errors go back to the button that asked. */
+  async function markSent(): Promise<void> {
+    if (!saved) return;
+    // The message goes along: it may still be waiting for autosave.
+    const body = { status: "sent", message: message?.message ?? null };
+    setSaved(savedInfo(await patchJson<ProposalDetail>(`/proposals/${saved.id}`, body)));
+  }
+
+  function changePartner(next: PartnerDetailsInput) {
+    setPartner(next);
+    savePartnerDefaults(next);
   }
 
   function restart() {
     clearSession();
+    setSaved(null);
+    showAddress("/new");
     setExtracted(null);
     setSource(null);
     history.current = [];
@@ -309,7 +435,7 @@ export function DemoFlow() {
     setRestoredNotice(false);
     clearOutputs();
     setScenario(LIKE_FOR_LIKE);
-    setPartner({ ...EXAMPLE_PARTNER, prospect_name: "" });
+    setPartner({ ...loadPartnerDefaults(), prospect_name: "" });
     setReached("upload");
     goTo("upload");
   }
@@ -331,6 +457,24 @@ export function DemoFlow() {
   }, [current, undo]);
 
   function renderStep() {
+    if (proposalId && !extracted) {
+      return (
+        <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col justify-center gap-4 px-4" aria-busy={!openError}>
+          {openError ? (
+            <Banner tone="error" title="Could not open this proposal">
+              {openError}{" "}
+              <Link href="/" className="font-semibold underline">
+                Back to proposals
+              </Link>
+            </Banner>
+          ) : (
+            <p role="status" className="text-center text-secondary">
+              Opening the proposal…
+            </p>
+          )}
+        </main>
+      );
+    }
     if (current === "upload" || !extracted) {
       return <UploadStep config={config} onExtracted={handleExtracted} />;
     }
@@ -381,7 +525,7 @@ export function DemoFlow() {
           partner={partner}
           proposal={proposal}
           onPartnerChange={(next) => {
-            setPartner(next);
+            changePartner(next);
             setMessage(null);
             setReached("proposal");
           }}
@@ -389,6 +533,7 @@ export function DemoFlow() {
             setProposal(file);
             setMessage(null);
           }}
+          onDownload={() => recordEvent("pdf_downloaded")}
           onBack={() => goTo("savings")}
           onContinue={() => goTo("whatsapp")}
         />
@@ -402,6 +547,9 @@ export function DemoFlow() {
         proposal={proposal}
         message={message}
         onMessage={setMessage}
+        saved={saved}
+        onMarkSent={markSent}
+        onEvent={recordEvent}
         onBack={() => goTo("proposal")}
       />
     );
@@ -415,6 +563,7 @@ export function DemoFlow() {
         onSelect={goTo}
         onRestart={extracted ? restart : null}
         sampleMode={config?.provider?.id === "mock"}
+        saveState={saved ? sync.state : null}
       />
       {restoredNotice && extracted ? (
         <div className="mx-auto w-full max-w-[1200px] px-4 pt-4 sm:px-6">

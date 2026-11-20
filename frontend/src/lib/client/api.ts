@@ -47,6 +47,28 @@ export async function postJson<T>(path: string, body: unknown, signal?: AbortSig
   return (await send(path, { ...jsonInit(body), signal })).json() as Promise<T>;
 }
 
+export async function patchJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+  return (await send(path, { ...jsonInit(body), method: "PATCH", signal })).json() as Promise<T>;
+}
+
+/** A last PATCH as the page closes or reloads: the browser finishes it even after the page is gone. */
+export function patchOnLeave(path: string, body: unknown): void {
+  void fetch(`${API_URL}${path}`, { ...jsonInit(body), method: "PATCH", keepalive: true }).catch(() => undefined);
+}
+
+/** POST or DELETE whose answer has no body (204). */
+export async function sendNoContent(path: string, method: "POST" | "DELETE", body?: unknown): Promise<void> {
+  await send(path, body === undefined ? { method } : { ...jsonInit(body), method });
+}
+
+/** GET that returns a file, with the file name the server suggests. */
+export async function getFile(path: string): Promise<{ blob: Blob; fileName: string | null }> {
+  const response = await send(path, { method: "GET" });
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const fileName = /filename="([^"]+)"/.exec(disposition)?.[1] ?? null;
+  return { blob: await response.blob(), fileName };
+}
+
 export async function postForm<T>(path: string, form: FormData): Promise<T> {
   return (await send(path, { method: "POST", body: form })).json() as Promise<T>;
 }

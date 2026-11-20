@@ -1,6 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import type { ReactNode } from "react";
+import type { SaveState } from "@/lib/useProposalSync";
 
 export const STEPS = [
   { id: "upload", label: "Upload" },
@@ -16,40 +19,63 @@ export function stepIndex(step: StepId): number {
   return STEPS.findIndex((item) => item.id === step);
 }
 
-/** Slim translucent top bar: logo, where you are, progress dots, and a way out. */
+const SAVE_TEXT: Record<SaveState, string> = {
+  idle: "Saved",
+  saving: "Saving…",
+  saved: "Saved",
+  error: "Not saved",
+};
+
+/**
+ * Slim translucent top bar: logo (back to the proposals list), where you are in the journey with its
+ * progress dots, and a way out. Pages outside the journey leave out the steps and pass their own actions.
+ */
 export function AppBar({
   current,
-  reached,
+  reached = current,
   onSelect,
-  onRestart,
+  onRestart = null,
   sampleMode = false,
+  saveState = null,
+  actions,
 }: {
-  current: StepId;
+  /** The journey step on screen; leave out on pages outside the journey */
+  current?: StepId;
   /** Furthest step reached; earlier steps can be revisited from the dots */
-  reached: StepId;
-  onSelect: (step: StepId) => void;
+  reached?: StepId;
+  onSelect?: (step: StepId) => void;
   /** Shown once there is something to start over from */
-  onRestart: (() => void) | null;
+  onRestart?: (() => void) | null;
   /** No AI reader is active: only the sample invoices and spreadsheets can be read */
   sampleMode?: boolean;
+  /** Autosave of the open proposal; null while it isn't saved yet */
+  saveState?: SaveState | null;
+  /** Buttons on the right, for pages outside the journey */
+  actions?: ReactNode;
 }) {
-  const currentIndex = stepIndex(current);
-  const reachedIndex = stepIndex(reached);
+  const currentIndex = current ? stepIndex(current) : -1;
+  const reachedIndex = reached ? stepIndex(reached) : -1;
 
   return (
     <header className="material sticky top-0 z-30 border-b border-separator bg-bar">
       <div className="mx-auto flex min-h-[60px] max-w-[1200px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2.5 sm:px-6">
         <div className="flex items-center gap-3">
-          <Image
-            src="/brand/bcom-global-logo.png"
-            alt="BCOM Global"
-            width={464}
-            height={213}
-            priority
-            className="h-7 w-auto dark:rounded-md dark:bg-white dark:px-1.5 dark:py-0.5"
-          />
-          <span aria-hidden="true" className="hidden h-5 w-px bg-separator sm:block" />
-          <span className="type-headline hidden text-[15px] font-semibold sm:block">Sales Assistant</span>
+          <Link
+            href="/"
+            aria-label="BCOM Global Sales Assistant: all proposals"
+            className="flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+          >
+            <Image
+              src="/brand/bcom-global-logo.png"
+              alt="BCOM Global"
+              width={464}
+              height={213}
+              priority
+              className="h-7 w-auto dark:rounded-md dark:bg-white dark:px-1.5 dark:py-0.5"
+            />
+            <span aria-hidden="true" className="hidden h-5 w-px bg-separator sm:block" />
+            <span className="type-headline hidden text-[15px] font-semibold sm:block">Sales Assistant</span>
+          </Link>
           {sampleMode ? (
             <span
               title="No AI reader is switched on: the sample PDFs and CSV or Excel statements work."
@@ -60,43 +86,66 @@ export function AppBar({
           ) : null}
         </div>
 
-        <nav aria-label="Progress" className="order-3 flex w-full items-center justify-between gap-3 sm:order-none sm:w-auto sm:justify-start">
-          <p className="text-[13px] text-secondary">
-            Step {currentIndex + 1} of {STEPS.length} · <span className="font-semibold text-ink">{STEPS[currentIndex]!.label}</span>
-          </p>
-          <ol className="flex items-center">
-            {STEPS.map((step, index) => {
-              const isCurrent = index === currentIndex;
-              const available = index <= reachedIndex && !isCurrent;
-              const dot = `block h-2 rounded-full transition-all duration-300 ${isCurrent ? "w-[22px] bg-accent" : index <= reachedIndex ? "w-2 bg-accent" : "w-2 bg-fill"}`;
-              return (
-                <li key={step.id}>
-                  {available ? (
-                    <button
-                      type="button"
-                      onClick={() => onSelect(step.id)}
-                      aria-label={`Go to ${step.label}`}
-                      className="flex h-6 min-w-6 items-center justify-center rounded-full px-[3px] focus-visible:outline-2 focus-visible:outline-accent"
-                    >
-                      <span className={dot} />
-                    </button>
-                  ) : (
-                    <span
-                      className="flex h-6 min-w-6 items-center justify-center px-[3px]"
-                      aria-current={isCurrent ? "step" : undefined}
-                      aria-label={`${step.label}${isCurrent ? ", current step" : ", not reached yet"}`}
-                      role="img"
-                    >
-                      <span className={dot} />
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
+        {current ? (
+          <nav
+            aria-label="Progress"
+            className="order-3 flex w-full items-center justify-between gap-3 sm:order-none sm:w-auto sm:justify-start"
+          >
+            <p className="text-[13px] text-secondary">
+              Step {currentIndex + 1} of {STEPS.length} ·{" "}
+              <span className="font-semibold text-ink">{STEPS[currentIndex]!.label}</span>
+            </p>
+            <ol className="flex items-center">
+              {STEPS.map((step, index) => {
+                const isCurrent = index === currentIndex;
+                const available = index <= reachedIndex && !isCurrent;
+                const dot = `block h-2 rounded-full transition-all duration-300 ${isCurrent ? "w-[22px] bg-accent" : index <= reachedIndex ? "w-2 bg-accent" : "w-2 bg-fill"}`;
+                return (
+                  <li key={step.id}>
+                    {available ? (
+                      <button
+                        type="button"
+                        onClick={() => onSelect?.(step.id)}
+                        aria-label={`Go to ${step.label}`}
+                        className="flex h-6 min-w-6 items-center justify-center rounded-full px-[3px] focus-visible:outline-2 focus-visible:outline-accent"
+                      >
+                        <span className={dot} />
+                      </button>
+                    ) : (
+                      <span
+                        className="flex h-6 min-w-6 items-center justify-center px-[3px]"
+                        aria-current={isCurrent ? "step" : undefined}
+                        aria-label={`${step.label}${isCurrent ? ", current step" : ", not reached yet"}`}
+                        role="img"
+                      >
+                        <span className={dot} />
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        ) : null}
 
-        <div className="flex min-w-[92px] justify-end">
+        <div className="flex min-w-[92px] items-center justify-end gap-1">
+          {saveState ? (
+            <span
+              role="status"
+              className={`hidden px-1 text-[13px] sm:inline ${saveState === "error" ? "font-semibold text-bad" : "text-secondary"}`}
+            >
+              {SAVE_TEXT[saveState]}
+            </span>
+          ) : null}
+          {actions}
+          {current ? (
+            <Link
+              href="/"
+              className="pressable rounded-full px-2 py-2 text-sm font-medium text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              Proposals
+            </Link>
+          ) : null}
           {onRestart ? (
             <button
               type="button"

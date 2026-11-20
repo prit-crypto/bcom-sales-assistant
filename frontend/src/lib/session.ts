@@ -18,12 +18,14 @@ export interface SavedSession {
   version: 1;
   step: StepId;
   reached: StepId;
-  extracted: { invoice: InvoiceData; provider: ProviderInfo; fileName: string } | null;
+  extracted: { invoice: InvoiceData; provider: ProviderInfo | null; fileName: string } | null;
   partner: PartnerDetailsInput;
   message: MessageResponse | null;
   source: { name: string; kind: SourceKind } | null;
   /** The what-if chosen on Savings (absent in sessions saved before it existed) */
   scenario?: Scenario;
+  /** Set once the work is saved as a proposal; it then reopens from the server instead */
+  proposalId?: string | null;
 }
 
 export function loadSession(): SavedSession | null {

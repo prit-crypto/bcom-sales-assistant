@@ -27,6 +27,8 @@ interface ProposalStepProps {
   proposal: ProposalFile | null;
   onPartnerChange: (partner: PartnerDetailsInput) => void;
   onProposalReady: (proposal: ProposalFile) => void;
+  /** The PDF was downloaded (for the proposal's history) */
+  onDownload?: () => void;
   onBack: () => void;
   onContinue: () => void;
 }
@@ -59,6 +61,7 @@ export function ProposalStep({
   proposal,
   onPartnerChange,
   onProposalReady,
+  onDownload,
   onBack,
   onContinue,
 }: ProposalStepProps) {
@@ -208,6 +211,7 @@ export function ProposalStep({
               hint={bookingInvalid ? "Use a full link starting with https:// to include it" : undefined}
             />
           </Group>
+          <p className="-mt-4 pl-1 text-[13px] text-secondary">Your details are remembered on this device for the next proposal.</p>
 
           <LogoPicker logo={partner.partner_logo} error={logoError} onPick={pickLogo} onRemove={() => update({ partner_logo: null })} />
 
@@ -292,6 +296,7 @@ export function ProposalStep({
           <a
             href={proposal.url}
             download={proposal.fileName}
+            onClick={onDownload}
             aria-disabled={!upToDate}
             className={`${buttonClasses("tinted")} ${upToDate ? "" : "pointer-events-none opacity-50"}`}
           >
@@ -311,7 +316,12 @@ export function ProposalStep({
         footer={
           proposal ? (
             <div className="flex gap-2.5">
-              <a href={proposal.url} download={proposal.fileName} className={`${buttonClasses("tinted", "large")} flex-1`}>
+              <a
+                href={proposal.url}
+                download={proposal.fileName}
+                onClick={onDownload}
+                className={`${buttonClasses("tinted", "large")} flex-1`}
+              >
                 Download PDF
               </a>
               <Button

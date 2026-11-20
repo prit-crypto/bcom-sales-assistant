@@ -61,18 +61,15 @@ test("progress dots go back; editing locks later steps", async ({ page }) => {
   await expect(page.getByText("Billing period unknown")).toBeVisible();
 });
 
-test("work survives a page refresh, and Discard starts over", async ({ page }) => {
+test("unsaved work survives a page refresh, and Discard starts over", async ({ page }) => {
   await openApp(page);
   await loadSample(page, "PDF with gaps");
   const weight = page.getByRole("textbox", { name: "Weight in kg for SWL 5630 8276 09" });
   await weight.fill("12");
   await weight.press("Enter");
-  await compare(page);
 
   await page.reload();
   await expect(page.getByText("Restored your last session")).toBeVisible();
-  await expect(page.locator("#savings-title")).toBeVisible();
-  await page.getByRole("button", { name: "Go to Check shipments" }).click();
   await expect(page.getByRole("button", { name: /Weight in kg for SWL 5630 8276 09: 12 kg/ })).toBeVisible();
   // The invoice file came back too, so it can still be viewed.
   await expect(page.getByRole("button", { name: "Show invoice" })).toBeVisible();
@@ -82,6 +79,29 @@ test("work survives a page refresh, and Discard starts over", async ({ page }) =
   await page.reload();
   await expect(page.getByText("No invoice to hand? Try a sample")).toBeVisible();
   await expect(page.getByText("Restored your last session")).toHaveCount(0);
+});
+
+test("compared work is saved and reopens from the server after a refresh", async ({ page }) => {
+  await openApp(page);
+  await loadSample(page, "PDF with gaps");
+  const weight = page.getByRole("textbox", { name: "Weight in kg for SWL 5630 8276 09" });
+  await weight.fill("12");
+  await weight.press("Enter");
+  await compare(page);
+  await expect(page.getByText(/Saved to your proposals · BCOM-P-/)).toBeVisible();
+  await expect(page).toHaveURL(/\/proposals\/[0-9a-f-]{36}\/edit$/);
+
+  await page.reload();
+  await expect(page.locator("#savings-title")).toBeVisible();
+  await expect(page.getByText("Restored your last session")).toHaveCount(0);
+  await page.getByRole("button", { name: "Go to Check shipments" }).click();
+  await expect(page.getByRole("button", { name: /Weight in kg for SWL 5630 8276 09: 12 kg/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show invoice" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Start over" }).click();
+  await expect(page).toHaveURL(/\/new$/);
+  await page.reload();
+  await expect(page.getByText("No invoice to hand? Try a sample")).toBeVisible();
 });
 
 test("undo: toast button, Undo button and ⌘Z", async ({ page }) => {
