@@ -10,12 +10,13 @@ router = APIRouter(prefix="/proposals", tags=["proposals"])
 
 
 @router.post(
-    "",
+    "/render",
     response_class=Response,
     responses={200: {"content": {"application/pdf": {}}, "description": "The proposal PDF"}},
 )
-async def create_proposal(body: ProposalRequest) -> Response:
-    """Builds the customer proposal PDF. Numbers are recalculated here, never taken from the browser."""
+async def render_proposal(body: ProposalRequest) -> Response:
+    """Builds the customer proposal PDF from unsaved data (the live preview). Numbers are recalculated
+    here, never taken from the browser."""
     # PDF rendering is CPU-bound; keep it off the event loop.
     pdf = await asyncio.to_thread(render_proposal_pdf, body.invoice, body.partner, body.scenario)
     return Response(

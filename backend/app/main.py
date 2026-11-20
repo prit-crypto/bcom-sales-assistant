@@ -20,6 +20,16 @@ _REQUEST_OVERHEAD_BYTES = 1024 * 1024
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(json=settings.log_json)
+    if settings.sentry_dsn:
+        import sentry_sdk
+
+        # Errors only, no request bodies: invoices hold customer data.
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            environment=settings.app_env,
+            send_default_pii=False,
+            traces_sample_rate=0,
+        )
 
     app = FastAPI(
         title="BCOM Sales Assistant API",
@@ -38,7 +48,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["Content-Type", "X-Request-ID"],
         expose_headers=["Content-Disposition", "X-Request-ID", "X-Cache"],
     )

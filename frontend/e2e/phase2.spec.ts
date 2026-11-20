@@ -85,7 +85,7 @@ test("what if: Economy for non-urgent parcels, more volume, reset, and the PDF f
   await expect.poll(() => headline(page)).toContain("AED 2,22");
   await expect(page.getByText("+20% volume")).toBeVisible();
 
-  const proposalRequest = page.waitForRequest((request) => request.url().endsWith("/proposals"));
+  const proposalRequest = page.waitForRequest((request) => request.url().endsWith("/proposals/render"));
   await page.getByRole("button", { name: "Create proposal" }).click();
   expect((await proposalRequest).postDataJSON().scenario).toEqual({ volume_factor: 1.2, economy_for_non_urgent: false });
 });
@@ -110,7 +110,7 @@ test("Arabic proposal and message, partner logo and booking link", async ({ page
 
   // Logo: preview on the form, sent with the next PDF.
   const withLogo = page.waitForRequest(
-    (request) => request.url().endsWith("/proposals") && String(request.postDataJSON()?.partner?.partner_logo).startsWith("data:image/png"),
+    (request) => request.url().endsWith("/proposals/render") && String(request.postDataJSON()?.partner?.partner_logo).startsWith("data:image/png"),
   );
   await page.getByLabel("Add logo").setInputFiles(path.join(PUBLIC, "brand", "bcom-icon.png"));
   await expect(page.getByRole("img", { name: "Your logo" })).toBeVisible();
@@ -121,12 +121,12 @@ test("Arabic proposal and message, partner logo and booking link", async ({ page
   await page.getByLabel("Booking link").fill("cal.com/aisha");
   await expect(page.getByText(/Use a full link starting with https:\/\//)).toBeVisible();
   const withLink = page.waitForRequest(
-    (request) => request.url().endsWith("/proposals") && request.postDataJSON()?.partner?.booking_url === "https://cal.com/aisha",
+    (request) => request.url().endsWith("/proposals/render") && request.postDataJSON()?.partner?.booking_url === "https://cal.com/aisha",
   );
   await page.getByLabel("Booking link").fill("https://cal.com/aisha");
   await withLink;
 
-  const arabic = page.waitForRequest((request) => request.url().endsWith("/proposals") && request.postDataJSON()?.partner?.language === "ar");
+  const arabic = page.waitForRequest((request) => request.url().endsWith("/proposals/render") && request.postDataJSON()?.partner?.language === "ar");
   await page.getByRole("radio", { name: "العربية" }).click();
   await arabic;
   await expect(page.getByText(/Ask a native speaker to check them/)).toBeVisible();

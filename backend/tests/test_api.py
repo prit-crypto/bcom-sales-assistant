@@ -94,7 +94,7 @@ def test_half_typed_country_codes_count_as_missing(client: TestClient) -> None:
 
 def test_creates_the_proposal_pdf(client: TestClient) -> None:
     response = client.post(
-        "/api/v1/proposals", json={"invoice": saving_invoice(), "partner": PARTNER}
+        "/api/v1/proposals/render", json={"invoice": saving_invoice(), "partner": PARTNER}
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
@@ -113,7 +113,7 @@ def test_creates_the_template_message(client: TestClient) -> None:
 
 
 def test_refuses_a_proposal_or_message_when_bcom_costs_more(client: TestClient) -> None:
-    for path in ("/api/v1/proposals", "/api/v1/messages"):
+    for path in ("/api/v1/proposals/render", "/api/v1/messages"):
         response = client.post(path, json={"invoice": losing_invoice(), "partner": PARTNER})
         assert response.status_code == 422, path
         assert response.json()["error"]["code"] == "no_saving"
@@ -121,7 +121,9 @@ def test_refuses_a_proposal_or_message_when_bcom_costs_more(client: TestClient) 
 
 def test_refuses_a_proposal_when_nothing_could_be_compared(client: TestClient) -> None:
     invoice = make_invoice([make_shipment(weight_kg=None)]).model_dump()
-    response = client.post("/api/v1/proposals", json={"invoice": invoice, "partner": PARTNER})
+    response = client.post(
+        "/api/v1/proposals/render", json={"invoice": invoice, "partner": PARTNER}
+    )
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "nothing_to_propose"
 
@@ -129,7 +131,7 @@ def test_refuses_a_proposal_when_nothing_could_be_compared(client: TestClient) -
 def test_partner_details_are_required(client: TestClient) -> None:
     partner = {**PARTNER, "partner_name": "   "}
     response = client.post(
-        "/api/v1/proposals", json={"invoice": saving_invoice(), "partner": partner}
+        "/api/v1/proposals/render", json={"invoice": saving_invoice(), "partner": partner}
     )
     assert response.status_code == 422
 

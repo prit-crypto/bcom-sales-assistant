@@ -7,13 +7,22 @@ init:  ## one-time setup: virtualenv + dev dependencies
 run:  ## development server on http://localhost:8000 (docs at /docs)
 	$(VENV)/uvicorn app.main:app --reload --port 8000
 
+db-up:  ## start PostgreSQL (port 5440) from the repository's docker-compose.yml
+	docker compose -f ../docker-compose.yml up -d db
+
+migrate:  ## bring the database to the latest migration
+	$(VENV)/alembic upgrade head
+
+revision:  ## new migration from the models: make revision m="what changed"
+	$(VENV)/alembic revision --autogenerate -m "$(m)"
+
 lint:
-	$(VENV)/ruff check app tests scripts
-	$(VENV)/ruff format --check app tests scripts
+	$(VENV)/ruff check app tests scripts alembic
+	$(VENV)/ruff format --check app tests scripts alembic
 
 fmt:
-	$(VENV)/ruff format app tests scripts
-	$(VENV)/ruff check --fix app tests scripts
+	$(VENV)/ruff format app tests scripts alembic
+	$(VENV)/ruff check --fix app tests scripts alembic
 
 typecheck:
 	$(VENV)/mypy app scripts
@@ -32,4 +41,4 @@ audit:  ## known vulnerabilities in the installed dependencies (needs the networ
 
 check: lint typecheck test
 
-.PHONY: init run lint fmt typecheck test openapi eval audit check
+.PHONY: init run db-up migrate revision lint fmt typecheck test openapi eval audit check

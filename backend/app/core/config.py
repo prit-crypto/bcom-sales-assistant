@@ -52,6 +52,19 @@ class Settings(BaseSettings):
     # Requests per minute per client for the endpoints that call the AI provider; 0 turns it off.
     rate_limit_per_minute: int = Field(default=20, ge=0, le=10_000)
 
+    # PostgreSQL (asyncpg driver). `docker compose up -d db` in the repository root starts one on port 5440.
+    database_url: str = Field(
+        default="postgresql+asyncpg://bcom:bcom@localhost:5440/bcom", repr=False
+    )
+    # Open a fresh connection per use instead of pooling (tests: TestClient runs its own event loop).
+    database_null_pool: bool = False
+    # Time zone for "today" in follow-up reminders (the partners work in the UAE).
+    timezone: str = "Asia/Dubai"
+    # Days after "Mark as sent" before the proposal shows under "Follow up today".
+    follow_up_days: int = Field(default=3, ge=1, le=60)
+    # Error reporting to Sentry; empty turns it off.
+    sentry_dsn: str = Field(default="", repr=False)
+
     # Re-uploading the same file returns the earlier reading instead of calling the AI again.
     extract_cache_size: int = Field(default=64, ge=0, le=10_000)
     extract_cache_ttl_seconds: int = Field(default=3600, ge=0)

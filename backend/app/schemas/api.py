@@ -112,3 +112,8 @@ class MessageResponse(ApiModel):
 
 class HealthResponse(ApiModel):
     status: Literal["ok"] = "ok"
+
+
+class ReadinessResponse(ApiModel):
+    status: Literal["ok", "unavailable"]
+    database: Literal["ok", "unreachable"]

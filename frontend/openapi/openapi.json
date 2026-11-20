@@ -742,7 +742,7 @@
         "title": "MessageResponse",
         "type": "object"
       },
-      "PartnerInput": {
+      "PartnerInput-Input": {
         "description": "Partner details entered on the proposal step.",
         "properties": {
           "booking_url": {
@@ -818,13 +818,499 @@
         "title": "PartnerInput",
         "type": "object"
       },
+      "PartnerInput-Output": {
+        "description": "Partner details entered on the proposal step.",
+        "properties": {
+          "booking_url": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Booking Url",
+            "type": "string"
+          },
+          "language": {
+            "default": "en",
+            "enum": [
+              "en",
+              "ar"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "partner_company": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Partner Company",
+            "type": "string"
+          },
+          "partner_email": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Partner Email",
+            "type": "string"
+          },
+          "partner_logo": {
+            "anyOf": [
+              {
+                "maxLength": 420000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Logo"
+          },
+          "partner_name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Partner Name",
+            "type": "string"
+          },
+          "partner_phone": {
+            "default": "",
+            "maxLength": 30,
+            "title": "Partner Phone",
+            "type": "string"
+          },
+          "prospect_name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Prospect Name",
+            "type": "string"
+          },
+          "validity_days": {
+            "maximum": 90.0,
+            "minimum": 7.0,
+            "title": "Validity Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "partner_name",
+          "partner_company",
+          "partner_phone",
+          "partner_email",
+          "prospect_name",
+          "validity_days",
+          "language",
+          "booking_url",
+          "partner_logo"
+        ],
+        "title": "PartnerInput",
+        "type": "object"
+      },
+      "ProposalCreate": {
+        "description": "Saved at \"Compare with BCOM rates\": the reviewed invoice, the what-if and the partner details.",
+        "properties": {
+          "invoice": {
+            "$ref": "#/components/schemas/InvoiceData-Input"
+          },
+          "partner": {
+            "$ref": "#/components/schemas/PartnerInput-Input"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/Scenario-Input"
+          },
+          "source_file_name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source File Name"
+          }
+        },
+        "required": [
+          "invoice",
+          "partner"
+        ],
+        "title": "ProposalCreate",
+        "type": "object"
+      },
+      "ProposalDetail": {
+        "properties": {
+          "compared_shipments": {
+            "title": "Compared Shipments",
+            "type": "integer"
+          },
+          "comparison": {
+            "$ref": "#/components/schemas/ComparisonResult"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "follow_up_due": {
+            "title": "Follow Up Due",
+            "type": "boolean"
+          },
+          "follow_up_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up On"
+          },
+          "has_saving": {
+            "title": "Has Saving",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invoice": {
+            "$ref": "#/components/schemas/InvoiceData-Output"
+          },
+          "lost_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lost Reason"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "monthly_saving": {
+            "title": "Monthly Saving",
+            "type": "number"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "partner": {
+            "$ref": "#/components/schemas/PartnerInput-Output"
+          },
+          "prospect_name": {
+            "title": "Prospect Name",
+            "type": "string"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/Scenario-Output"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "source_file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source File Name"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "sent",
+              "won",
+              "lost"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total_shipments": {
+            "title": "Total Shipments",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "yearly_saving": {
+            "title": "Yearly Saving",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "prospect_name",
+          "status",
+          "currency",
+          "monthly_saving",
+          "yearly_saving",
+          "has_saving",
+          "compared_shipments",
+          "total_shipments",
+          "follow_up_on",
+          "follow_up_due",
+          "created_at",
+          "updated_at",
+          "sent_at",
+          "decided_at",
+          "invoice",
+          "scenario",
+          "partner",
+          "message",
+          "notes",
+          "lost_reason",
+          "source_file_name",
+          "comparison",
+          "events"
+        ],
+        "title": "ProposalDetail",
+        "type": "object"
+      },
+      "ProposalEventCreate": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "pdf_downloaded",
+              "excel_downloaded",
+              "message_copied",
+              "whatsapp_opened"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "ProposalEventCreate",
+        "type": "object"
+      },
+      "ProposalEventOut": {
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "detail": {
+            "additionalProperties": true,
+            "title": "Detail",
+            "type": "object"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "detail",
+          "at"
+        ],
+        "title": "ProposalEventOut",
+        "type": "object"
+      },
+      "ProposalItem": {
+        "description": "One row of the pipeline list. Figures are the server's own, recalculated on every change.",
+        "properties": {
+          "compared_shipments": {
+            "title": "Compared Shipments",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "follow_up_due": {
+            "title": "Follow Up Due",
+            "type": "boolean"
+          },
+          "follow_up_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up On"
+          },
+          "has_saving": {
+            "title": "Has Saving",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "monthly_saving": {
+            "title": "Monthly Saving",
+            "type": "number"
+          },
+          "prospect_name": {
+            "title": "Prospect Name",
+            "type": "string"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "sent",
+              "won",
+              "lost"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total_shipments": {
+            "title": "Total Shipments",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "yearly_saving": {
+            "title": "Yearly Saving",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "prospect_name",
+          "status",
+          "currency",
+          "monthly_saving",
+          "yearly_saving",
+          "has_saving",
+          "compared_shipments",
+          "total_shipments",
+          "follow_up_on",
+          "follow_up_due",
+          "created_at",
+          "updated_at",
+          "sent_at",
+          "decided_at"
+        ],
+        "title": "ProposalItem",
+        "type": "object"
+      },
+      "ProposalList": {
+        "properties": {
+          "follow_up_due": {
+            "title": "Follow Up Due",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "follow_up_due"
+        ],
+        "title": "ProposalList",
+        "type": "object"
+      },
       "ProposalRequest": {
         "properties": {
           "invoice": {
             "$ref": "#/components/schemas/InvoiceData-Input"
           },
           "partner": {
-            "$ref": "#/components/schemas/PartnerInput"
+            "$ref": "#/components/schemas/PartnerInput-Input"
           },
           "scenario": {
             "$ref": "#/components/schemas/Scenario-Input"
@@ -835,6 +1321,108 @@
           "partner"
         ],
         "title": "ProposalRequest",
+        "type": "object"
+      },
+      "ProposalUpdate": {
+        "description": "Any subset of the fields; only the ones sent are changed (send `follow_up_on: null` to clear it).",
+        "properties": {
+          "follow_up_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up On"
+          },
+          "invoice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvoiceData-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lost_reason": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lost Reason"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "partner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PartnerInput-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Scenario-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "draft",
+                  "sent",
+                  "won",
+                  "lost"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "ProposalUpdate",
         "type": "object"
       },
       "ProviderInfo": {
@@ -876,6 +1464,32 @@
           "reads_images"
         ],
         "title": "ProviderInfo",
+        "type": "object"
+      },
+      "ReadinessResponse": {
+        "properties": {
+          "database": {
+            "enum": [
+              "ok",
+              "unreachable"
+            ],
+            "title": "Database",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "database"
+        ],
+        "title": "ReadinessResponse",
         "type": "object"
       },
       "Scenario-Input": {
@@ -1662,6 +2276,7 @@
     },
     "/api/v1/health": {
       "get": {
+        "description": "The process is up (liveness).",
         "operationId": "health_api_v1_health_get",
         "responses": {
           "200": {
@@ -1676,6 +2291,38 @@
           }
         },
         "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "description": "The app can do its work: the database answers (readiness, used by Docker healthchecks).",
+        "operationId": "ready_api_v1_health_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Ready",
         "tags": [
           "health"
         ]
@@ -1807,9 +2454,124 @@
       }
     },
     "/api/v1/proposals": {
+      "get": {
+        "description": "Newest change first, with the count of sent proposals due for a follow-up.",
+        "operationId": "list_proposals_api_v1_proposals_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "draft",
+                    "sent",
+                    "won",
+                    "lost"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "description": "Prospect name or reference",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Prospect name or reference",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Proposals",
+        "tags": [
+          "saved proposals"
+        ]
+      },
       "post": {
-        "description": "Builds the customer proposal PDF. Numbers are recalculated here, never taken from the browser.",
+        "description": "Saves a draft from the reviewed invoice. The figures are calculated here.",
         "operationId": "create_proposal_api_v1_proposals_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Proposal",
+        "tags": [
+          "saved proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/render": {
+      "post": {
+        "description": "Builds the customer proposal PDF from unsaved data (the live preview). Numbers are recalculated\nhere, never taken from the browser.",
+        "operationId": "render_proposal_api_v1_proposals_render_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1838,9 +2600,266 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Create Proposal",
+        "summary": "Render Proposal",
         "tags": [
           "proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{proposal_id}": {
+      "delete": {
+        "description": "Deletes the proposal, its data and its history. It can't be undone.",
+        "operationId": "delete_proposal_api_v1_proposals__proposal_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Proposal",
+        "tags": [
+          "saved proposals"
+        ]
+      },
+      "get": {
+        "operationId": "get_proposal_api_v1_proposals__proposal_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Proposal",
+        "tags": [
+          "saved proposals"
+        ]
+      },
+      "patch": {
+        "description": "Autosave and status changes. Only the fields sent are changed; figures are recalculated.",
+        "operationId": "update_proposal_api_v1_proposals__proposal_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Proposal",
+        "tags": [
+          "saved proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{proposal_id}/events": {
+      "post": {
+        "description": "Adds a line to the history: PDF or Excel downloaded, message copied, WhatsApp opened.",
+        "operationId": "record_event_api_v1_proposals__proposal_id__events_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalEventCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Event",
+        "tags": [
+          "saved proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{proposal_id}/excel": {
+      "get": {
+        "description": "The comparison as an Excel workbook, built again from the saved data.",
+        "operationId": "proposal_excel_api_v1_proposals__proposal_id__excel_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "The comparison as Excel"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Proposal Excel",
+        "tags": [
+          "saved proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{proposal_id}/pdf": {
+      "get": {
+        "description": "The proposal PDF, built again from the saved data.",
+        "operationId": "proposal_pdf_api_v1_proposals__proposal_id__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "The proposal PDF"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Proposal Pdf",
+        "tags": [
+          "saved proposals"
         ]
       }
     }

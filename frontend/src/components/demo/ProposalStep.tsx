@@ -95,7 +95,7 @@ export function ProposalStep({
         request.current = controller;
         setStatus("updating");
         setError(null);
-        postForBlob("/proposals", { invoice, partner: partnerForRequest(partner), scenario }, controller.signal)
+        postForBlob("/proposals/render", { invoice, partner: partnerForRequest(partner), scenario }, controller.signal)
           .then((blob) => {
             onProposalReady({
               url: URL.createObjectURL(blob),

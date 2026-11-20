@@ -16,6 +16,10 @@ dependencies = [
     "weasyprint>=63",            # proposal HTML -> PDF (needs pango system libs)
     "structlog>=24.4",           # structured logs with request ids (team standard)
     "openpyxl>=3.1",             # Excel export of the comparison; reading .xlsx statements
+    "sqlalchemy[asyncio]>=2.0.36", # database (team standard: async SQLAlchemy + repositories)
+    "asyncpg>=0.30",             # PostgreSQL driver
+    "alembic>=1.14",             # database migrations
+    "sentry-sdk[fastapi]>=2.19", # optional error reporting (SENTRY_DSN)
 ]
 
 [project.optional-dependencies]

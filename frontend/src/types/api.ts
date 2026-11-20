@@ -4,7 +4,7 @@
  * because FastAPI's exception handlers are not part of the OpenAPI description.
  */
 import type {
-  PartnerInput,
+  PartnerInputInput as PartnerInput,
   ScenarioInput,
   ShipmentComparison as GeneratedShipmentComparison,
 } from "@/lib/api/generated";
@@ -19,10 +19,15 @@ export type {
   GroupTotal,
   InvoiceCheck,
   MessageResponse,
+  ProposalDetail,
+  ProposalItem,
+  ProposalList,
   ProviderInfo,
   ShipmentComparison,
   TransitTradeoff,
 } from "@/lib/api/generated";
+
+export type ProposalStatus = import("@/lib/api/generated").ProposalItem["status"];
 
 export type ShipmentStatus = GeneratedShipmentComparison["status"];
 

@@ -385,7 +385,7 @@ def test_arabic_pdf_and_message_endpoints(client: TestClient) -> None:
         "invoice": sample_one_invoice().model_dump(),
         "partner": {**PARTNER, "language": "ar", "booking_url": "https://cal.example.com/x"},
     }
-    pdf = client.post("/api/v1/proposals", json=body)
+    pdf = client.post("/api/v1/proposals/render", json=body)
     assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
     assert "-ar.pdf" in pdf.headers["content-disposition"]
     message = client.post("/api/v1/messages", json=body).json()["message"]

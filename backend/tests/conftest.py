@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 from collections.abc import Callable, Iterator
@@ -11,10 +12,16 @@ from fastapi.testclient import TestClient
 os.environ["AI_PROVIDER"] = "mock"
 os.environ["GEMINI_API_KEY"] = ""
 os.environ["OPENAI_API_KEY"] = ""
+# A separate, throwaway database (created by docker/postgres/create-test-db.sql); override in CI.
+os.environ["DATABASE_URL"] = os.environ.get(
+    "TEST_DATABASE_URL", "postgresql+asyncpg://bcom:bcom@localhost:5440/bcom_test"
+)
+os.environ["DATABASE_NULL_POOL"] = "true"
 
 from app.clients.ai.factory import get_ai_provider  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
 from app.core.rate_limit import limiter  # noqa: E402
+from app.db.session import get_engine, get_sessionmaker  # noqa: E402
 from app.schemas.invoice import InvoiceData, Shipment  # noqa: E402
 from app.services.invoice.cache import extraction_cache  # noqa: E402
 
@@ -28,14 +35,47 @@ def _fresh_settings() -> Iterator[None]:
         get_ai_provider.cache_clear()
         limiter.reset()
         extraction_cache.clear()
+        get_engine.cache_clear()
+        get_sessionmaker.cache_clear()
 
     reset()
     yield
     reset()
 
 
+BACKEND = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(scope="session")
+def _migrated() -> None:
+    """Brings the test database to the latest migration once per run."""
+    from alembic.config import Config
+
+    from alembic import command
+
+    command.upgrade(Config(str(BACKEND / "alembic.ini")), "head")
+
+
+def _truncate() -> None:
+    from sqlalchemy import text
+
+    async def run() -> None:
+        async with get_engine().begin() as connection:
+            await connection.execute(
+                text("TRUNCATE proposals, proposal_events RESTART IDENTITY CASCADE")
+            )
+
+    asyncio.run(run())
+
+
 @pytest.fixture
-def client() -> TestClient:
+def clean_db(_migrated: None) -> None:
+    """An empty database for this test."""
+    _truncate()
+
+
+@pytest.fixture
+def client(clean_db: None) -> TestClient:
     from app.main import create_app
 
     return TestClient(create_app())
