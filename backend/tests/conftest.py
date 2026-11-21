@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 os.environ["AI_PROVIDER"] = "mock"
 os.environ["GEMINI_API_KEY"] = ""
 os.environ["OPENAI_API_KEY"] = ""
-# A separate, throwaway database (created by docker/postgres/create-test-db.sql); override in CI.
+# A separate, throwaway database (created by tests/create-test-db.sql); override in CI.
 os.environ["DATABASE_URL"] = os.environ.get(
     "TEST_DATABASE_URL", "postgresql+asyncpg://bcom:bcom@localhost:5440/bcom_test"
 )

@@ -1,0 +1,59 @@
+# The whole app: PostgreSQL + backend API + frontend.
+#   cp .env.example .env      # then fill in the AI key and a database password
+#   docker compose up --build -d
+# Only the frontend is published (http://localhost:${FRONTEND_PORT:-3000}). The browser calls the frontend at
+# /api/v1 and the frontend forwards those requests to the backend, so the backend and database stay internal.
+name: bcom
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bcom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bcom}
+      POSTGRES_DB: ${POSTGRES_DB:-bcom}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    # AI provider, keys and other backend settings (see backend/.env.example for every option).
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-bcom}:${POSTGRES_PASSWORD:-bcom}@db:5432/${POSTGRES_DB:-bcom}
+      # The address customers open from their link; the browser only ever talks to the frontend.
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
+      CORS_ORIGINS: ${PUBLIC_APP_URL:-http://localhost:3000}
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Where the frontend server forwards /api/v1 (fixed when the image is built).
+        BACKEND_URL: http://backend:8000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db-data:

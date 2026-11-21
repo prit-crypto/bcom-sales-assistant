@@ -47,6 +47,18 @@ EDITABLE_FIELDS: tuple[EditableField, ...] = (
     "charge",
 )
 
+# Limits shared by request validation (below) and by the normalisation of reader output, so a value a
+# reader returns can never be rejected later by the API.
+MAX_SHORT_TEXT = 80
+MAX_LONG_TEXT = 120
+MAX_WEIGHT_KG = 100_000
+MAX_PIECES = 100_000
+MAX_CHARGE = 10_000_000
+MAX_SUBTOTAL = 1_000_000_000
+MAX_SHIPMENTS = 2000
+MAX_WARNINGS = 100
+MAX_WARNING_LENGTH = 500
+
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _COUNTRY = re.compile(r"^[A-Z]{2}$")
 
@@ -70,8 +82,12 @@ def _check_iso_date(value: str | None) -> str | None:
 
 
 # The length limit sits on the text itself, so an empty (None) value is accepted, not checked for length.
-Text80 = Annotated[Annotated[str, Field(max_length=80)] | None, BeforeValidator(_blank_to_none)]
-Text120 = Annotated[Annotated[str, Field(max_length=120)] | None, BeforeValidator(_blank_to_none)]
+Text80 = Annotated[
+    Annotated[str, Field(max_length=MAX_SHORT_TEXT)] | None, BeforeValidator(_blank_to_none)
+]
+Text120 = Annotated[
+    Annotated[str, Field(max_length=MAX_LONG_TEXT)] | None, BeforeValidator(_blank_to_none)
+]
 IsoDate = Annotated[str | None, BeforeValidator(_blank_to_none), AfterValidator(_check_iso_date)]
 CountryCode = Annotated[
     Annotated[str, Field(max_length=3)] | None,
@@ -90,10 +106,10 @@ class Shipment(ApiModel):
     origin_country: CountryCode = None
     destination_city: Text80 = None
     destination_country: CountryCode = None
-    weight_kg: Annotated[float | None, Field(gt=0, le=100_000)] = None
-    pieces: Annotated[int | None, Field(gt=0, le=100_000)] = None
+    weight_kg: Annotated[float | None, Field(gt=0, le=MAX_WEIGHT_KG)] = None
+    pieces: Annotated[int | None, Field(gt=0, le=MAX_PIECES)] = None
     service: ServiceLevel | None = None
-    charge: Annotated[float | None, Field(gt=0, le=10_000_000)] = None
+    charge: Annotated[float | None, Field(gt=0, le=MAX_CHARGE)] = None
     # The partner can exclude a row from the comparison.
     included: bool = True
     # Values the reader could not read clearly; cleared by the screen once the partner edits them.
@@ -111,9 +127,9 @@ class InvoiceData(ApiModel):
     period_end: IsoDate = None
     currency: Annotated[str | None, Field(pattern=r"^[A-Z]{3}$")] = None
     # Total of the shipment lines excluding VAT, as printed on the invoice (for the totals check).
-    printed_subtotal: Annotated[float | None, Field(ge=0, le=1_000_000_000)] = None
-    shipments: list[Shipment] = Field(default_factory=list, max_length=2000)
+    printed_subtotal: Annotated[float | None, Field(ge=0, le=MAX_SUBTOTAL)] = None
+    shipments: list[Shipment] = Field(default_factory=list, max_length=MAX_SHIPMENTS)
     # Notes about things the reader could not read or was unsure about.
-    warnings: list[Annotated[str, Field(max_length=500)]] = Field(
-        default_factory=list, max_length=100
+    warnings: list[Annotated[str, Field(max_length=MAX_WARNING_LENGTH)]] = Field(
+        default_factory=list, max_length=MAX_WARNINGS
     )

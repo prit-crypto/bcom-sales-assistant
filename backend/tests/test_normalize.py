@@ -83,3 +83,56 @@ def test_rounds_fractional_pieces_to_at_least_one() -> None:
     shipment = raw_invoice().shipments[0].model_copy(update={"pieces": "0.4"})
     invoice = normalize_invoice(raw_invoice(shipments=[shipment]))
     assert invoice.shipments[0].pieces == 1
+
+
+def shipment(**overrides: object) -> RawShipment:
+    values: dict[str, object] = {
+        "date": "2026-10-02", "reference": "A", "origin_city": "Dubai", "origin_country": "AE",
+        "destination_city": "Riyadh", "destination_country": "SA", "weight_kg": 2, "pieces": 1,
+        "service": "Express Worldwide", "charge": 120,
+    }  # fmt: skip
+    values.update(overrides)
+    return RawShipment.model_validate(values)
+
+
+def test_shortens_over_long_text_instead_of_failing() -> None:
+    # A reader may return a company name together with its full address, or a long reference.
+    invoice = normalize_invoice(
+        raw_invoice(
+            customer_name="Gulf Spice Traders LLC, Shop 22, Spice Souk Road, Deira, Dubai " * 3,
+            invoice_number="N" * 90,
+            shipments=[shipment(reference="R" * 100, destination_city="C" * 90)],
+        )
+    )
+    assert invoice.customer_name is not None and len(invoice.customer_name) <= 120
+    assert invoice.invoice_number == "N" * 80
+    assert invoice.shipments[0].reference == "R" * 80
+    assert invoice.shipments[0].destination_city == "C" * 80
+    assert "4 text values were too long and shortened" in invoice.warnings[0]
+    # Shortened text does not affect the price: the shipment is still compared.
+    assert compare_invoice(invoice).summary.compared_shipments == 1
+
+
+def test_leaves_impossible_numbers_empty_for_the_partner_to_fix() -> None:
+    invoice = normalize_invoice(
+        raw_invoice(shipments=[shipment(weight_kg=150_000, charge=12_000_000, pieces=200_000)])
+    )
+    row = invoice.shipments[0]
+    assert (row.weight_kg, row.charge, row.pieces) == (None, None, None)
+    assert "3 numbers were far too large" in invoice.warnings[0]
+    # The emptied cells show as missing, so the row waits for the partner instead of being priced.
+    result = compare_invoice(invoice)
+    assert result.rows[0].status == "missing_data"
+    assert result.rows[0].missing_fields == ["weight_kg", "charge"]
+
+
+def test_values_at_the_limit_are_kept_unchanged() -> None:
+    invoice = normalize_invoice(
+        raw_invoice(
+            customer_name="X" * 120,
+            shipments=[shipment(reference="R" * 80, weight_kg=100_000, charge=10_000_000)],
+        )
+    )
+    assert invoice.customer_name == "X" * 120
+    assert invoice.shipments[0].weight_kg == 100_000
+    assert not any("too long" in warning or "too large" in warning for warning in invoice.warnings)

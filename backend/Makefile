@@ -1,8 +1,12 @@
 VENV := .venv/bin
+PYTHON ?= python3.12
+# The code is not installed as a package: make the backend folder importable for scripts and tools.
+export PYTHONPATH := $(CURDIR)
 
-init:  ## one-time setup: virtualenv + dev dependencies
-	uv venv --python 3.12 .venv
-	uv pip install -e ".[dev]" --python $(VENV)/python
+init:  ## one-time setup: virtualenv + runtime and development packages (exact versions)
+	$(PYTHON) -m venv .venv
+	$(VENV)/pip install --upgrade pip
+	$(VENV)/pip install -r requirements-dev.txt
 
 run:  ## development server on http://localhost:8000 (docs at /docs)
 	$(VENV)/uvicorn app.main:app --reload --port 8000
@@ -28,7 +32,7 @@ typecheck:
 	$(VENV)/mypy app scripts
 
 test:
-	$(VENV)/pytest -q
+	$(VENV)/python -m pytest -q
 
 openapi:  ## refresh frontend/openapi/openapi.json after changing the API
 	$(VENV)/python scripts/export_openapi.py
@@ -39,8 +43,8 @@ eval:  ## reading accuracy of the active AI provider on all sample invoices (nee
 corrections-report:  ## what partners corrected in each reader's work, and the hints the AI now gets
 	$(VENV)/python scripts/corrections_report.py
 
-audit:  ## known vulnerabilities in the installed dependencies (needs the network)
-	$(VENV)/pip-audit --skip-editable
+audit:  ## known vulnerabilities in the runtime dependencies (needs the network)
+	$(VENV)/pip-audit -r requirements.txt
 
 check: lint typecheck test
 

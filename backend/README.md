@@ -12,29 +12,24 @@ same every time, whichever AI provider is active. The frontend never calculates 
 
 ## Requirements
 
-Python 3.12 with [uv](https://docs.astral.sh/uv/), Docker (for PostgreSQL), and Pango for the PDF
+Python 3.12 (packages installed with pip from `requirements*.txt`), Docker (for PostgreSQL), and Pango for the PDF
 (`sudo apt install libpango-1.0-0 libpangoft2-1.0-0` on Debian/Ubuntu; present on most desktops). The
 [Dockerfile](Dockerfile) installs Pango and the Arabic fonts itself.
 
 ## Run in Docker
 
-[docker-compose.yml](docker-compose.yml) in this folder runs PostgreSQL and the API:
+The whole app (database, this API and the frontend) runs from the [docker-compose.yml](../docker-compose.yml) in the
+repository root – see the [root README](../README.md). There the API is internal: the browser reaches it through the
+frontend at `/api/v1`, and only the frontend's port is published. The container applies database migrations on
+start; its settings come from the root `.env` (without one it runs in mock mode).
 
-```bash
-docker compose up -d --build   # PostgreSQL on 5440 + API on http://localhost:8080 (docs at /docs)
-docker compose up -d db        # PostgreSQL only, for development with `make run`
-docker compose logs -f backend # follow the API's logs
-docker compose down            # stop (the data stays in the volume)
-```
-
-The container applies database migrations on start and reads its settings from `.env` in this folder when it exists
-(without one it runs in mock mode). Inside Docker the database address, `CORS_ORIGINS` and `PUBLIC_APP_URL` are set
-by the compose file for the frontend container on http://localhost:3080.
+[docker-compose.yml](docker-compose.yml) in this folder is for development only: it starts PostgreSQL on
+localhost:5440 for `make run` and the tests (`make db-up`).
 
 ## Development setup
 
 ```bash
-make init                 # creates .venv and installs app + dev dependencies (uses uv)
+make init                 # creates .venv, installs requirements-dev.txt (runtime + dev packages, exact versions)
 cp .env.example .env      # AI_PROVIDER=mock works with no key
 make db-up                # PostgreSQL 17 in Docker on port 5440 (bcom, plus bcom_test and bcom_e2e)
 make migrate              # create / update the tables (Alembic)
@@ -181,7 +176,7 @@ tests, and check that migrations go down and up again.
 | `AI_PROVIDER` | What it does | Needs | Cost |
 |---|---|---|---|
 | `mock` (default) | Reads only the SwiftLine sample PDFs, uses a fixed message template | nothing | $0 |
-| `gemini` | Google Gemini reads any PDF or photo and writes the message | `GEMINI_API_KEY` | Free tier |
+| `gemini` | Google Gemini reads any PDF or photo and writes the message | `GEMINI_API_KEY` | Paid key recommended |
 | `openai` | OpenAI reads any PDF or photo and writes the message | `OPENAI_API_KEY` | Paid (small) |
 
 Restart the server after changing `.env`. Gemini retries a busy model twice, then switches to
@@ -189,10 +184,23 @@ Restart the server after changing `.env`. Gemini retries a busy model twice, the
 message rather than a cut-off request. Every provider's output is validated against the same schema
 ([app/schemas/raw_invoice.py](app/schemas/raw_invoice.py)) and normalised the same way.
 
-The Gemini results recorded on 18 Nov 2026 (all 8 samples read 100% correctly by `gemini-3.5-flash-lite`) were
-measured with the previous TypeScript version, whose output schema used camelCase field names. The schema now uses
-snake_case; run `make eval` with a key to re-check all eight samples in one go. OpenAI has not been run against a
-live key yet.
+### Gemini model choice (benchmarked 19 Nov 2026, paid key, thinking `low`)
+
+Each model read 10 files – the 8 samples plus Sample 2 photographed at a 0.9° and a 2° tilt – through this API;
+values were checked against the data the samples were generated from, matched by waybill number. Prices are
+Google's paid-tier rates per 1M tokens (input / output) as of 21 Nov 2026.
+
+| Model | Correct values | Tilted photos | Avg per file | Price |
+|---|---|---|---|---|
+| **`gemini-3.8-flash`** (default) | 100% | both correct | 19.8 s | $0.75 / $3.75 (doubles on 1 Jan 2027) |
+| `gemini-3.5-flash-lite` (fallback) | 95.4% | misread the 0.9° photo | 9.6 s | $0.30 / $2.50 |
+| `gemini-4-hydrogen` | 100% | both correct | 20.7 s | $1.50 / $7.50 |
+| `gemini-4-neon` | 100% | both correct | 32 s | – |
+
+3.8 Flash is the default: fully correct at half Hydrogen's price. Thinking tokens are billed as output, and
+`minimal` thinking is rejected by 3.8 Flash, so `low` is the cheapest setting. Re-check when the price changes in
+January 2027 (`make eval` reads all eight samples with the active settings). OpenAI has not been run against a live
+key yet.
 
 ## Layout
 

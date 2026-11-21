@@ -1,22 +1,29 @@
-FROM python:3.12-slim
+# Production image of the backend API (FastAPI + WeasyPrint for the proposal PDF).
 
+# --- build: install the runtime packages into a virtualenv ---
+FROM python:3.12-slim AS build
+WORKDIR /build
+COPY requirements.txt ./
+RUN python -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# --- runtime: only the virtualenv, the app and the system libraries it needs ---
+FROM python:3.12-slim
 # WeasyPrint (proposal PDF) needs Pango and HarfBuzz; fonts-noto-core has the Arabic fonts for Arabic proposals.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-liberation fonts-noto-core \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 10001 --create-home app
 
-COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /usr/local/bin/uv
-
+COPY --from=build /opt/venv /opt/venv
 WORKDIR /app
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
+COPY --chown=app:app app ./app
+COPY --chown=app:app alembic.ini ./
+COPY --chown=app:app alembic ./alembic
 
-COPY app ./app
-COPY alembic.ini ./
-COPY alembic ./alembic
-RUN uv sync --frozen --no-dev
-
-ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
+ENV PATH="/opt/venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+USER app
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=5 \
     CMD python -c "import urllib.request,sys; sys.exit(urllib.request.urlopen('http://localhost:8000/api/v1/health/ready').status != 200)"

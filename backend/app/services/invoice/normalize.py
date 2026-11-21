@@ -3,7 +3,22 @@
 import re
 
 from app.core.config import get_settings
-from app.schemas.invoice import EDITABLE_FIELDS, EditableField, InvoiceData, ServiceLevel, Shipment
+from app.schemas.invoice import (
+    EDITABLE_FIELDS,
+    MAX_CHARGE,
+    MAX_LONG_TEXT,
+    MAX_PIECES,
+    MAX_SHIPMENTS,
+    MAX_SHORT_TEXT,
+    MAX_SUBTOTAL,
+    MAX_WARNING_LENGTH,
+    MAX_WARNINGS,
+    MAX_WEIGHT_KG,
+    EditableField,
+    InvoiceData,
+    ServiceLevel,
+    Shipment,
+)
 from app.schemas.raw_invoice import LooseNumber, RawInvoice, RawShipment
 from app.services.invoice.validation import get_missing_fields
 from app.services.pricing.rate_card import RATE_CARD_CURRENCY
@@ -33,6 +48,47 @@ _EXPRESS = re.compile(r"(express|priority|next day|same day|worldwide|premium|^e
 def _clean_text(value: str | None) -> str | None:
     trimmed = value.strip() if value else ""
     return trimmed or None
+
+
+class _Fixes:
+    """Counts values from the reader that had to be shortened or dropped to fit the API limits.
+
+    A reader (especially an AI) can return a name together with its whole address, or misread a total as a
+    weight. Those values must not make the whole invoice fail: text is shortened and impossible numbers are
+    left empty, so the partner sees a highlighted cell and can correct it.
+    """
+
+    def __init__(self) -> None:
+        self.shortened = 0
+        self.cleared = 0
+
+    def text(self, value: str | None, limit: int) -> str | None:
+        cleaned = _clean_text(value)
+        if cleaned is not None and len(cleaned) > limit:
+            self.shortened += 1
+            return cleaned[:limit].rstrip()
+        return cleaned
+
+    def number(self, value: LooseNumber, limit: float) -> float | None:
+        number = normalize_number(value)
+        if number is not None and number > limit:
+            self.cleared += 1
+            return None
+        return number
+
+    def warnings(self) -> list[str]:
+        notes: list[str] = []
+        if self.shortened:
+            notes.append(
+                f"{self.shortened} text value{'s were' if self.shortened > 1 else ' was'} too long and "
+                "shortened (for example a name printed together with its address). Please check them."
+            )
+        if self.cleared:
+            notes.append(
+                f"{self.cleared} number{'s were' if self.cleared > 1 else ' was'} far too large to be "
+                "right (probably misread) and left empty. Fill in the highlighted cells."
+            )
+        return notes
 
 
 def normalize_country(value: str | None) -> str | None:
@@ -105,30 +161,36 @@ def normalize_uncertain(names: list[str]) -> list[EditableField]:
     return found
 
 
-def _normalize_shipment(raw: RawShipment, index: int) -> Shipment:
-    pieces = normalize_number(raw.pieces)
+def _normalize_shipment(raw: RawShipment, index: int, fixes: _Fixes) -> Shipment:
+    pieces = fixes.number(raw.pieces, MAX_PIECES)
     return Shipment(
         id=f"s{index + 1}",
         date=normalize_date(raw.date),
-        reference=_clean_text(raw.reference),
-        origin_city=_clean_text(raw.origin_city),
+        reference=fixes.text(raw.reference, MAX_SHORT_TEXT),
+        origin_city=fixes.text(raw.origin_city, MAX_SHORT_TEXT),
         origin_country=normalize_country(raw.origin_country),
-        destination_city=_clean_text(raw.destination_city),
+        destination_city=fixes.text(raw.destination_city, MAX_SHORT_TEXT),
         destination_country=normalize_country(raw.destination_country),
-        weight_kg=normalize_number(raw.weight_kg),
+        weight_kg=fixes.number(raw.weight_kg, MAX_WEIGHT_KG),
         pieces=None if pieces is None else max(1, int(round_half_up(pieces))),
         service=normalize_service(raw.service),
-        charge=normalize_number(raw.charge),
+        charge=fixes.number(raw.charge, MAX_CHARGE),
         included=True,
         uncertain_fields=normalize_uncertain(raw.uncertain_fields),
     )
 
 
 def normalize_invoice(raw: RawInvoice) -> InvoiceData:
+    fixes = _Fixes()
     shipments = [
-        _normalize_shipment(shipment, index) for index, shipment in enumerate(raw.shipments)
+        _normalize_shipment(shipment, index, fixes)
+        for index, shipment in enumerate(raw.shipments[:MAX_SHIPMENTS])
     ]
-    warnings = [note.strip()[:500] for note in raw.notes if note.strip()]
+    warnings = [note.strip()[:MAX_WARNING_LENGTH] for note in raw.notes if note.strip()]
+    if len(raw.shipments) > MAX_SHIPMENTS:
+        warnings.append(
+            f"The invoice has {len(raw.shipments)} shipment lines; only the first {MAX_SHIPMENTS} are used."
+        )
 
     incomplete = sum(1 for shipment in shipments if get_missing_fields(shipment))
     if incomplete:
@@ -146,6 +208,13 @@ def normalize_invoice(raw: RawInvoice) -> InvoiceData:
             "The billing period was not found. The savings treat this invoice as one month of "
             "shipping. Enter the period if it covers a different length of time."
         )
+
+    carrier_name = fixes.text(raw.carrier_name, MAX_LONG_TEXT)
+    customer_name = fixes.text(raw.customer_name, MAX_LONG_TEXT)
+    invoice_number = fixes.text(raw.invoice_number, MAX_SHORT_TEXT)
+    printed_subtotal = fixes.number(raw.invoice_subtotal, MAX_SUBTOTAL)
+    # Last, so the counts include every value; first in the list, so they are not cut off by the limit.
+    warnings = fixes.warnings() + warnings
 
     raw_currency = _clean_text(raw.currency)
     currency = raw_currency.upper() if raw_currency else None
@@ -169,14 +238,14 @@ def normalize_invoice(raw: RawInvoice) -> InvoiceData:
             )
 
     return InvoiceData(
-        carrier_name=_clean_text(raw.carrier_name),
-        customer_name=_clean_text(raw.customer_name),
-        invoice_number=_clean_text(raw.invoice_number),
+        carrier_name=carrier_name,
+        customer_name=customer_name,
+        invoice_number=invoice_number,
         invoice_date=normalize_date(raw.invoice_date),
         period_start=period_start,
         period_end=period_end,
         currency=currency,
-        printed_subtotal=normalize_number(raw.invoice_subtotal),
-        shipments=shipments[:2000],
-        warnings=warnings[:100],
+        printed_subtotal=printed_subtotal,
+        shipments=shipments,
+        warnings=warnings[:MAX_WARNINGS],
     )

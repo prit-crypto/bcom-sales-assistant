@@ -1,31 +1,69 @@
-# env files (keys live here – never commit)
+# Secrets and local settings – keys live here, never commit. Templates (.env.example) are kept.
 .env
-.env*.local
+.env.*
+!.env.example
+
+# Hosting-provider config stays out of the repository (set up on the provider instead)
+render.yaml
+*.render.yaml
+fly.toml
+vercel.json
+.vercel/
+netlify.toml
+.netlify/
+railway.json
+railway.toml
+Procfile
+
+# Local Docker overrides (ports, mounts for one machine)
+docker-compose.override.yml
+compose.override.yaml
+
+# Databases, dumps and backups
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+backups/
 
 # frontend (Next.js)
 node_modules/
 .next/
 .next-e2e/
 .next-shot/
-test-results/
-playwright-report/
 out/
 next-env.d.ts
 *.tsbuildinfo
 npm-debug.log*
+# written by `next dev` for coding assistants; not part of the project
+frontend/AGENTS.md
 
 # backend (Python)
 .venv/
 __pycache__/
 *.py[cod]
+build/
+dist/
+*.egg-info/
+
+# Test results, coverage and tool caches
+test-results/
+playwright-report/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .coverage
-
-# misc
-.DS_Store
+htmlcov/
 coverage/
 
-# reports
+# Reports generated locally
 backend/eval-report.md
+
+# Logs, editor and OS files, scratch
+*.log
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+tmp/
+scratch/

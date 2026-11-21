@@ -1,12 +1,14 @@
 # Production image of the frontend (Next.js standalone server).
-# The API address is fixed at build time: docker build --build-arg NEXT_PUBLIC_API_URL=https://api.example.com/api/v1
+# The browser calls this server at /api/v1; the server forwards those requests to the backend, whose
+# internal address is fixed when the image is built:
+#   docker build --build-arg BACKEND_URL=http://backend:8000 .
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-ARG NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_TELEMETRY_DISABLED=1
+ARG BACKEND_URL=http://backend:8000
+ENV BACKEND_URL=$BACKEND_URL NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 FROM node:22-alpine

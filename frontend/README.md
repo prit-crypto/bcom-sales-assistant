@@ -17,28 +17,24 @@ container.
 
 ## Run in Docker
 
-[docker-compose.yml](docker-compose.yml) in this folder runs the app on http://localhost:3080. Start the backend
-first (`docker compose up -d --build` in `../backend`), then:
-
-```bash
-docker compose up -d --build   # app on http://localhost:3080, calling the API on http://localhost:8080
-docker compose down            # stop
-```
-
-The browser calls the API directly, and its address is fixed when the image is built. To use another server:
-`BCOM_API_URL=https://api.example.com/api/v1 docker compose up -d --build` (that server's `CORS_ORIGINS` must allow
-this app's address).
+The whole app (database, backend and this frontend) runs from the [docker-compose.yml](../docker-compose.yml) in the
+repository root – see the [root README](../README.md). The browser only talks to this frontend: requests to
+`/api/v1/*` are forwarded by the Next.js server to the backend (`rewrites` in [next.config.ts](next.config.ts)),
+so the backend is never published. The backend's internal address is fixed when the image is built
+(`BACKEND_URL` build argument, `http://backend:8000` in Docker Compose).
 
 ## Development setup
 
 ```bash
 npm install
-cp .env.example .env.local   # NEXT_PUBLIC_API_URL, default http://localhost:8000/api/v1
+cp .env.example .env.local   # BACKEND_URL, default http://localhost:8000
 npm run dev                  # http://localhost:3000 (start the backend first)
 ```
 
-The backend must allow this origin in its `CORS_ORIGINS` (default `http://localhost:3000`). With no AI key the
-backend runs in **mock mode**: the bundled sample invoices work, other invoices need Gemini or OpenAI.
+The development server forwards `/api/v1/*` to `BACKEND_URL`, so no CORS setup is needed. (Setting
+`NEXT_PUBLIC_API_URL` to an absolute URL makes the browser call a backend directly instead – the browser tests do
+this; that backend's `CORS_ORIGINS` must then allow the app's address.) With no AI key the backend runs in
+**mock mode**: the bundled sample invoices work, other invoices need Gemini or OpenAI.
 
 | Command | Purpose |
 |---|---|

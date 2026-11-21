@@ -1,6 +1,17 @@
+# Keep secrets, development files and build output out of the frontend image.
+.env
+.env.*
+!.env.example
 node_modules
 .next
 .next-e2e
+.next-shot
+out
 test-results
 playwright-report
-.env*.local
+e2e
+playwright.config.ts
+scripts
+docker-compose.yml
+*.md
+AGENTS.md

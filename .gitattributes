@@ -1,0 +1,26 @@
+# Normalise line endings: text files are stored with LF, whatever the developer's OS.
+* text=auto eol=lf
+
+# Binary files: never diffed or line-ending converted.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.ico    binary
+*.pdf    binary
+*.xlsx   binary
+*.woff   binary
+*.woff2  binary
+*.db     binary
+*.sqlite binary
+
+# Generated files: collapsed in GitHub diffs and left out of the language statistics.
+frontend/package-lock.json            linguist-generated=true
+frontend/openapi/openapi.json         linguist-generated=true
+frontend/src/lib/api/generated/**     linguist-generated=true
+
+# Sample invoices and test fixtures: data, not code.
+frontend/public/samples/**            linguist-vendored=true
+frontend/public/templates/**          linguist-vendored=true
+backend/tests/fixtures/**             linguist-vendored=true

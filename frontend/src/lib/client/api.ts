@@ -1,7 +1,11 @@
 import type { ApiErrorBody } from "@/types/api";
 
-/** Base URL of the backend API, e.g. http://localhost:8000/api/v1 (set in .env.local). */
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1").replace(/\/+$/, "");
+/**
+ * Base URL of the backend API. By default the same site ("/api/v1"): the Next.js server forwards those
+ * requests to the backend (see `rewrites` in next.config.ts), so the backend never has to be public.
+ * Set NEXT_PUBLIC_API_URL to an absolute URL only to call a backend directly (the browser tests do).
+ */
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/+$/, "");
 
 /** Error from the backend, with a message that is safe to show. */
 export class ApiRequestError extends Error {

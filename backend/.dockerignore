@@ -1,8 +1,19 @@
-.venv
+# Keep secrets, development files and caches out of the backend image.
 .env
+.env.*
+!.env.example
+.venv
 **/__pycache__
+**/*.py[cod]
 .pytest_cache
 .mypy_cache
 .ruff_cache
+.coverage
+htmlcov
 tests
+scripts
+requirements-dev.txt
+Makefile
+docker-compose.yml
+*.md
 eval-report.md

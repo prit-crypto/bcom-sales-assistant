@@ -1,8 +1,12 @@
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 
+from app.clients.ai.mock import MockProvider
 from app.core.config import get_settings
+from app.schemas.raw_invoice import RawInvoice
+from app.services.invoice.upload import InvoiceFile
 from tests.conftest import make_invoice, make_shipment, sample_pdf
 
 PARTNER = {
@@ -151,3 +155,37 @@ def test_blank_text_fields_are_accepted(client: TestClient) -> None:
     response = client.post("/api/v1/comparisons", json={"invoice": invoice.model_dump()})
     assert response.status_code == 200
     assert response.json()["rows"][0]["status"] == "missing_data"
+
+
+def test_extract_loads_unusual_ai_values_for_review(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An AI answer with an over-long name and a misread weight still loads, instead of a 500."""
+
+    class OddReader:
+        info = MockProvider.info
+
+        async def extract_invoice(self, file: InvoiceFile) -> RawInvoice:
+            return RawInvoice.model_validate(
+                {
+                    "carrier_name": "X", "customer_name": "Y" * 300, "invoice_number": "1",
+                    "invoice_date": None, "period_start": None, "period_end": None,
+                    "currency": "AED", "notes": [],
+                    "shipments": [{
+                        "date": "2026-10-02", "reference": "A", "origin_city": "Dubai",
+                        "origin_country": "AE", "destination_city": "Riyadh",
+                        "destination_country": "SA", "weight_kg": 150_000, "pieces": 1,
+                        "service": "Express", "charge": 120,
+                    }],
+                }
+            )  # fmt: skip
+
+    monkeypatch.setattr("app.services.invoice.extract.get_ai_provider", lambda: OddReader())
+    response = client.post(
+        "/api/v1/invoices/extract",
+        files={"file": ("invoice.pdf", b"%PDF-1.4 test", "application/pdf")},
+    )
+    assert response.status_code == 200
+    invoice = response.json()["invoice"]
+    assert len(invoice["customer_name"]) == 120
+    assert invoice["shipments"][0]["weight_kg"] is None

@@ -1,0 +1,48 @@
+# Applies when an image is built with the repository root as context. Each service also has its own
+# .dockerignore (backend/, frontend/) for its usual build context.
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Version control and CI
+.git
+.github
+.gitattributes
+
+# Dependencies, virtualenvs and build output
+**/node_modules
+**/.venv
+**/.next
+**/.next-e2e
+**/.next-shot
+**/out
+**/__pycache__
+**/*.py[cod]
+**/*.tsbuildinfo
+
+# Databases, dumps and backups
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.dump
+backups
+
+# Tests, caches and reports
+**/test-results
+**/playwright-report
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/coverage
+**/htmlcov
+**/*.log
+
+# Documentation and raw data that the images do not need
+docs
+**/*.md
+!frontend/README.md

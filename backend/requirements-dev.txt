@@ -1,0 +1,39 @@
+# Development and test tools on top of the runtime packages, pinned to the exact tested versions.
+# Install: pip install -r requirements-dev.txt
+-r requirements.txt
+
+# Direct: pytest, httpx (FastAPI TestClient), ruff, mypy, pip-audit. Everything else is what they need.
+ast-serialize==0.13.1
+boolean-py==5.0
+cachecontrol==0.15.0
+colorama==0.4.6 ; sys_platform == 'win32'
+cyclonedx-python-lib==11.12.0
+defusedxml==0.7.1
+filelock==4.2.12
+httpcore==1.0.9
+httpx==0.28.1
+iniconfig==2.3.1
+librt==0.16.0 ; platform_python_implementation != 'PyPy'
+license-expression==30.4.4
+markdown-it-py==4.3.0
+mdurl==0.1.2
+msgpack==1.2.4
+mypy==2.4.1
+mypy-extensions==1.2.0
+packageurl-python==0.17.6
+packaging==26.3
+pathspec==1.1.1
+pip-api==0.0.35
+pip-audit==2.10.1
+pip-requirements-parser==32.0.1
+platformdirs==4.14.7
+pluggy==1.7.0
+py-serializable==2.2.0
+pygments==2.21.0
+pyparsing==3.3.3
+pytest==9.2.0
+rich==15.0.0
+ruff==0.17.5
+sortedcontainers==2.4.0
+tomli==2.5.0
+tomli-w==1.2.0

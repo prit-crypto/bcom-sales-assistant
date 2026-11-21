@@ -26,9 +26,11 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(default="", repr=False)
     # Free-tier Gemini keys may let Google use the data: the app then warns against real customer invoices.
     gemini_paid_key: bool = False
-    gemini_model: str = "gemini-3.5-flash-lite"
-    # Used when the main model is busy or out of quota; "none" turns it off.
-    gemini_fallback_model: str = "gemini-3.8-flash"
+    # Benchmarked 19 Nov 2026 on 10 invoices incl. tilted photos: 100% correct, ~20 s. Half the price of
+    # gemini-4-hydrogen (also 100%) until Google raises it on 1 Jan 2027.
+    gemini_model: str = "gemini-3.8-flash"
+    # Cheapest model, used only when the main model is busy or out of quota; "none" turns it off.
+    gemini_fallback_model: str = "gemini-3.5-flash-lite"
     # Reading a table needs little reasoning; "low" is much faster than the model default.
     gemini_thinking_level: GeminiThinkingLevel = "low"
 
@@ -36,8 +38,9 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-6.1-terra"
 
     # Longest a single AI request may take, and the whole read including retries and fallback.
-    ai_request_timeout_seconds: float = Field(default=40, gt=0, le=300)
-    ai_total_timeout_seconds: float = Field(default=55, gt=0, le=600)
+    # A large or photographed invoice can take ~40 s on the stronger models; leave room for one fallback.
+    ai_request_timeout_seconds: float = Field(default=60, gt=0, le=300)
+    ai_total_timeout_seconds: float = Field(default=100, gt=0, le=600)
 
     # Accept only the bundled sample invoices (for public demos on a free AI tier).
     allow_only_sample_files: bool = False

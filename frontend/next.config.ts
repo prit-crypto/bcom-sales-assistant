@@ -2,12 +2,20 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
 
-/** Where the browser may send requests: this site and the backend API (its origin only). */
+/**
+ * Where the Next.js server forwards /api/v1/* (the backend's address as seen from this server).
+ * Read when the app is built, so the Docker image takes it as a build argument (BACKEND_URL).
+ */
+const backendUrl = (process.env.BACKEND_URL || "http://localhost:8000").replace(/\/+$/, "");
+
+/** An extra origin the browser may call: only when NEXT_PUBLIC_API_URL points straight at a backend. */
 function apiOrigin(): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) return "";
   try {
-    return new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1").origin;
+    return new URL(apiUrl).origin;
   } catch {
-    return "";
+    return ""; // a relative URL is this site, already allowed by 'self'
   }
 }
 
@@ -42,8 +50,18 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   // A self-contained server for the Docker image (frontend/Dockerfile).
   output: "standalone",
+  experimental: {
+    // Uploads are forwarded to the backend, which enforces its own limit (MAX_UPLOAD_MB, at most 30 MB) with a
+    // clear message. Next.js cuts forwarded bodies at 10 MB by default; allow a little more than the backend's
+    // maximum so the backend always answers.
+    proxyClientMaxBodySize: "32mb",
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  // The browser calls this site; the server passes API requests on to the backend, which stays internal.
+  async rewrites() {
+    return [{ source: "/api/v1/:path*", destination: `${backendUrl}/api/v1/:path*` }];
   },
 };
 
