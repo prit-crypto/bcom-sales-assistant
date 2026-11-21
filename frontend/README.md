@@ -1,9 +1,35 @@
 # BCOM Sales Assistant – frontend
 
-The partner-facing screens: upload → check shipments → savings → proposal PDF → WhatsApp message. It has no server
-code of its own; everything is done by the backend in [../backend](../backend).
+The partner screens of the BCOM Sales Assistant, a proof of concept for **BCOM Global franchise partners**. A partner
+uploads a prospect's courier invoice, checks the shipments, sees the savings against BCOM's rates, and gets a
+branded proposal PDF, a WhatsApp message to send, a pipeline of saved proposals with follow-ups, and a link the
+customer can open and accept.
 
-## Setup
+It has no server code of its own: every reading, price and file comes from the backend in [../backend](../backend),
+which must be running. The frontend never calculates money.
+
+> Everything in this POC is fictional: the BCOM rate card, the courier ("SwiftLine Express") and the sample customers.
+
+## Requirements
+
+Node.js 20.9+ and a running backend (see [../backend/README.md](../backend/README.md)). Docker if you run it in a
+container.
+
+## Run in Docker
+
+[docker-compose.yml](docker-compose.yml) in this folder runs the app on http://localhost:3080. Start the backend
+first (`docker compose up -d --build` in `../backend`), then:
+
+```bash
+docker compose up -d --build   # app on http://localhost:3080, calling the API on http://localhost:8080
+docker compose down            # stop
+```
+
+The browser calls the API directly, and its address is fixed when the image is built. To use another server:
+`BCOM_API_URL=https://api.example.com/api/v1 docker compose up -d --build` (that server's `CORS_ORIGINS` must allow
+this app's address).
+
+## Development setup
 
 ```bash
 npm install
@@ -11,7 +37,8 @@ cp .env.example .env.local   # NEXT_PUBLIC_API_URL, default http://localhost:800
 npm run dev                  # http://localhost:3000 (start the backend first)
 ```
 
-The backend must allow this origin in its `CORS_ORIGINS` (default `http://localhost:3000`).
+The backend must allow this origin in its `CORS_ORIGINS` (default `http://localhost:3000`). With no AI key the
+backend runs in **mock mode**: the bundled sample invoices work, other invoices need Gemini or OpenAI.
 
 | Command | Purpose |
 |---|---|
@@ -71,6 +98,27 @@ spirit of Apple's product pages. No blue (the company's other product uses navy)
 The browser tests (`npm run e2e`) need PostgreSQL running (`docker compose up -d db` in the
 `backend` folder); their backend empties and
 migrates its own `bcom_e2e` database on every run.
+
+## Demo script (about 5 minutes)
+
+1. **Upload**: click *Use this sample* on **Sample 2 · PDF with gaps** (or the phone photo with Gemini/OpenAI).
+2. **Check shipments**: point out the highlighted cells: two weights are missing. Type `12` into one of them.
+   The partner can correct anything the AI read, or untick rows.
+3. **Savings**: show the headline monthly saving, the coverage bar (compared / missing / not on the rate card), the
+   two examples from the invoice, and that BCOM is honestly shown as *more expensive* on UAE domestic lanes.
+4. **Proposal PDF**: fill in your details, create the PDF and scroll through: recommended services, examples from
+   the invoice, comparison by region and route, shipments not included, commercial conditions, assumptions.
+5. **WhatsApp**: write the message, edit a word, click *Open in WhatsApp*. Nothing is sent automatically.
+   Click *Mark as sent*: the proposal now waits for a follow-up.
+6. **Customer link**: on the proposal's page, create the customer link and open it: this is what the customer
+   sees. Accept it, then look at the proposal again: it is won.
+7. **Proposals**: click the logo: the proposal is in the list. Open it to see its history, change the follow-up date,
+   add a note, mark it won or lost, or download the PDF again.
+
+Extras worth showing: drop two invoices from different months at once (or "Add another month") for an average over
+both; on Savings, switch on *Send non-urgent parcels by Economy* and try *+20%* volume; *Download Excel*; on the
+proposal, pick *العربية* for the Arabic PDF and message, add a logo and a booking link. With Gemini or OpenAI active,
+the **Other courier formats** row on the upload screen shows the same flow on four different invoice designs.
 
 ## Features worth knowing
 
@@ -140,3 +188,13 @@ scripts/               sample invoice generator
 The generator uses a frozen copy of the POC rate card (`scripts/samples/frozen-*.ts`) only to make realistic
 current-courier prices for the fictional samples. The app's real pricing lives in the backend. After regenerating,
 copy the two SwiftLine PDFs and their expected values into `../backend/tests/fixtures`.
+
+## Known limitations (POC)
+
+- No login yet (by decision): everyone who can open the app sees and can change the same list of proposals, and the
+  partner's own details are remembered per device. Keep it on a private network until logins are added.
+- WhatsApp is click-to-chat only: the partner sends the message and attaches the PDF themselves.
+- Follow-up reminders show in the app only.
+- Arabic covers the proposal PDF, the WhatsApp message and the customer's page; the partner screens stay in English.
+  The Arabic wording has not yet been reviewed by a native speaker.
+- **Do not upload real customer invoices while the backend uses the Gemini free tier**; use the samples or a paid key.

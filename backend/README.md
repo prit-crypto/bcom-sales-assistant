@@ -1,20 +1,62 @@
 # BCOM Sales Assistant – backend
 
-FastAPI service that reads a prospect's courier invoice, compares it with the (fictional) BCOM rate card, and builds
-the proposal PDF and WhatsApp message. The frontend in [../frontend](../frontend) is its only client.
+The API behind the BCOM Sales Assistant, a proof of concept for **BCOM Global franchise partners**. A partner uploads
+a prospect's courier invoice (PDF, photo or spreadsheet); this service reads the shipments, compares them with the
+(fictional) BCOM rate card, and builds the proposal PDF, the WhatsApp message, the Excel export, the saved-proposal
+pipeline and the customer's link with Accept. The partner screens live in [../frontend](../frontend), the only client.
 
-## Setup
+All prices and savings are calculated here by plain code (`app/services/pricing`), so the numbers are exact and the
+same every time, whichever AI provider is active. The frontend never calculates money.
+
+> Everything in this POC is fictional: the BCOM rate card, the courier ("SwiftLine Express") and the sample customers.
+
+## Requirements
+
+Python 3.12 with [uv](https://docs.astral.sh/uv/), Docker (for PostgreSQL), and Pango for the PDF
+(`sudo apt install libpango-1.0-0 libpangoft2-1.0-0` on Debian/Ubuntu; present on most desktops). The
+[Dockerfile](Dockerfile) installs Pango and the Arabic fonts itself.
+
+## Run in Docker
+
+[docker-compose.yml](docker-compose.yml) in this folder runs PostgreSQL and the API:
+
+```bash
+docker compose up -d --build   # PostgreSQL on 5440 + API on http://localhost:8080 (docs at /docs)
+docker compose up -d db        # PostgreSQL only, for development with `make run`
+docker compose logs -f backend # follow the API's logs
+docker compose down            # stop (the data stays in the volume)
+```
+
+The container applies database migrations on start and reads its settings from `.env` in this folder when it exists
+(without one it runs in mock mode). Inside Docker the database address, `CORS_ORIGINS` and `PUBLIC_APP_URL` are set
+by the compose file for the frontend container on http://localhost:3080.
+
+## Development setup
 
 ```bash
 make init                 # creates .venv and installs app + dev dependencies (uses uv)
-cp .env.example .env
+cp .env.example .env      # AI_PROVIDER=mock works with no key
 make db-up                # PostgreSQL 17 in Docker on port 5440 (bcom, plus bcom_test and bcom_e2e)
 make migrate              # create / update the tables (Alembic)
 make run                  # http://localhost:8000, interactive API docs at /docs
 ```
 
-The proposal PDF uses WeasyPrint, which needs Pango (`libpango-1.0-0 libpangoft2-1.0-0`). The [Dockerfile](Dockerfile)
-installs it.
+## Settings (`.env`)
+
+[.env.example](.env.example) lists every setting with a comment. The ones you are most likely to change:
+
+| Setting | What it does |
+|---|---|
+| `AI_PROVIDER` | `mock` (default, no AI), `gemini` or `openai`; see [Invoice reader](#invoice-reader-ai_provider) |
+| `GEMINI_API_KEY` / `OPENAI_API_KEY` | Key for the chosen provider |
+| `GEMINI_PAID_KEY` | `true` once the Gemini key is on a paid plan (turns off the free-tier warning) |
+| `DATABASE_URL` | PostgreSQL address (default `localhost:5440`, the compose database) |
+| `CORS_ORIGINS` | Frontend addresses allowed to call the API (default `http://localhost:3000`) |
+| `PUBLIC_APP_URL` | Where the frontend lives, used to build the customer's link |
+| `ALLOW_ONLY_SAMPLE_FILES` | `true` accepts only the bundled sample invoices (for a public demo) |
+| `RATE_LIMIT_PER_MINUTE` | Calls to the AI endpoints per client per minute (default 20, `0` = off) |
+
+Restart the server after changing `.env` (`docker compose up -d backend` in Docker).
 
 | Command | Purpose |
 |---|---|
@@ -79,6 +121,16 @@ PostgreSQL through async SQLAlchemy + asyncpg, with Alembic migrations in [alemb
 in [app/repositories](app/repositories) touch the database; services use them. Tables: `proposals` and
 `proposal_events`. Tests use the `bcom_test` database (`TEST_DATABASE_URL` to override) with tables emptied between
 tests, and check that migrations go down and up again.
+
+## Safeguards on the numbers
+
+- When BCOM is not cheaper overall, the comparison says so, and the proposal PDF and WhatsApp message are refused
+  (`no_saving`), so a customer never sees "save about AED -11".
+- Monthly figures are scaled only from the **billing period printed on the invoice**. If it is missing, the invoice
+  counts as one month and the partner is asked to enter the period; shipment dates are not used to guess it.
+- A missing currency is assumed to be AED, with a warning on the review screen and a line in the assumptions.
+- The customer page and the PDF say the saving is an estimate, how many of the invoice's shipments it is based on,
+  and show the biggest savings from the customer's own invoice as examples.
 
 ## Safeguards
 
@@ -167,3 +219,17 @@ tests/                    pytest; fixtures/ holds the two SwiftLine sample PDFs 
 
 `tests/fixtures/expected_samples.json` and the sample PDFs come from the generator in
 `../frontend/scripts`; copy them again if you regenerate the samples.
+
+## Known limitations (POC)
+
+- Rates are fictional; no connection to BCOM's real rates or the Metafour API yet.
+- Mock mode reads only the bundled sample format. Real invoices need `gemini` or `openai`.
+- **Do not upload real customer invoices while using the Gemini free tier**: Google may use free-tier data to improve
+  its products. Use the fictional samples, or a paid key.
+- No login yet (by decision): everyone who can reach the API sees and can change the same list of proposals. Keep it
+  on a private network until logins are added. The per-minute limit on the AI endpoints only slows misuse.
+- Saved proposals keep the reviewed invoice data (customer names and amounts), never the uploaded file. Deleting a
+  proposal removes its data.
+- No volumetric weight from parcel dimensions.
+- Sending on WhatsApp Business and live BCOM rates need outside approvals and are not built.
+- The Arabic PDF and message have not yet been reviewed by a native speaker.
