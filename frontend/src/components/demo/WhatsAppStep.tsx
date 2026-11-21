@@ -245,12 +245,6 @@ export function WhatsAppStep({
             <Button variant="tinted" onClick={() => void addLink()} disabled={linking}>
               {linking ? "Adding…" : "Add the proposal link"}
             </Button>
-            <Link
-              href={`/proposals/${saved.id}`}
-              className="pressable rounded-full px-3 py-2 text-sm font-semibold text-accent hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
-            >
-              Send by email instead
-            </Link>
           </div>
         ) : null}
 

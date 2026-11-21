@@ -148,7 +148,7 @@ export function DemoFlow({ proposalId = null }: { proposalId?: string | null }) 
     getJson<ConfigResponse>("/config")
       .then(setConfig)
       .catch((error: unknown) =>
-        setConfig({ provider: null, problem: errorMessage(error), max_upload_mb: 10, privacy_notice: null, samples_only: false, email_enabled: false }),
+        setConfig({ provider: null, problem: errorMessage(error), max_upload_mb: 10, privacy_notice: null, samples_only: false }),
       );
   }, []);
 

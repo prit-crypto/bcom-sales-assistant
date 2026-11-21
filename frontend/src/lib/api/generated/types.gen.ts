@@ -200,10 +200,6 @@ export type ComparisonSummary = {
  */
 export type ConfigResponse = {
     /**
-     * Email Enabled
-     */
-    email_enabled: boolean;
-    /**
      * Max Upload Mb
      */
     max_upload_mb: number;
@@ -270,60 +266,6 @@ export type CurrencyConversion = {
      * Rate
      */
     rate: number;
-};
-
-/**
- * EmailDraft
- *
- * What the email form starts with; the partner can change everything.
- */
-export type EmailDraft = {
-    /**
-     * Email Enabled
-     */
-    email_enabled: boolean;
-    /**
-     * Message
-     */
-    message: string;
-    /**
-     * Subject
-     */
-    subject: string;
-    /**
-     * To
-     */
-    to: string;
-};
-
-/**
- * EmailRequest
- */
-export type EmailRequest = {
-    /**
-     * Attach Pdf
-     */
-    attach_pdf?: boolean;
-    /**
-     * Cc
-     */
-    cc?: Array<string>;
-    /**
-     * Include Link
-     */
-    include_link?: boolean;
-    /**
-     * Message
-     */
-    message: string;
-    /**
-     * Subject
-     */
-    subject: string;
-    /**
-     * To
-     */
-    to: string;
 };
 
 /**
@@ -1960,66 +1902,6 @@ export type UpdateProposalApiV1ProposalsProposalIdPatchResponses = {
 };
 
 export type UpdateProposalApiV1ProposalsProposalIdPatchResponse = UpdateProposalApiV1ProposalsProposalIdPatchResponses[keyof UpdateProposalApiV1ProposalsProposalIdPatchResponses];
-
-export type SendEmailApiV1ProposalsProposalIdEmailPostData = {
-    body: EmailRequest;
-    path: {
-        /**
-         * Proposal Id
-         */
-        proposal_id: string;
-    };
-    query?: never;
-    url: '/api/v1/proposals/{proposal_id}/email';
-};
-
-export type SendEmailApiV1ProposalsProposalIdEmailPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendEmailApiV1ProposalsProposalIdEmailPostError = SendEmailApiV1ProposalsProposalIdEmailPostErrors[keyof SendEmailApiV1ProposalsProposalIdEmailPostErrors];
-
-export type SendEmailApiV1ProposalsProposalIdEmailPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: ProposalDetail;
-};
-
-export type SendEmailApiV1ProposalsProposalIdEmailPostResponse = SendEmailApiV1ProposalsProposalIdEmailPostResponses[keyof SendEmailApiV1ProposalsProposalIdEmailPostResponses];
-
-export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetData = {
-    body?: never;
-    path: {
-        /**
-         * Proposal Id
-         */
-        proposal_id: string;
-    };
-    query?: never;
-    url: '/api/v1/proposals/{proposal_id}/email-draft';
-};
-
-export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetError = EmailDraftApiV1ProposalsProposalIdEmailDraftGetErrors[keyof EmailDraftApiV1ProposalsProposalIdEmailDraftGetErrors];
-
-export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetResponses = {
-    /**
-     * Successful Response
-     */
-    200: EmailDraft;
-};
-
-export type EmailDraftApiV1ProposalsProposalIdEmailDraftGetResponse = EmailDraftApiV1ProposalsProposalIdEmailDraftGetResponses[keyof EmailDraftApiV1ProposalsProposalIdEmailDraftGetResponses];
 
 export type RecordEventApiV1ProposalsProposalIdEventsPostData = {
     body: ProposalEventCreate;

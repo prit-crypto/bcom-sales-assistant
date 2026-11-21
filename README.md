@@ -66,8 +66,7 @@ Details: [backend/README.md](backend/README.md) · [frontend/README.md](frontend
 5. **WhatsApp** – write the message, edit a word, click *Open in WhatsApp*. Nothing is sent automatically.
    Click *Mark as sent*: the proposal now waits for a follow-up.
 6. **Customer link** – on the proposal's page, create the customer link and open it: this is what the customer
-   sees. Accept it, then look at the proposal again: it is won. "Send by email" sends it with the PDF (with
-   `docker compose up -d mailpit`, emails land in the inbox at http://localhost:8025).
+   sees. Accept it, then look at the proposal again: it is won.
 7. **Proposals** – click the logo: the proposal is in the list. Open it to see its history, change the follow-up date,
    add a note, mark it won or lost, or download the PDF again.
 

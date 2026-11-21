@@ -62,15 +62,7 @@ class Settings(BaseSettings):
     timezone: str = "Asia/Dubai"
     # Days after "Mark as sent" before the proposal shows under "Follow up today".
     follow_up_days: int = Field(default=3, ge=1, le=60)
-    # Email (proposals sent from the app). No SMTP_HOST = email switched off.
-    smtp_host: str = ""
-    smtp_port: int = Field(default=587, ge=1, le=65535)
-    smtp_username: str = ""
-    smtp_password: str = Field(default="", repr=False)
-    smtp_security: Literal["starttls", "ssl", "none"] = "starttls"
-    email_from: str = "proposals@example.com"
-    email_from_name: str = "BCOM Global"
-    # Where the frontend lives, to build the customer's link in emails.
+    # Where the frontend lives, to build the customer's link.
     public_app_url: str = "http://localhost:3000"
 
     # Pass lessons from partners' corrections to the AI on new reads.
@@ -96,10 +88,6 @@ class Settings(BaseSettings):
         if value == "" and info.field_name:
             return cls.model_fields[info.field_name].default
         return value
-
-    @property
-    def email_enabled(self) -> bool:
-        return bool(self.smtp_host.strip())
 
     @property
     def cors_origin_list(self) -> list[str]:

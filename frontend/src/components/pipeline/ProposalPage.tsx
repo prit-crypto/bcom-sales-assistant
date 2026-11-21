@@ -11,7 +11,6 @@ import { Icon } from "@/components/ui/Icon";
 import { errorMessage, getFile, getJson, patchJson, saveBlob, sendNoContent } from "@/lib/client/api";
 import { formatDate, formatDueDate, formatMoney, formatPercent, formatWhen } from "@/lib/format";
 import type { ProposalDetail, ProposalStatus } from "@/types/api";
-import { EmailCard } from "./EmailCard";
 import { STATUS_LABEL } from "./ProposalStatusPill";
 import { ShareCard } from "./ShareCard";
 
@@ -77,7 +76,7 @@ function describeEvent(event: Event): string {
       return detail.note
         ? `Accepted online by ${String(detail.name)}: "${String(detail.note)}"`
         : `Accepted online by ${String(detail.name)}`;
-    case "emailed":
+    case "emailed": // older proposals, from when email sending existed
       return `Emailed to ${String(detail.to)}${Number(detail.cc) > 0 ? ` (+${Number(detail.cc)} in copy)` : ""}`;
     default:
       return event.kind;
@@ -428,7 +427,6 @@ export function ProposalPage({ id }: { id: string }) {
             </section>
 
             <ShareCard proposal={proposal} onChange={setProposal} />
-            <EmailCard proposal={proposal} onSent={setProposal} />
 
             <section
               aria-labelledby="notes-title"

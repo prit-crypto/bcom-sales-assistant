@@ -34,7 +34,7 @@ spirit of Apple's product pages. No blue (the company's other product uses navy)
   `text-hero-save`), bright gold for the main buttons and highlights (`gold`, `#D4AF6A`), deep gold for savings, links and small
   marks on white (`accent`, `#8A6416`, 5.4:1 on white), Apple grey canvas `#F5F5F7`; red only for "costs more",
   gold for "needs attention" too (one warm colour across the app). Use the semantic classes, never raw hex values.
-  The proposal PDF, the email and the Excel export use the same graphite and gold. Green appears only on
+  The proposal PDF and the Excel export use the same graphite and gold. Green appears only on
   WhatsApp's own button and message bubble.
 - **Hero bands** (`HeroBand`, `PageHeader` in `src/components/ui/Hero.tsx`): the home, upload, savings, proposal
   and customer pages open on a graphite band with cards floating over its lower edge; the working steps get a
@@ -69,7 +69,7 @@ spirit of Apple's product pages. No blue (the company's other product uses navy)
 | `/proposals/<id>/edit` | The journey again for a saved proposal (opens at Savings) |
 | `/p/<token>` | **The customer's page** from their link: savings, regions, services, PDF, contact and Accept, in English or Arabic. No partner screens are reachable from it, and search engines are told not to index it |
 
-The browser tests (`npm run e2e`) need PostgreSQL and Mailpit running (`docker compose up -d db mailpit` in the
+The browser tests (`npm run e2e`) need PostgreSQL running (`docker compose up -d db` in the
 repository root); their backend empties and
 migrates its own `bcom_e2e` database on every run.
 
@@ -84,10 +84,9 @@ migrates its own `bcom_e2e` database on every run.
 - **Saved as you go**: "Compare with BCOM rates" saves the work as a draft proposal; after that the shipments,
   what-if, partner details and message autosave a moment after they stop changing ("Saving… / Saved" in the top bar).
   A change made just before closing, reloading or leaving the page is still sent.
-- **Customer link and email** (proposal page): "Create customer link" gives a private page where the customer
-  sees the savings and can accept (the proposal then shows as won, with their name and note). "Send by email" starts
-  with a message in the customer's language, attaches the PDF and can add the link. The WhatsApp step can add the
-  link to the message too.
+- **Customer link** (proposal page): "Create customer link" gives a private page where the customer
+  sees the savings and can accept (the proposal then shows as won, with their name and note). The WhatsApp step can
+  add the link to the message too.
 - **Mark as sent** (WhatsApp step or proposal page) sets a follow-up date; on that day the proposal appears under
   "Follow up today" on the list.
 - **Your details are remembered** on this device (name, company, logo, booking link, language, validity) for the next

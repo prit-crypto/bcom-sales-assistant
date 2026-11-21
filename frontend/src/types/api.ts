@@ -15,7 +15,6 @@ export type {
   ComparisonSummary,
   ConfigResponse,
   CurrencyConversion,
-  EmailDraft,
   ExtractResponse,
   GroupTotal,
   InvoiceCheck,

@@ -112,26 +112,3 @@ class ProposalDetail(ProposalItem):
 
 class ProposalEventCreate(ApiModel):
     kind: EventKind
-
-
-_EMAIL = r"^[^@\s<>,;]+@[^@\s<>,;]+\.[^@\s<>,;]+$"
-EmailAddress = Annotated[str, BeforeValidator(_strip), Field(max_length=254, pattern=_EMAIL)]
-
-
-class EmailDraft(ApiModel):
-    """What the email form starts with; the partner can change everything."""
-
-    to: str
-    subject: str
-    message: str
-    email_enabled: bool
-
-
-class EmailRequest(ApiModel):
-    to: EmailAddress
-    cc: list[EmailAddress] = Field(default_factory=list, max_length=5)
-    subject: Annotated[str, BeforeValidator(_strip), Field(min_length=1, max_length=200)]
-    message: Annotated[str, Field(min_length=1, max_length=5000)]
-    attach_pdf: bool = True
-    # Adds the customer's link (made if needed) at the end of the message
-    include_link: bool = True

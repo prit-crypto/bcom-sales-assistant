@@ -1,6 +1,5 @@
 # Local stack.
 #   docker compose up -d db       PostgreSQL only (port 5440), for development with `make run` / `npm run dev`
-#   docker compose up -d mailpit  a pretend mailbox for email tests (inbox on http://localhost:8025)
 #   docker compose up --build     everything in containers: app on http://localhost:3080, API on :8080
 name: bcom-sales-assistant
 
@@ -23,15 +22,6 @@ services:
       timeout: 3s
       retries: 10
 
-  # Catches every email the app sends (nothing leaves this machine). Inbox: http://localhost:8025
-  mailpit:
-    image: axllent/mailpit:v1.33.0
-    ports:
-      - "8025:8025"   # web inbox and API
-      - "1025:1025"   # SMTP
-    environment:
-      MP_MAX_MESSAGES: 500
-
   backend:
     build: ./backend
     environment:
@@ -41,21 +31,12 @@ services:
       AI_PROVIDER: ${AI_PROVIDER:-mock}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      # Email goes to Mailpit; point these at a real mail server to send for real.
-      SMTP_HOST: ${SMTP_HOST:-mailpit}
-      SMTP_PORT: ${SMTP_PORT:-1025}
-      SMTP_SECURITY: ${SMTP_SECURITY:-none}
-      SMTP_USERNAME: ${SMTP_USERNAME:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      EMAIL_FROM: ${EMAIL_FROM:-proposals@bcom.test}
       PUBLIC_APP_URL: http://localhost:3080
     ports:
       - "8080:8000"
     depends_on:
       db:
         condition: service_healthy
-      mailpit:
-        condition: service_started
 
   frontend:
     build:

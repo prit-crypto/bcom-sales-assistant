@@ -322,11 +322,6 @@
       },
       "ConfigResponse": {
         "properties": {
-          "email_enabled": {
-            "default": false,
-            "title": "Email Enabled",
-            "type": "boolean"
-          },
           "max_upload_mb": {
             "title": "Max Upload Mb",
             "type": "number"
@@ -374,8 +369,7 @@
           "problem",
           "max_upload_mb",
           "privacy_notice",
-          "samples_only",
-          "email_enabled"
+          "samples_only"
         ],
         "title": "ConfigResponse",
         "type": "object"
@@ -457,82 +451,6 @@
           "original_spend"
         ],
         "title": "CurrencyConversion",
-        "type": "object"
-      },
-      "EmailDraft": {
-        "description": "What the email form starts with; the partner can change everything.",
-        "properties": {
-          "email_enabled": {
-            "title": "Email Enabled",
-            "type": "boolean"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "subject": {
-            "title": "Subject",
-            "type": "string"
-          },
-          "to": {
-            "title": "To",
-            "type": "string"
-          }
-        },
-        "required": [
-          "to",
-          "subject",
-          "message",
-          "email_enabled"
-        ],
-        "title": "EmailDraft",
-        "type": "object"
-      },
-      "EmailRequest": {
-        "properties": {
-          "attach_pdf": {
-            "default": true,
-            "title": "Attach Pdf",
-            "type": "boolean"
-          },
-          "cc": {
-            "items": {
-              "maxLength": 254,
-              "type": "string"
-            },
-            "maxItems": 5,
-            "title": "Cc",
-            "type": "array"
-          },
-          "include_link": {
-            "default": true,
-            "title": "Include Link",
-            "type": "boolean"
-          },
-          "message": {
-            "maxLength": 5000,
-            "minLength": 1,
-            "title": "Message",
-            "type": "string"
-          },
-          "subject": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Subject",
-            "type": "string"
-          },
-          "to": {
-            "maxLength": 254,
-            "title": "To",
-            "type": "string"
-          }
-        },
-        "required": [
-          "to",
-          "subject",
-          "message"
-        ],
-        "title": "EmailRequest",
         "type": "object"
       },
       "ExtractResponse": {
@@ -3589,104 +3507,6 @@
           }
         },
         "summary": "Update Proposal",
-        "tags": [
-          "saved proposals"
-        ]
-      }
-    },
-    "/api/v1/proposals/{proposal_id}/email": {
-      "post": {
-        "description": "Emails the proposal (PDF attached, customer link added when asked). A draft becomes sent.",
-        "operationId": "send_email_api_v1_proposals__proposal_id__email_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "proposal_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Proposal Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmailRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProposalDetail"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Send Email",
-        "tags": [
-          "saved proposals"
-        ]
-      }
-    },
-    "/api/v1/proposals/{proposal_id}/email-draft": {
-      "get": {
-        "description": "The subject and message the email form starts with, in the customer's language.",
-        "operationId": "email_draft_api_v1_proposals__proposal_id__email_draft_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "proposal_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Proposal Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EmailDraft"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Email Draft",
         "tags": [
           "saved proposals"
         ]

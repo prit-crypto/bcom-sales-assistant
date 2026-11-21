@@ -4,7 +4,7 @@ import { defineConfig } from "@playwright/test";
 /**
  * Browser tests for the whole journey. `npm run e2e` starts its own backend (no-AI mode, no rate limit,
  * its own `bcom_e2e` database) and frontend on ports 18765 / 13765, so it never touches the servers
- * or data you develop with. Needs the database and Mailpit running: `docker compose up -d db mailpit`.
+ * or data you develop with. Needs the database running: `docker compose up -d db`.
  * Uses the system Chrome when present (set CHROME_PATH to override); otherwise run
  * `npx playwright install chromium` once.
  */
@@ -37,11 +37,6 @@ export default defineConfig({
         AI_PROVIDER: "mock",
         RATE_LIMIT_PER_MINUTE: "0",
         DATABASE_URL: process.env.E2E_DATABASE_URL ?? "postgresql+asyncpg://bcom:bcom@localhost:5440/bcom_e2e",
-        // Emails go to Mailpit (docker compose up -d mailpit); tests read them from its API.
-        SMTP_HOST: process.env.E2E_SMTP_HOST ?? "localhost",
-        SMTP_PORT: process.env.E2E_SMTP_PORT ?? "1025",
-        SMTP_SECURITY: "none",
-        EMAIL_FROM: "proposals@bcom.test",
         PUBLIC_APP_URL: `http://localhost:${WEB_PORT}`,
         CORS_ORIGINS: `http://localhost:${WEB_PORT}`,
       },

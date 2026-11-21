@@ -28,7 +28,6 @@ async def read_config() -> ConfigResponse:
         "max_upload_mb": settings.max_upload_mb,
         "privacy_notice": privacy_notice(settings),
         "samples_only": settings.allow_only_sample_files,
-        "email_enabled": settings.email_enabled,
     }
     try:
         provider = get_ai_provider()

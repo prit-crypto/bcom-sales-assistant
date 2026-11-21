@@ -1,4 +1,4 @@
-"""The saving is told honestly on the customer page, PDF and email: what it is based on, with real examples."""
+"""The saving is told honestly on the customer page and PDF: what it is based on, with real examples."""
 
 from datetime import date
 from typing import Any
@@ -60,9 +60,3 @@ def test_customer_view_says_what_the_saving_is_based_on(client: TestClient) -> N
     assert (view["compared_shipments"], view["total_shipments"]) == (2, 3)
     assert view["period"] == "01 Oct 2026 – 31 Oct 2026"
     assert view["examples"] and view["examples"][0]["saving"] > 0
-
-    draft = client.get(f"/api/v1/proposals/{created['id']}/email-draft").json()
-    assert (
-        "estimate based on 2 of the 3 shipments on your invoice from 01 Oct 2026 – 31 Oct 2026"
-        in draft["message"]
-    )
