@@ -28,7 +28,14 @@ def email_off() -> AppError:
 
 
 def draft(
-    partner: PartnerInput, monthly: float, yearly: float, currency: str, valid_until_iso: str
+    partner: PartnerInput,
+    monthly: float,
+    yearly: float,
+    currency: str,
+    valid_until_iso: str,
+    compared: int = 0,
+    total: int = 0,
+    period: str = "",
 ) -> tuple[str, str]:
     """Default subject and message, in the customer's language. The partner can change both."""
     contact = "\n".join(
@@ -41,12 +48,18 @@ def draft(
         )
         if line
     )
+    # What the estimate is based on, so the figure is not read as the whole bill.
+    over_en = f" from {period}" if period else ""
+    over_ar = f" في الفترة {period}" if period else ""
+    basis_en = f"This is an estimate based on {compared} of the {total} shipments on your invoice{over_en}."
+    basis_ar = f"هذا تقدير مبني على {compared} من أصل {total} شحنة في فاتورتكم{over_ar}."
     if partner.language == "ar":
         subject = f"عرض توفير تكاليف الشحن من BCOM Global – {partner.prospect_name}"
         message = (
             f"فريق {partner.prospect_name} المحترم،\n\n"
             "شكراً لمشاركتنا فاتورة الشحن الأخيرة. بناءً عليها، يمكنكم مع BCOM Global توفير حوالي "
             f"{format_money(monthly, currency)} شهرياً ({format_money(yearly, currency)} سنوياً).\n\n"
+            f"{basis_ar}\n\n"
             f"تجدون العرض الكامل مرفقاً. الأسعار سارية حتى {format_date(valid_until_iso)}.\n\n"
             f"مع أطيب التحيات،\n{contact}"
         )
@@ -56,6 +69,7 @@ def draft(
             f"Dear {partner.prospect_name} team,\n\n"
             "Thank you for sharing your recent courier invoice. Based on it, switching to BCOM Global could save "
             f"you about {format_money(monthly, currency)} a month ({format_money(yearly, currency)} a year).\n\n"
+            f"{basis_en}\n\n"
             f"The full proposal is attached. The rates are valid until {format_date(valid_until_iso)}.\n\n"
             f"Kind regards,\n{contact}"
         )

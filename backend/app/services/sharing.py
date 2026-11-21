@@ -15,7 +15,8 @@ from app.schemas.public import (
     PublicStatus,
 )
 from app.services.pricing.comparison import compare_invoice
-from app.services.proposal.i18n import assumptions, conditions
+from app.services.proposal.examples import saving_examples
+from app.services.proposal.i18n import assumptions, conditions, date_text
 from app.services.proposal.render import relabel, service_rows
 from app.services.proposals import ProposalService, parts, today
 
@@ -63,7 +64,8 @@ def public_status(proposal: Proposal) -> PublicStatus:
 
 def public_view(proposal: Proposal, accepted_by: str | None = None) -> PublicProposal:
     invoice, scenario, partner = parts(proposal)
-    summary = compare_invoice(invoice, scenario=scenario).summary
+    comparison = compare_invoice(invoice, scenario=scenario)
+    summary = comparison.summary
     language = partner.language
     until = valid_until(proposal)
     return PublicProposal(
@@ -76,6 +78,12 @@ def public_view(proposal: Proposal, accepted_by: str | None = None) -> PublicPro
         saving_pct=summary.saving_pct,
         monthly_current=summary.monthly_current,
         monthly_proposed=summary.monthly_proposed,
+        compared_shipments=summary.compared_shipments,
+        total_shipments=summary.total_shipments,
+        period=f"{date_text(invoice.period_start, language)} – {date_text(invoice.period_end, language)}"
+        if invoice.period_start and invoice.period_end
+        else "",
+        examples=saving_examples(invoice, comparison, language),
         regions=[
             PublicGroup(
                 label=g.label,

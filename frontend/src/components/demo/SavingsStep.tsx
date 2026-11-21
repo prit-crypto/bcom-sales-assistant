@@ -80,13 +80,31 @@ export function SavingsStep({
     setExporting(true);
     setExportError(null);
     try {
-      saveBlob(await postForBlob("/exports/comparison", { invoice, scenario }), exportFileName(invoice.customer_name));
+      saveBlob(
+        await postForBlob("/exports/comparison", { invoice, scenario }),
+        exportFileName(invoice.customer_name),
+      );
     } catch (failure) {
       setExportError(errorMessage(failure));
     } finally {
       setExporting(false);
     }
   }
+
+  // The two shipments that show the saving most clearly, on different routes.
+  const examples = rows
+    .map((row, index) => ({ row, shipment: invoice.shipments[index]! }))
+    .filter(({ row }) => row.status === "compared" && (row.saving ?? 0) > 0)
+    .sort((a, b) => (b.row.saving ?? 0) - (a.row.saving ?? 0))
+    .filter(
+      ({ shipment }, index, all) =>
+        all.findIndex(
+          (other) =>
+            other.shipment.origin_city === shipment.origin_city &&
+            other.shipment.destination_city === shipment.destination_city,
+        ) === index,
+    )
+    .slice(0, 2);
 
   const scenarioChips = [
     scenario.volume_factor !== 1 ? volumeLabel(scenario.volume_factor) : null,
@@ -98,7 +116,9 @@ export function SavingsStep({
 
   if (summary.compared_shipments === 0) {
     const reasons = new Map<string, number>();
-    rows.forEach((row) => reasons.set(row.reason ?? "Not compared", (reasons.get(row.reason ?? "Not compared") ?? 0) + 1));
+    rows.forEach((row) =>
+      reasons.set(row.reason ?? "Not compared", (reasons.get(row.reason ?? "Not compared") ?? 0) + 1),
+    );
     return (
       <>
         <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-6 px-4 pt-8 sm:px-6 sm:pt-12">
@@ -130,7 +150,9 @@ export function SavingsStep({
   function openShipments(status: RowFilter) {
     setFilter(status);
     setShipmentsOpen(true);
-    requestAnimationFrame(() => document.getElementById("every-shipment")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    requestAnimationFrame(() =>
+      document.getElementById("every-shipment")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
   }
 
   return (
@@ -143,7 +165,11 @@ export function SavingsStep({
         >
           <div className="flex flex-wrap items-center gap-2.5">
             <p className="text-[17px] text-hero-secondary sm:text-[19px]">
-              {sameCost ? `${prospect} would pay` : saves ? `${prospect} could save` : `With BCOM, ${prospect} would pay`}
+              {sameCost
+                ? `${prospect} would pay`
+                : saves
+                  ? `${prospect} could save about`
+                  : `With BCOM, ${prospect} would pay`}
             </p>
             {conversion ? (
               <span className="inline-flex items-center rounded-full bg-hero-raised px-2.5 py-0.5 text-xs font-semibold text-hero-ink">
@@ -151,7 +177,10 @@ export function SavingsStep({
               </span>
             ) : null}
             {scenarioChips.map((chip) => (
-              <span key={chip} className="inline-flex items-center rounded-full bg-gold px-2.5 py-0.5 text-xs font-semibold text-on-gold">
+              <span
+                key={chip}
+                className="inline-flex items-center rounded-full bg-gold px-2.5 py-0.5 text-xs font-semibold text-on-gold"
+              >
                 {chip}
               </span>
             ))}
@@ -161,17 +190,23 @@ export function SavingsStep({
               <span className="type-title text-[40px] sm:text-[64px]">About the same as today</span>
             ) : (
               <>
-                <span className={`type-display tabular text-[60px] sm:text-[112px] ${saves ? "text-hero-ink" : "text-bad"}`}>
+                <span
+                  className={`type-display tabular text-[60px] sm:text-[112px] ${saves ? "text-hero-ink" : "text-bad"}`}
+                >
                   <span className="sr-only">{formatMoney(Math.abs(summary.monthly_saving))}</span>
                   <span aria-hidden="true">{formatMoney(headline)}</span>
                 </span>
-                <span className="type-title text-[24px] text-gold sm:text-[32px]">{saves ? "a month" : "more a month"}</span>
+                <span className="type-title text-[24px] text-gold sm:text-[32px]">
+                  {saves ? "a month" : "more a month"}
+                </span>
               </>
             )}
           </h1>
           {sameCost ? null : (
             <p className="text-lg leading-snug text-hero-secondary sm:text-[21px]">
-              <strong className="font-semibold text-hero-ink">{formatMoney(Math.abs(summary.yearly_saving))} a year.</strong>{" "}
+              <strong className="font-semibold text-hero-ink">
+                {formatMoney(Math.abs(summary.yearly_saving))} a year.
+              </strong>{" "}
               {formatPercent(Math.abs(summary.saving_pct))} {saves ? "less" : "more"} than {courier}
               {scenario.economy_for_non_urgent ? ", for the same parcels." : ", for the same services."}
             </p>
@@ -179,23 +214,73 @@ export function SavingsStep({
           {conversion ? (
             <p className="text-sm text-hero-secondary">
               {conversion.currency}{" "}
-              {conversion.original_spend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on the
-              invoice, converted at {conversion.rate} AED per {conversion.currency}
+              {conversion.original_spend.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}{" "}
+              on the invoice, converted at {conversion.rate} AED per {conversion.currency}
               {conversion.currency === "USD" ? " (the dirham's fixed peg)" : ""}.
             </p>
           ) : null}
         </section>
         <div className="flex max-w-[760px] flex-col gap-4 rounded-[22px] bg-hero-raised p-5 sm:p-6">
-          <CompareBar label="Today" value={summary.monthly_current} max={Math.max(summary.monthly_current, summary.monthly_proposed)} tone="today" />
-          <CompareBar label="With BCOM" value={summary.monthly_proposed} max={Math.max(summary.monthly_current, summary.monthly_proposed)} tone="bcom" />
+          <CompareBar
+            label="Today"
+            value={summary.monthly_current}
+            max={Math.max(summary.monthly_current, summary.monthly_proposed)}
+            tone="today"
+          />
+          <CompareBar
+            label="With BCOM"
+            value={summary.monthly_proposed}
+            max={Math.max(summary.monthly_current, summary.monthly_proposed)}
+            tone="bcom"
+          />
           <p className="text-[13px] text-hero-secondary">
-            {summary.compared_shipments} of {summary.total_shipments} shipments compared · {formatPercent(summary.spend_coverage_pct)} of spend
+            An estimate based on {summary.compared_shipments} of {summary.total_shipments} shipments ·{" "}
+            {formatPercent(summary.spend_coverage_pct)} of spend
           </p>
+          {examples.length > 0 ? (
+            <div className="flex flex-col gap-2 border-t border-hero-line pt-4">
+              <p className="text-[13px] font-semibold text-gold">For example, from this invoice</p>
+              <ul className="flex flex-col gap-2">
+                {examples.map(({ row, shipment }) => (
+                  <li
+                    key={row.shipment_id}
+                    className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 text-[15px]"
+                  >
+                    <span className="min-w-0">
+                      <span className="font-medium">
+                        {shipment.origin_city ?? shipment.origin_country ?? "?"} →{" "}
+                        {shipment.destination_city ?? shipment.destination_country ?? "?"}
+                      </span>
+                      <span className="text-hero-secondary">
+                        {" "}
+                        · {row.service_label}
+                        {shipment.weight_kg ? ` · ${shipment.weight_kg} kg` : ""}
+                      </span>
+                    </span>
+                    <span className="tabular whitespace-nowrap">
+                      <span className="text-hero-secondary">{formatMoneyExact(row.current ?? 0)} → </span>
+                      <span className="font-semibold">{formatMoneyExact(row.proposed ?? 0)}</span>
+                      <span className="text-hero-save"> · save {formatMoneyExact(row.saving ?? 0)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       </HeroBand>
 
       <main className="mx-auto -mt-16 flex w-full max-w-[1200px] flex-1 flex-col gap-5 px-4 sm:gap-6 sm:px-6">
-        <WhatIfPanel scenario={scenario} summary={summary} updating={updating} error={scenarioError} onChange={onScenarioChange} />
+        <WhatIfPanel
+          scenario={scenario}
+          summary={summary}
+          updating={updating}
+          error={scenarioError}
+          onChange={onScenarioChange}
+        />
 
         {exportError ? (
           <Banner tone="error" title="Could not create the Excel file">
@@ -205,19 +290,22 @@ export function SavingsStep({
 
         {!saves ? (
           <Banner tone="attention" title="No saving to propose">
-            BCOM is not cheaper than {courier} for these shipments, so a proposal and WhatsApp message can&apos;t be
-            created. Check the shipments for reading errors, or include more of them.
+            BCOM is not cheaper than {courier} for these shipments, so a proposal and WhatsApp message
+            can&apos;t be created. Check the shipments for reading errors, or include more of them.
           </Banner>
         ) : null}
 
         {summary.period_days === null ? (
           <Banner tone="info" title="Billing period unknown">
-            The invoice&apos;s billing period was not found, so these figures treat it as one month of shipping. Enter the
-            period on the shipments step if it covers a different length of time.
+            The invoice&apos;s billing period was not found, so these figures treat it as one month of
+            shipping. Enter the period on the shipments step if it covers a different length of time.
           </Banner>
         ) : null}
 
-        <section aria-label="Coverage" className="flex flex-col gap-3 rounded-[20px] bg-surface px-6 py-5 shadow-card">
+        <section
+          aria-label="Coverage"
+          className="flex flex-col gap-3 rounded-[20px] bg-surface px-6 py-5 shadow-card"
+        >
           <motion.div
             aria-hidden="true"
             className="flex h-2 origin-left gap-0.5 overflow-hidden rounded-full"
@@ -252,7 +340,10 @@ export function SavingsStep({
           </div>
         </section>
 
-        <section aria-labelledby="where-title" className="overflow-hidden rounded-[28px] bg-surface shadow-raised">
+        <section
+          aria-labelledby="where-title"
+          className="overflow-hidden rounded-[28px] bg-surface shadow-raised"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-5 pb-3.5">
             <h2 id="where-title" className="type-title text-[24px] font-bold sm:text-[28px]">
               Where you save
@@ -288,11 +379,14 @@ export function SavingsStep({
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <span className="truncate text-base font-semibold">{group.label}</span>
                     <span className="text-[13px] text-secondary">
-                      {group.shipments} shipment{group.shipments === 1 ? "" : "s"} · {formatMoneyExact(group.current)} →{" "}
-                      {formatMoneyExact(group.proposed)}
+                      {group.shipments} shipment{group.shipments === 1 ? "" : "s"} ·{" "}
+                      {formatMoneyExact(group.current)} → {formatMoneyExact(group.proposed)}
                     </span>
                   </div>
-                  <div aria-hidden="true" className="col-span-2 h-2.5 overflow-hidden rounded-full bg-fill-soft md:col-span-1">
+                  <div
+                    aria-hidden="true"
+                    className="col-span-2 h-2.5 overflow-hidden rounded-full bg-fill-soft md:col-span-1"
+                  >
                     {/* Grows from the left (a transform, so it stays smooth) each time the rows change. */}
                     <motion.div
                       className={`h-full origin-left rounded-full ${up ? "bg-accent" : "bg-bad-bar"}`}
@@ -316,14 +410,18 @@ export function SavingsStep({
             <div className="flex items-center gap-2.5 border-t border-separator bg-fill-soft px-6 py-3.5 text-[13px] text-secondary">
               <Icon name="info" className="size-4 shrink-0" />
               <span>
-                BCOM costs more on {summary.higher_priced_shipments} shipment{summary.higher_priced_shipments === 1 ? "" : "s"}.
-                They are included above, so the saving is honest.
+                BCOM costs more on {summary.higher_priced_shipments} shipment
+                {summary.higher_priced_shipments === 1 ? "" : "s"}. They are included above, so the saving is
+                honest.
               </span>
             </div>
           ) : null}
         </section>
 
-        <div id="every-shipment" className="scroll-mt-24 overflow-hidden rounded-[20px] bg-surface shadow-card">
+        <div
+          id="every-shipment"
+          className="scroll-mt-24 overflow-hidden rounded-[20px] bg-surface shadow-card"
+        >
           <Disclosure
             title="Every shipment"
             detail={String(rows.length)}
@@ -357,7 +455,8 @@ export function SavingsStep({
                     >
                       <div className="min-w-0">
                         <p className="truncate font-medium">
-                          {shipment.origin_city ?? shipment.origin_country ?? "?"} → {shipment.destination_city ?? shipment.destination_country ?? "?"}
+                          {shipment.origin_city ?? shipment.origin_country ?? "?"} →{" "}
+                          {shipment.destination_city ?? shipment.destination_country ?? "?"}
                         </p>
                         <p className="text-[13px] text-secondary">
                           {[row.service_label, row.zone_label].filter(Boolean).join(" · ") || "—"}
@@ -386,7 +485,11 @@ export function SavingsStep({
               )}
             </div>
           </Disclosure>
-          <Disclosure title="How we calculated this" open={howOpen} onToggle={() => setHowOpen((open) => !open)}>
+          <Disclosure
+            title="How we calculated this"
+            open={howOpen}
+            onToggle={() => setHowOpen((open) => !open)}
+          >
             <ul className="flex list-disc flex-col gap-1.5 border-t border-separator py-4 pr-6 pl-11 text-[15px] leading-relaxed text-secondary">
               {summary.assumptions.map((assumption) => (
                 <li key={assumption}>{assumption}</li>
@@ -419,7 +522,17 @@ export function SavingsStep({
   );
 }
 
-function CompareBar({ label, value, max, tone }: { label: string; value: number; max: number; tone: "today" | "bcom" }) {
+function CompareBar({
+  label,
+  value,
+  max,
+  tone,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  tone: "today" | "bcom";
+}) {
   const shown = useCountUp(value);
   const reduce = useReducedMotion();
   const width = `${Math.max(4, (value / Math.max(1, max)) * 100)}%`;

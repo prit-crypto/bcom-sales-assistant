@@ -124,6 +124,20 @@
   <div class="kpi"><div class="label">{{ L.kpi_compared }}</div><div class="kpi-value"><bdi>{{ summary.compared_shipments }} / {{ summary.total_shipments }}</bdi></div></div>
 </div>
 
+{% if examples %}
+<section>
+  <h2>{{ L.examples_title }}</h2>
+  <table>
+    <thead><tr><th class="col-name">{{ L.col_shipment }}</th><th class="num">{{ L.col_today }}</th><th class="num">{{ L.col_bcom }}</th><th class="num">{{ L.col_saving }}</th></tr></thead>
+    <tbody>
+    {% for example in examples %}
+      <tr><td><div class="strong"><bdi>{{ example.route }}</bdi></div><div class="small">{{ example.detail }}</div></td><td class="num">{{ example.current | money_exact }}</td><td class="num">{{ example.proposed | money_exact }}</td>{{ saving_cell(example.saving) }}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
 <section>
   <h2>{{ L.recommended }}</h2>
   <table>

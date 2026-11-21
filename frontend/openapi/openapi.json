@@ -1757,6 +1757,10 @@
             "title": "Assumptions",
             "type": "array"
           },
+          "compared_shipments": {
+            "title": "Compared Shipments",
+            "type": "integer"
+          },
           "conditions": {
             "items": {
               "type": "string"
@@ -1767,6 +1771,13 @@
           "currency": {
             "title": "Currency",
             "type": "string"
+          },
+          "examples": {
+            "items": {
+              "$ref": "#/components/schemas/SavingExample"
+            },
+            "title": "Examples",
+            "type": "array"
           },
           "language": {
             "enum": [
@@ -1790,6 +1801,10 @@
           },
           "partner": {
             "$ref": "#/components/schemas/PublicPartner"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
           },
           "prospect_name": {
             "title": "Prospect Name",
@@ -1827,6 +1842,10 @@
             "title": "Status",
             "type": "string"
           },
+          "total_shipments": {
+            "title": "Total Shipments",
+            "type": "integer"
+          },
           "valid_until": {
             "format": "date",
             "title": "Valid Until",
@@ -1847,6 +1866,10 @@
           "saving_pct",
           "monthly_current",
           "monthly_proposed",
+          "compared_shipments",
+          "total_shipments",
+          "period",
+          "examples",
           "regions",
           "services",
           "assumptions",
@@ -2172,6 +2195,40 @@
           "partner_logo"
         ],
         "title": "SavedPartner",
+        "type": "object"
+      },
+      "SavingExample": {
+        "description": "One real shipment from the customer's invoice: what it cost and what it would cost with BCOM.",
+        "properties": {
+          "current": {
+            "title": "Current",
+            "type": "number"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "proposed": {
+            "title": "Proposed",
+            "type": "number"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          },
+          "saving": {
+            "title": "Saving",
+            "type": "number"
+          }
+        },
+        "required": [
+          "route",
+          "detail",
+          "current",
+          "proposed",
+          "saving"
+        ],
+        "title": "SavingExample",
         "type": "object"
       },
       "Scenario-Input": {

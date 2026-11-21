@@ -947,6 +947,10 @@ export type PublicProposal = {
      */
     assumptions: Array<string>;
     /**
+     * Compared Shipments
+     */
+    compared_shipments: number;
+    /**
      * Conditions
      */
     conditions: Array<string>;
@@ -954,6 +958,10 @@ export type PublicProposal = {
      * Currency
      */
     currency: string;
+    /**
+     * Examples
+     */
+    examples: Array<SavingExample>;
     /**
      * Language
      */
@@ -971,6 +979,10 @@ export type PublicProposal = {
      */
     monthly_saving: number;
     partner: PublicPartner;
+    /**
+     * Period
+     */
+    period: string;
     /**
      * Prospect Name
      */
@@ -995,6 +1007,10 @@ export type PublicProposal = {
      * Status
      */
     status: 'open' | 'accepted' | 'expired' | 'closed';
+    /**
+     * Total Shipments
+     */
+    total_shipments: number;
     /**
      * Valid Until
      */
@@ -1193,6 +1209,34 @@ export type SavedPartnerOutput = {
      * Validity Days
      */
     validity_days: number;
+};
+
+/**
+ * SavingExample
+ *
+ * One real shipment from the customer's invoice: what it cost and what it would cost with BCOM.
+ */
+export type SavingExample = {
+    /**
+     * Current
+     */
+    current: number;
+    /**
+     * Detail
+     */
+    detail: string;
+    /**
+     * Proposed
+     */
+    proposed: number;
+    /**
+     * Route
+     */
+    route: string;
+    /**
+     * Saving
+     */
+    saving: number;
 };
 
 /**

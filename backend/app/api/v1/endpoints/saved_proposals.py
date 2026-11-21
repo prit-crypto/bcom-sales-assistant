@@ -25,6 +25,7 @@ from app.schemas.public import ShareLink
 from app.services import email as mail
 from app.services.export import build_workbook, export_file_name
 from app.services.pricing.comparison import compare_invoice
+from app.services.proposal.i18n import date_text
 from app.services.proposal.render import render_proposal_pdf
 from app.services.proposals import parts, require_partner, to_item, today
 from app.services.sharing import link_path, link_url, new_token, valid_until
@@ -158,13 +159,21 @@ async def turn_off_link(proposal_id: uuid.UUID, service: Proposals) -> Response:
 async def email_draft(proposal_id: uuid.UUID, service: Proposals) -> EmailDraft:
     """The subject and message the email form starts with, in the customer's language."""
     proposal = await service.get(proposal_id)
-    _, _, partner = parts(proposal)
+    invoice, _, partner = parts(proposal)
+    period = (
+        f"{date_text(invoice.period_start, partner.language)} – {date_text(invoice.period_end, partner.language)}"
+        if invoice.period_start and invoice.period_end
+        else ""
+    )
     subject, message = mail.draft(
         partner,
         proposal.monthly_saving,
         proposal.yearly_saving,
         proposal.currency,
         valid_until(proposal).isoformat(),
+        proposal.compared_shipments,
+        proposal.total_shipments,
+        period,
     )
     return EmailDraft(
         to="", subject=subject, message=message, email_enabled=get_settings().email_enabled

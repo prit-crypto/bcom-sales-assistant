@@ -56,6 +56,11 @@ const EN = {
   notFound: "This link doesn't work",
   footer: "Prepared with the BCOM Global Sales Assistant",
   inPartnership: "In partnership with",
+  estimated: "Estimated saving",
+  basis: "An estimate based on {compared} of the {total} shipments on your invoice",
+  examplesTitle: "From your own invoice",
+  examplesIntro: "Real shipments you sent, priced with BCOM:",
+  save: "Save",
 };
 
 const T: Record<Language, Record<keyof typeof EN, string>> = {
@@ -99,6 +104,11 @@ const T: Record<Language, Record<keyof typeof EN, string>> = {
     notFound: "هذا الرابط لا يعمل",
     footer: "أُعدّ باستخدام مساعد المبيعات من BCOM Global",
     inPartnership: "بالشراكة مع",
+    estimated: "التوفير المتوقع",
+    basis: "تقدير مبني على {compared} من أصل {total} شحنة في فاتورتكم",
+    examplesTitle: "أمثلة من فاتورتكم",
+    examplesIntro: "شحنات أرسلتموها فعلاً، بأسعار BCOM:",
+    save: "وفّر",
   },
 };
 
@@ -237,6 +247,7 @@ export function CustomerProposal({ token }: { token: string }) {
             <p className="text-[15px] text-hero-secondary sm:text-[17px]">
               {t.preparedFor} {proposal.prospect_name}
             </p>
+            <p className="text-[13px] font-semibold tracking-wide text-gold uppercase">{t.estimated}</p>
             <h1 id="saving-title" className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1 font-bold">
               <span className="sr-only">
                 {proposal.prospect_name} {t.couldSave}
@@ -252,6 +263,18 @@ export function CustomerProposal({ token }: { token: string }) {
               </bdi>{" "}
               {t.aYear} · <bdi className="whitespace-nowrap">{formatPercent(proposal.saving_pct)}</bdi>{" "}
               {t.less}
+            </p>
+            <p className="text-[15px] text-hero-secondary">
+              {t.basis
+                .replace("{compared}", String(proposal.compared_shipments))
+                .replace("{total}", String(proposal.total_shipments))}
+              {proposal.period ? (
+                <>
+                  {" "}
+                  (<bdi className="whitespace-nowrap">{proposal.period}</bdi>)
+                </>
+              ) : null}
+              .
             </p>
           </div>
           <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[20px] bg-hero-line">
@@ -274,6 +297,45 @@ export function CustomerProposal({ token }: { token: string }) {
       </HeroBand>
 
       <main className="mx-auto -mt-16 flex w-full max-w-[880px] flex-1 flex-col gap-5 px-4 pb-16 sm:px-6">
+        {proposal.examples.length > 0 ? (
+          <section
+            aria-labelledby="examples-title"
+            className="flex flex-col gap-3 rounded-[22px] bg-surface p-5 shadow-raised sm:p-6"
+          >
+            <div className="flex flex-col gap-0.5">
+              <h2 id="examples-title" className="type-headline text-[20px] font-semibold">
+                {t.examplesTitle}
+              </h2>
+              <p className="text-[15px] text-secondary">{t.examplesIntro}</p>
+            </div>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {proposal.examples.map((example) => (
+                <li
+                  key={example.route + example.detail}
+                  className="flex flex-col gap-2 rounded-2xl bg-canvas p-4"
+                >
+                  <span className="flex flex-col">
+                    <bdi className="font-semibold">{example.route}</bdi>
+                    <span className="text-[13px] text-secondary">{example.detail}</span>
+                  </span>
+                  <span className="flex flex-wrap items-baseline justify-between gap-2 text-[15px]">
+                    <span className="tabular text-secondary">
+                      <bdi className="whitespace-nowrap">{formatMoneyExact(example.current, currency)}</bdi> →{" "}
+                      <bdi className="whitespace-nowrap font-semibold text-ink">
+                        {formatMoneyExact(example.proposed, currency)}
+                      </bdi>
+                    </span>
+                    <span className="tabular font-semibold text-accent">
+                      <bdi className="whitespace-nowrap">
+                        {t.save} {formatMoneyExact(example.saving, currency)}
+                      </bdi>
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         {proposal.status === "accepted" ? (
           <Banner tone="success" title={t.acceptedTitle}>
             {proposal.accepted_by ? `${t.acceptedBy} ${proposal.accepted_by}. ` : ""}

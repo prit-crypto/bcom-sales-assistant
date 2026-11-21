@@ -15,6 +15,7 @@ from app.schemas.comparison import ComparisonResult, GroupTotal, Scenario
 from app.schemas.invoice import InvoiceData, ServiceLevel
 from app.services.pricing.comparison import compare_invoice
 from app.services.pricing.rate_card import RATES, SERVICE_LABELS, ZONE_IDS
+from app.services.proposal.examples import saving_examples
 from app.services.proposal.i18n import (
     LABELS,
     Language,
@@ -184,6 +185,7 @@ def render_proposal_html(
         headline_after=headline_after,
         economy_line=economy_line,
         sub=sub,
+        examples=saving_examples(invoice, comparison, language),
         service_rows=service_rows(summary.by_service, language),
         zones=relabel(summary.by_zone, language, lanes=False),
         lanes=relabel(summary.top_lanes, language, lanes=True),

@@ -29,6 +29,17 @@ class PublicService(ApiModel):
     saving: float
 
 
+class SavingExample(ApiModel):
+    """One real shipment from the customer's invoice: what it cost and what it would cost with BCOM."""
+
+    route: str
+    # Service, weight and date, in the customer's language
+    detail: str
+    current: float
+    proposed: float
+    saving: float
+
+
 class PublicPartner(ApiModel):
     name: str
     company: str
@@ -48,6 +59,11 @@ class PublicProposal(ApiModel):
     saving_pct: float
     monthly_current: float
     monthly_proposed: float
+    # What the estimate is based on: compared shipments of all on the invoice, over this billing period
+    compared_shipments: int
+    total_shipments: int
+    period: str
+    examples: list[SavingExample]
     regions: list[PublicGroup]
     services: list[PublicService]
     assumptions: list[str]
