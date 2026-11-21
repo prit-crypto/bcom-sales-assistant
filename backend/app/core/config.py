@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     # Requests per minute per client for the endpoints that call the AI provider; 0 turns it off.
     rate_limit_per_minute: int = Field(default=20, ge=0, le=10_000)
 
-    # PostgreSQL (asyncpg driver). `docker compose up -d db` in the repository root starts one on port 5440.
+    # PostgreSQL (asyncpg driver). `docker compose up -d db` in backend/ starts one on port 5440.
     database_url: str = Field(
         default="postgresql+asyncpg://bcom:bcom@localhost:5440/bcom", repr=False
     )

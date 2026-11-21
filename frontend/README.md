@@ -51,9 +51,8 @@ spirit of Apple's product pages. No blue (the company's other product uses navy)
   figures count up once, a tick draws in when a missing value is filled, "Copy" turns into "Copied ✓", the PDF
   preview cross-fades when it updates, a half-typed currency gives one small shake. Only `transform` and
   `opacity` are animated, nothing runs longer than about 0.5 s, and "reduce motion" turns all of it off.
-- **Logo**: on graphite the bar uses `public/brand/bcom-global-logo-light.png` (white BCOM, gold GLOBAL); a graphite
-  version for light surfaces is `bcom-global-logo-graphite.png`. Both were made from the original logo (kept for the
-  PDF's former logo) by turning its ink into one colour with transparency. The PDF header is graphite with the
+- **Logo**: on graphite the bar uses `public/brand/bcom-global-logo-light.png` (white BCOM, gold GLOBAL),
+  made from the original logo by turning its ink into one colour with transparency. The PDF header is graphite with the
   light logo; the browser tab icon (`src/app/icon.png`, `apple-icon.png`) is the gold globe on graphite.
 - **Layout**: a solid graphite top bar (`AppBar`, with the journey as a breadcrumb) and a floating bottom bar
   (`ActionBar`) on every step, so the next action is always in reach. Lists are grouped iPhone-style rows with
@@ -70,7 +69,7 @@ spirit of Apple's product pages. No blue (the company's other product uses navy)
 | `/p/<token>` | **The customer's page** from their link: savings, regions, services, PDF, contact and Accept, in English or Arabic. No partner screens are reachable from it, and search engines are told not to index it |
 
 The browser tests (`npm run e2e`) need PostgreSQL running (`docker compose up -d db` in the
-repository root); their backend empties and
+`backend` folder); their backend empties and
 migrates its own `bcom_e2e` database on every run.
 
 ## Features worth knowing

@@ -1,0 +1,46 @@
+# Backend: PostgreSQL + the API. Run these from the backend/ folder.
+#   docker compose up -d db          PostgreSQL only (port 5440), for development with `make run`
+#   docker compose up -d --build     database + API on http://localhost:8080 (docs at /docs)
+# The API reads its settings (AI provider, keys, ...) from backend/.env when it exists; the values below
+# only replace what must be different inside Docker.
+name: bcom-backend
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: bcom
+      POSTGRES_PASSWORD: bcom
+      POSTGRES_DB: bcom
+    ports:
+      # 5440 on the host: 5432/5433 are often taken by other projects.
+      - "5440:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ../docker/postgres/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bcom -d bcom"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://bcom:bcom@db:5432/bcom
+      # Where the frontend container is served (frontend/docker-compose.yml).
+      CORS_ORIGINS: http://localhost:3080
+      PUBLIC_APP_URL: http://localhost:3080
+    ports:
+      - "8080:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
+    # Fixed name, so the data is the same whichever compose file starts the database.
+    name: bcom-sales-assistant_db-data

@@ -4,7 +4,7 @@ import { defineConfig } from "@playwright/test";
 /**
  * Browser tests for the whole journey. `npm run e2e` starts its own backend (no-AI mode, no rate limit,
  * its own `bcom_e2e` database) and frontend on ports 18765 / 13765, so it never touches the servers
- * or data you develop with. Needs the database running: `docker compose up -d db`.
+ * or data you develop with. Needs the database running: `docker compose up -d db` in backend/.
  * Uses the system Chrome when present (set CHROME_PATH to override); otherwise run
  * `npx playwright install chromium` once.
  */

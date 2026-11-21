@@ -19,7 +19,7 @@ installs it.
 | Command | Purpose |
 |---|---|
 | `make run` | Development server with reload |
-| `make db-up` / `make migrate` | Start PostgreSQL (repository `docker-compose.yml`) / apply migrations |
+| `make db-up` / `make migrate` | Start PostgreSQL (`backend/docker-compose.yml`) / apply migrations |
 | `make revision m="…"` | New migration generated from the models in `app/models` |
 | `make corrections-report` | What partners corrected in each reader's work, and the hints the AI now gets (Markdown) |
 | `make test` | Unit and API tests (pytest) |

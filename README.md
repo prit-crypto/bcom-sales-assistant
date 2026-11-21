@@ -23,12 +23,17 @@ are exact and the same every time, whichever AI provider is active. The frontend
 
 ## Run everything in Docker
 
+Each part has its own compose file. Start the backend first, then the frontend:
+
 ```bash
-docker compose up --build   # app on http://localhost:3080, API on http://localhost:8080 (docs at /docs)
+(cd backend  && docker compose up -d --build)   # PostgreSQL (5440) + API on http://localhost:8080 (docs at /docs)
+(cd frontend && docker compose up -d --build)   # app on http://localhost:3080
 ```
 
-The backend container applies database migrations on start. Set `AI_PROVIDER` / `GEMINI_API_KEY` / `OPENAI_API_KEY`
-in your shell (or a root `.env`) to use an AI reader; without them it runs in mock mode.
+The backend container applies database migrations on start and reads its settings from `backend/.env`
+(`AI_PROVIDER`, `GEMINI_API_KEY`, ...); without one it runs in mock mode. The frontend's API address is fixed when
+its image is built (`BCOM_API_URL`, default `http://localhost:8080/api/v1`). For development, `docker compose up -d db`
+in `backend/` starts only PostgreSQL.
 
 ## Quick start for development (two terminals)
 
