@@ -12,6 +12,5 @@ playwright-report
 e2e
 playwright.config.ts
 scripts
-docker-compose.yml
 *.md
 AGENTS.md

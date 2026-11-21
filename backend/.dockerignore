@@ -14,6 +14,5 @@ tests
 scripts
 requirements-dev.txt
 Makefile
-docker-compose.yml
 *.md
 eval-report.md

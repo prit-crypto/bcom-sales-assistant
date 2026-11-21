@@ -55,6 +55,9 @@ const nextConfig: NextConfig = {
     // clear message. Next.js cuts forwarded bodies at 10 MB by default; allow a little more than the backend's
     // maximum so the backend always answers.
     proxyClientMaxBodySize: "32mb",
+    // Forwarded requests are cut after 30 s without data by default; an AI read can take longer (the backend
+    // gives up by itself after AI_TOTAL_TIMEOUT_SECONDS, 100 s by default).
+    proxyTimeout: 120_000,
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

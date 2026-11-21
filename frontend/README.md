@@ -91,7 +91,7 @@ spirit of Apple's product pages. No blue (the company's other product uses navy)
 | `/proposals/<id>/edit` | The journey again for a saved proposal (opens at Savings) |
 | `/p/<token>` | **The customer's page** from their link: savings, regions, services, PDF, contact and Accept, in English or Arabic. No partner screens are reachable from it, and search engines are told not to index it |
 
-The browser tests (`npm run e2e`) need PostgreSQL running (`docker compose up -d db` in the
+The browser tests (`npm run e2e`) need PostgreSQL running (`make db-up` in the
 `backend` folder); their backend empties and
 migrates its own `bcom_e2e` database on every run.
 

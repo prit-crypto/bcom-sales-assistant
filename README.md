@@ -21,7 +21,7 @@ Needs Python 3.12, Node.js 20.9+, Docker (for PostgreSQL) and Pango (`sudo apt i
 cd backend
 make init               # .venv with the exact package versions from requirements-dev.txt
 cp .env.example .env    # AI_PROVIDER=mock works without a key
-make db-up              # PostgreSQL on localhost:5440 (development only)
+make db-up              # PostgreSQL on localhost:5440 from docker-compose.dev.yml (development only)
 make migrate
 make run
 

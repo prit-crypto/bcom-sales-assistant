@@ -11,8 +11,8 @@ init:  ## one-time setup: virtualenv + runtime and development packages (exact v
 run:  ## development server on http://localhost:8000 (docs at /docs)
 	$(VENV)/uvicorn app.main:app --reload --port 8000
 
-db-up:  ## start PostgreSQL (port 5440) from backend/docker-compose.yml
-	docker compose up -d db
+db-up:  ## start the development PostgreSQL (port 5440) from docker-compose.dev.yml in the repository root
+	docker compose -f ../docker-compose.dev.yml up -d --wait
 
 migrate:  ## bring the database to the latest migration
 	$(VENV)/alembic upgrade head

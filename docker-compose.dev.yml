@@ -1,0 +1,30 @@
+# Development only: PostgreSQL on localhost:5440 for `make run` in backend/, plus the empty bcom_test /
+# bcom_e2e databases the backend and browser tests use. Start it with `make db-up` (from backend/) or
+#   docker compose -f docker-compose.dev.yml up -d
+# To run the whole app, use docker-compose.yml instead (its database is not published).
+name: bcom-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: bcom
+      POSTGRES_PASSWORD: bcom
+      POSTGRES_DB: bcom
+    ports:
+      # Published on purpose: this database is for local development. 5440: 5432/5433 are often taken.
+      - "5440:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./backend/tests/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bcom -d bcom"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  db-data:
+    # Kept from before, so existing development data stays; separate from the app's bcom_db-data.
+    name: bcom-sales-assistant_db-data

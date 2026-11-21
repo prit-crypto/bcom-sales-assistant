@@ -23,8 +23,8 @@ repository root – see the [root README](../README.md). There the API is intern
 frontend at `/api/v1`, and only the frontend's port is published. The container applies database migrations on
 start; its settings come from the root `.env` (without one it runs in mock mode).
 
-[docker-compose.yml](docker-compose.yml) in this folder is for development only: it starts PostgreSQL on
-localhost:5440 for `make run` and the tests (`make db-up`).
+For development, [docker-compose.dev.yml](../docker-compose.dev.yml) in the repository root starts only PostgreSQL,
+on localhost:5440, for `make run` and the tests (`make db-up`).
 
 ## Development setup
 
@@ -56,7 +56,7 @@ Restart the server after changing `.env` (`docker compose up -d backend` in Dock
 | Command | Purpose |
 |---|---|
 | `make run` | Development server with reload |
-| `make db-up` / `make migrate` | Start PostgreSQL (`backend/docker-compose.yml`) / apply migrations |
+| `make db-up` / `make migrate` | Start PostgreSQL (`docker-compose.dev.yml`) / apply migrations |
 | `make revision m="…"` | New migration generated from the models in `app/models` |
 | `make corrections-report` | What partners corrected in each reader's work, and the hints the AI now gets (Markdown) |
 | `make test` | Unit and API tests (pytest) |
