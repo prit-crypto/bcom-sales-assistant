@@ -25,11 +25,12 @@ test("an empty pipeline points to the first invoice", async ({ page }) => {
   await expect(page.getByText("No invoice to hand? Try a sample")).toBeVisible();
 });
 
-test("a proposal from sent to follow-up, won, lost and reopened, with notes, files and history", async ({ page }) => {
+test("a proposal from sent to follow-up, won, lost and reopened, with notes and files", async ({ page }) => {
   const id = await saveSampleProposal(page);
   await page.goto(`/proposals/${id}`);
   await expect(page.getByRole("heading", { name: "Al Noor Mobile Accessories Trading LLC" })).toBeVisible();
-  await expect(page.getByText("Saved from sample-1-al-noor-mobile.pdf")).toBeVisible();
+  await expect(page.getByText(/from sample-1-al-noor-mobile\.pdf/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "History" })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Mark as sent" }).click();
   await expect(page.getByText(/Follow up in 3 days/)).toBeVisible();
@@ -54,7 +55,7 @@ test("a proposal from sent to follow-up, won, lost and reopened, with notes, fil
   await page.getByRole("button", { name: "Lost", exact: true }).click();
   await page.getByLabel(/Why was it lost/).fill("Stayed with their courier");
   await page.getByRole("button", { name: "Mark as lost" }).click();
-  await expect(page.getByText("Marked as lost: Stayed with their courier")).toBeVisible();
+  await expect(page.getByText(/^Lost .*: Stayed with their courier\.$/)).toBeVisible();
 
   await page.getByRole("textbox", { name: "Notes" }).fill("Spoke to Fatima, call again after Eid");
   await expect(page.getByText("Saved", { exact: true })).toBeVisible();
@@ -63,11 +64,9 @@ test("a proposal from sent to follow-up, won, lost and reopened, with notes, fil
   await page.getByRole("button", { name: "Download PDF" }).click();
   const pdf = await pdfPromise;
   expect(readFileSync((await pdf.path())!).subarray(0, 4).toString()).toBe("%PDF");
-  await expect(page.getByText("PDF downloaded")).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Notes" })).toHaveValue("Spoke to Fatima, call again after Eid");
-  await expect(page.getByText("Notes updated")).toBeVisible();
 
   await page.getByRole("link", { name: /editing/ }).click();
   await expect(page.locator("#savings-title")).toBeVisible();

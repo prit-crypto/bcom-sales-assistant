@@ -18,6 +18,8 @@ import type { InvoiceData } from "@/types/invoice";
 export interface ProposalFile {
   url: string;
   fileName: string;
+  /** The PDF itself, so it can be handed to the device's share menu (WhatsApp) */
+  blob: Blob;
 }
 
 interface ProposalStepProps {
@@ -104,6 +106,7 @@ export function ProposalStep({
             onProposalReady({
               url: URL.createObjectURL(blob),
               fileName: safeFileName(partner.prospect_name, partner.language),
+              blob,
             });
             setStatus("ready");
           })

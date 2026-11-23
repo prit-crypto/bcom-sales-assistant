@@ -133,7 +133,9 @@ async def extract_invoice_stream(
     return StreamingResponse(
         events(),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+        # no-transform: proxies that compress (the frontend's Next.js server does) would otherwise hold every
+        # event back until the read ends, and the partner would see no progress. X-Accel-Buffering: nginx.
+        headers={"Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no"},
     )
 
 

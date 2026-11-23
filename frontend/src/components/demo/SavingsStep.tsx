@@ -276,7 +276,6 @@ export function SavingsStep({
       <main className="mx-auto -mt-16 flex w-full max-w-[1200px] flex-1 flex-col gap-5 px-4 sm:gap-6 sm:px-6">
         <WhatIfPanel
           scenario={scenario}
-          summary={summary}
           updating={updating}
           error={scenarioError}
           onChange={onScenarioChange}

@@ -70,19 +70,17 @@ test.describe("checks on the shipments", () => {
   });
 });
 
-test("what if: Economy for non-urgent parcels, more volume, reset, and the PDF follows", async ({ page }) => {
+test("what if: more volume, back to current shipping, and the PDF follows", async ({ page }) => {
   await openApp(page);
   await loadSample(page, "Clean PDF");
   await compare(page);
   await expect.poll(() => headline(page)).toContain("AED 1,854");
+  // The Economy what-if was removed: only the volume can be changed.
+  await expect(page.getByRole("switch", { name: /Economy/ })).toHaveCount(0);
 
-  await page.getByRole("switch", { name: "Send non-urgent parcels by Economy" }).click();
-  await expect.poll(() => headline(page)).toContain("AED 3,916");
-  await expect(page.getByText("Non-urgent by Economy").first()).toBeVisible();
-  await expect(page.getByText(/a month like for like, or/)).toBeVisible();
-  await expect(page.getByRole("table").filter({ hasText: "Delivery times the prospect trades for it" })).toBeVisible();
-
-  await page.getByRole("button", { name: "Reset to like for like" }).click();
+  await page.getByRole("radio", { name: "×2" }).click();
+  await expect.poll(() => headline(page)).toContain("AED 3,70");
+  await page.getByRole("button", { name: "Back to their current shipping" }).click();
   await expect.poll(() => headline(page)).toContain("AED 1,854");
 
   await page.getByRole("radio", { name: "+20%" }).click();
@@ -203,10 +201,10 @@ test("a refreshed page keeps the what-if", async ({ page }) => {
   await compare(page);
   await expect(page).toHaveURL(/\/edit$/);
   const saved = page.waitForResponse((response) => response.request().method() === "PATCH" && response.ok());
-  await page.getByRole("switch", { name: "Send non-urgent parcels by Economy" }).click();
-  await expect.poll(() => headline(page)).toContain("AED 3,916");
+  await page.getByRole("radio", { name: "+50%" }).click();
+  await expect(page.getByText("+50% volume")).toBeVisible();
   await saved;
   await page.reload();
-  await expect.poll(() => headline(page)).toContain("AED 3,916");
-  await expect(page.getByRole("switch", { name: "Send non-urgent parcels by Economy" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText("+50% volume")).toBeVisible();
+  await expect(page.getByRole("radio", { name: "+50%" })).toBeChecked();
 });

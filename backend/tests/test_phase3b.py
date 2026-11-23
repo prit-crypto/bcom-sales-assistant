@@ -134,6 +134,8 @@ def test_stream_reports_each_stage_then_the_invoice(client: TestClient) -> None:
     )
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
+    # Without no-transform the frontend's server gzips the stream and the progress arrives only at the end.
+    assert "no-transform" in response.headers["cache-control"]
     parsed = events(response.text)
     stages = [data["stage"] for name, data in parsed if name == "stage"]
     assert stages == ["received", "checked", "reading", "cleaning", "checking"]

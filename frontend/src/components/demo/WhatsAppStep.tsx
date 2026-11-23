@@ -31,6 +31,26 @@ interface WhatsAppStepProps {
   onBack: () => void;
 }
 
+/**
+ * Whether this device's share menu can take a PDF (phones, and Chrome/Edge on Windows, Safari on Mac).
+ * A WhatsApp link (wa.me) can only carry text, so this is the only way to send the PDF with the message.
+ */
+function canSharePdf(): boolean {
+  if (typeof navigator === "undefined" || typeof navigator.canShare !== "function") return false;
+  try {
+    return navigator.canShare({ files: [new File([""], "proposal.pdf", { type: "application/pdf" })] });
+  } catch {
+    return false;
+  }
+}
+
+/** The message with the customer's link (where they can open and download the PDF) added at the end. */
+function withLink(text: string, url: string, arabic: boolean): string {
+  if (text.includes(url)) return text;
+  const lead = arabic ? "يمكنكم الاطلاع على العرض وتحميله وقبوله عبر الإنترنت:" : "View, download and accept the proposal online:";
+  return `${text.trimEnd()}\n\n${lead} ${url}`;
+}
+
 export function WhatsAppStep({
   invoice,
   scenario,
@@ -46,18 +66,26 @@ export function WhatsAppStep({
   const [marking, setMarking] = useState(false);
   const [markError, setMarkError] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
+  // This step only opens after the partner has clicked through, so it is never rendered on the server.
+  const [sharePdf] = useState(canSharePdf);
+  const [shareError, setShareError] = useState<string | null>(null);
 
-  /** Adds the customer's link (made if needed) to the end of the message, in the message's language. */
+  /** The customer's link (made if needed), as a full address. */
+  async function customerLink(): Promise<string | null> {
+    if (!saved) return null;
+    const link = await postJson<ShareLink>(`/proposals/${saved.id}/share`, {});
+    return `${window.location.origin}${link.path}`;
+  }
+
+  /** Adds the customer's link to the end of the message, in the message's language. */
   async function addLink() {
     if (!saved || !message) return;
     setLinking(true);
     setMarkError(null);
     try {
-      const link = await postJson<ShareLink>(`/proposals/${saved.id}/share`, {});
-      const url = `${window.location.origin}${link.path}`;
-      if (!message.message.includes(url)) {
-        const lead = partner.language === "ar" ? "يمكنكم الاطلاع على العرض وقبوله عبر الإنترنت:" : "View and accept the proposal online:";
-        onMessage({ ...message, message: `${message.message.trimEnd()}\n\n${lead} ${url}` });
+      const url = await customerLink();
+      if (url && !message.message.includes(url)) {
+        onMessage({ ...message, message: withLink(message.message, url, partner.language === "ar") });
         setEdited(true);
       }
     } catch (failure) {
@@ -92,8 +120,14 @@ export function WhatsAppStep({
     setBusy(true);
     setError(null);
     try {
-      onMessage(await postJson<MessageResponse>("/messages", { invoice, partner: partnerForRequest(partner), scenario }));
+      const written = await postJson<MessageResponse>("/messages", { invoice, partner: partnerForRequest(partner), scenario });
+      onMessage(written);
       setEdited(false);
+      // Where the PDF can't be shared with the message, the link lets the customer open and download it.
+      if (!sharePdf && saved) {
+        const url = await customerLink().catch(() => null); // the "Add the proposal link" button can still add it
+        if (url) onMessage({ ...written, message: withLink(written.message, url, partner.language === "ar") });
+      }
     } catch (writeError) {
       setError(errorMessage(writeError));
     } finally {
@@ -120,6 +154,21 @@ export function WhatsAppStep({
     } catch {
       // Clipboard can be blocked: select the text so it can be copied by hand.
       textArea.current?.select();
+    }
+  }
+
+  /** Opens the device's share menu with the PDF and the message; the partner picks WhatsApp and the contact. */
+  async function share() {
+    if (!message || !proposal) return;
+    setShareError(null);
+    const file = new File([proposal.blob], proposal.fileName, { type: "application/pdf" });
+    try {
+      await navigator.share({ files: [file], text: message.message });
+      onEvent?.("whatsapp_opened");
+    } catch (failure) {
+      // Closing the share menu is not an error.
+      if (failure instanceof DOMException && failure.name === "AbortError") return;
+      setShareError("Could not open the share menu. Download the PDF and attach it in WhatsApp instead.");
     }
   }
 
@@ -227,7 +276,13 @@ export function WhatsAppStep({
               </span>
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-sm font-medium">{proposal.fileName}</span>
-                <span className="text-xs text-secondary">Attach it in WhatsApp before you send. Nothing is sent automatically.</span>
+                <span className="text-xs text-secondary">
+                  {sharePdf
+                    ? "“Share PDF” sends this file and the message together: choose WhatsApp, then the contact."
+                    : saved
+                      ? "The link in the message lets the customer open and download it. To send the file itself, download it and attach it in WhatsApp."
+                      : "Download it and attach it in WhatsApp before you send. Nothing is sent automatically."}
+                </span>
               </span>
               <a
                 href={proposal.url}
@@ -239,6 +294,8 @@ export function WhatsAppStep({
             </div>
           ) : null}
         </div>
+
+        {shareError ? <Banner tone="error">{shareError}</Banner> : null}
 
         {saved && message ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -311,7 +368,23 @@ export function WhatsAppStep({
             </motion.span>
           </AnimatePresence>
         </Button>
-        {message ? (
+        {message && sharePdf && proposal ? (
+          <>
+            <a
+              href={buildWhatsAppLink(message.message, phone)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => onEvent?.("whatsapp_opened")}
+              className={buttonClasses("tinted")}
+            >
+              Text only
+            </a>
+            <Button variant="whatsapp" onClick={() => void share()} className="flex-1 md:flex-none">
+              <Icon name="file" className="size-4" />
+              Share PDF
+            </Button>
+          </>
+        ) : message ? (
           <a
             href={buildWhatsAppLink(message.message, phone)}
             target="_blank"

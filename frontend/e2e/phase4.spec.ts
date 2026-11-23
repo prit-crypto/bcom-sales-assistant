@@ -36,10 +36,10 @@ test("the customer opens the link and accepts; the partner sees it won", async (
   await expect(customer.getByText(/Accepted by Fatima Al Zahra/)).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText(/^Won /)).toBeVisible();
-  await expect(page.getByText('Accepted online by Fatima Al Zahra: "Please start in December"')).toBeVisible();
-  await expect(page.getByText("Customer opened the link")).toBeVisible();
+  await expect(page.getByText(/^Won .*Accepted online by Fatima Al Zahra: "Please start in December"$/)).toBeVisible();
   await expect(page.getByText(/Opened Today/)).toBeVisible();
+  // The partner's page has no history list.
+  await expect(page.getByRole("heading", { name: "History" })).toHaveCount(0);
 });
 
 test("a turned-off link stops working", async ({ page, context }) => {
@@ -63,13 +63,46 @@ test("an Arabic proposal opens right to left for the customer", async ({ page, c
   await expect(customer.locator("[dir=rtl]").first()).toBeVisible();
 });
 
-test("the WhatsApp step can add the customer link to the message", async ({ page }) => {
+test("where the PDF can't be shared, the message gets the customer link by itself", async ({ page }) => {
   await saveSample(page);
   await page.getByRole("button", { name: "Create proposal" }).click();
   await expect(page.getByText("Preview up to date")).toBeVisible();
   await page.getByRole("button", { name: "Next: WhatsApp" }).click();
   const message = page.locator("#whatsapp-message");
   await expect(message).toHaveValue(/every month/);
-  await page.getByRole("button", { name: "Add the proposal link" }).click();
-  await expect(message).toHaveValue(/View and accept the proposal online: http:\/\/localhost:13765\/p\//);
+  await expect(message).toHaveValue(/View, download and accept the proposal online: http:\/\/localhost:13765\/p\//);
+  await expect(page.getByText("Standard template · edited")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Open in WhatsApp" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Share PDF" })).toHaveCount(0);
+});
+
+test("where the device can share files, Share PDF sends the PDF and the message together", async ({ page }) => {
+  // A phone's share menu, stood in for: records what the page hands to it.
+  await page.addInitScript(() => {
+    const shared: { names: string[]; types: string[]; text: string }[] = [];
+    Object.assign(window, { __shared: shared });
+    Object.assign(navigator, {
+      canShare: (data: ShareData) => Boolean(data.files?.length),
+      share: async (data: ShareData) => {
+        shared.push({ names: (data.files ?? []).map((f) => f.name), types: (data.files ?? []).map((f) => f.type), text: data.text ?? "" });
+      },
+    });
+  });
+  await saveSample(page);
+  await page.getByRole("button", { name: "Create proposal" }).click();
+  await expect(page.getByText("Preview up to date")).toBeVisible();
+  await page.getByRole("button", { name: "Next: WhatsApp" }).click();
+  const message = page.locator("#whatsapp-message");
+  await expect(message).toHaveValue(/every month/);
+  // The PDF goes with the message, so no link is added.
+  await expect(message).not.toHaveValue(/\/p\//);
+
+  await page.getByRole("button", { name: "Share PDF" }).click();
+  const shared = await page.evaluate(() => (window as unknown as { __shared: { names: string[]; types: string[]; text: string }[] }).__shared);
+  expect(shared).toHaveLength(1);
+  const [sent] = shared;
+  expect(sent?.names).toEqual([expect.stringMatching(/^BCOM-proposal-.*\.pdf$/)]);
+  expect(sent?.types).toEqual(["application/pdf"]);
+  expect(sent?.text).toContain("every month");
+  await expect(page.getByRole("link", { name: "Text only" })).toHaveAttribute("href", /^https:\/\/wa\.me\//);
 });

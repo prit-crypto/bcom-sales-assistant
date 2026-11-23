@@ -46,8 +46,8 @@ for (const mode of MODES) {
     await scan(page, "shipments");
 
     await compare(page);
-    await page.getByRole("switch", { name: "Send non-urgent parcels by Economy" }).click();
-    await expect(page.getByText(/a month like for like, or/)).toBeVisible();
+    await page.getByRole("radio", { name: "+20%" }).click();
+    await expect(page.getByRole("button", { name: "Back to their current shipping" })).toBeVisible();
     await scan(page, "savings");
 
     await page.getByRole("button", { name: "Create proposal" }).click();
